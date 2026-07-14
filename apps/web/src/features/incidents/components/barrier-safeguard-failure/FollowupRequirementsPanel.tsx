@@ -1,0 +1,2 @@
+import { SimpleBarrierPanel } from './BarrierPanelPrimitives';
+export function FollowupRequirementsPanel({ data, onCreate }: { data: any; onCreate?: (row?: any) => void }) { return <div><SimpleBarrierPanel title="Follow-up Requirements" data={data} />{data?.generated?.length ? <button className="mt-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-black dark:border-cyan-300/10" onClick={() => onCreate?.(data.generated[0])}>Create first generated action</button> : null}</div>; }

@@ -1,0 +1,780 @@
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Workforce tab fully.
+Context: The PTW Create Permit wizard, Permit Detail Page, Isolation / LOTO tab, and Gas Test tab exist or
+are in progress. Now make the Workforce tab real, database-driven, and fully functional.
+Route:
+/ptw/:id
+Tab: Workforce
+Do NOT create static demo UI. Do NOT use mock workers. Do NOT redesign the PTW page. Keep the current
+dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+Backend: NestJS + Prisma/Supabase + PostgreSQL
+Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+Auth: existing IAM/RBAC
+Audit: existing audit log
+Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+The Workforce tab must manage all people working under a permit.
+It must support:
+Permit holder
+Performing authority
+Area authority
+Permit issuer
+Contractor company
+Worker roster
+Trade/role tracking
+Safety briefing acknowledgement
+Sign-in / sign-out
+Maximum personnel count
+Emergency accountability list
+Workforce readiness blocking before activation
+Closure blocking if workers are still signed in
+Audit log and permit history events
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+================================================== WORKFORCE TAB UI
+==================================================
+The tab must show:
+Workforce Summary Card
+Total personnel
+Signed-in personnel
+Signed-out personnel
+Briefing completed %
+Contractor personnel count
+Internal personnel count
+Maximum personnel allowed
+Workforce status:
+Not Assigned
+Briefing Pending
+Ready
+Active
+Sign-Out Pending
+Complete
+Activation Blocker Banner Show if permit cannot activate because:
+Permit holder missing
+Performing authority missing
+Area authority missing
+Required briefing incomplete
+No workers assigned
+Required roles missing
+Maximum personnel count exceeded
+Closure Blocker Banner Show if permit cannot close because:
+Workers are still signed in
+Emergency accountability not confirmed
+Permit holder has not signed off work completion
+Key Roles Panel Show:
+Permit Holder
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
+23. 
+24. 
+25. 
+26. 
+27. 
+28. 
+29. 
+2
+
+Performing Authority
+Area Authority
+Permit Issuer
+Contractor Supervisor
+Fire Watch if Hot Work
+Attendant if Confined Space
+Entry Supervisor if Confined Space
+Gas Tester if gas testing required
+Isolation Authority if isolation required
+Workforce Roster Table Columns:
+Worker Name
+Company
+Contractor Company
+Trade
+Badge ID
+Contact Number
+Role on Permit
+Briefing Status
+Sign-In Time
+Sign-Out Time
+Status
+Actions
+Emergency Accountability Panel Show:
+Total people currently signed in
+Missing sign-out count
+Emergency contacts
+Last accountability check
+Accountability confirmed by
+Accountability confirmed at
+Briefing / Toolbox Talk Section Show:
+Briefing required: Yes/No
+Briefing topic
+Briefing conducted by
+Briefing date/time
+Workers acknowledged
+Missing acknowledgements
+30. 
+31. 
+32. 
+33. 
+34. 
+35. 
+36. 
+37. 
+38. 
+39. 
+40. 
+41. 
+42. 
+43. 
+44. 
+45. 
+46. 
+47. 
+48. 
+49. 
+50. 
+51. 
+52. 
+53. 
+54. 
+55. 
+56. 
+57. 
+58. 
+59. 
+60. 
+61. 
+62. 
+63. 
+64. 
+65. 
+3
+
+Toolbox talk notes
+================================================== WORKER FIELDS
+==================================================
+Each workforce record must include:
+id
+permit_id
+company_id
+site_id
+user_id optional
+worker_name
+worker_type: Internal / Contractor / Visitor
+employer_company
+contractor_company_id optional
+trade
+badge_id
+contact_number
+emergency_contact_name
+emergency_contact_phone
+role_on_permit
+is_permit_holder
+is_performing_authority
+is_area_authority
+is_permit_issuer
+is_fire_watch
+is_attendant
+is_entry_supervisor
+is_gas_tester
+is_isolation_authority
+briefing_required
+briefing_completed
+briefing_completed_at
+briefing_completed_by
+signed_in
+signed_in_at
+signed_in_by
+signed_out
+signed_out_at
+signed_out_by
+status
+notes
+created_by
+created_at
+updated_at
+66. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+Status options:
+Planned
+Briefing Pending
+Briefed
+Signed In
+Signed Out
+Removed
+No Show
+Role options:
+Permit Holder
+Performing Authority
+Area Authority
+Permit Issuer
+Worker
+Contractor Supervisor
+Fire Watch
+Confined Space Attendant
+Confined Space Entrant
+Entry Supervisor
+Gas Tester
+Isolation Authority
+Standby Person
+Safety Watch
+Visitor
+Other
+================================================== PERMIT TYPE ROLE REQUIREMENTS
+==================================================
+Hot Work requires:
+Permit Holder
+Performing Authority
+Area Authority
+Fire Watch
+Permit Issuer
+Confined Space Entry requires:
+Permit Holder
+Performing Authority
+Area Authority
+Entry Supervisor
+Attendant
+Entrants
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+Rescue/standby person if configured
+Gas Tester
+Electrical Isolation / LOTO requires:
+Permit Holder
+Performing Authority
+Area Authority
+Isolation Authority
+Excavation requires:
+Permit Holder
+Performing Authority
+Area Authority
+Competent person if configured
+Radiography requires:
+Permit Holder
+Performing Authority
+Area Authority
+Radiation worker / radiation monitor
+Working at Height requires:
+Permit Holder
+Performing Authority
+Area Authority
+Rescue/standby person if configured
+Line Breaking / Equipment Opening requires:
+Permit Holder
+Performing Authority
+Area Authority
+Standby person if hazardous service
+SIMOPS requires:
+Permit Holder
+Performing Authority
+Area Authority
+SIMOPS Coordinator
+Cold Work requires:
+Permit Holder
+Performing Authority
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+Area Authority
+================================================== BACKEND DATABASE
+==================================================
+Create/update models:
+permit_workforce permit_briefings permit_workforce_history
+permit_workforce:
+all worker fields listed above
+permit_briefings:
+id
+permit_id
+company_id
+site_id
+briefing_title
+briefing_topic
+briefing_notes
+conducted_by
+conducted_at
+required_for_all_workers
+completed_count
+missing_count
+status
+created_by
+created_at
+updated_at
+permit_workforce_history:
+id
+permit_id
+workforce_id
+company_id
+site_id
+event_type
+description
+user_id
+before_value
+after_value
+created_at
+================================================== BACKEND APIs
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+Create/update:
+GET /ptw/:id/workforce
+POST /ptw/:id/workforce
+PATCH /ptw/:id/workforce/:workerId
+DELETE /ptw/:id/workforce/:workerId
+POST /ptw/:id/workforce/:workerId/briefing
+POST /ptw/:id/workforce/:workerId/sign-in
+POST /ptw/:id/workforce/:workerId/sign-out
+POST /ptw/:id/workforce/bulk-briefing
+POST /ptw/:id/workforce/bulk-sign-in
+POST /ptw/:id/workforce/bulk-sign-out
+GET /ptw/:id/workforce/summary
+GET /ptw/:id/workforce/required-roles
+GET /ptw/:id/workforce/history
+POST /ptw/:id/briefings
+PATCH /ptw/:id/briefings/:briefingId
+GET /ptw/:id/briefings
+POST /ptw/:id/workforce/accountability-check
+================================================== BACKEND RULES
+==================================================
+Permit activation rule: Permit cannot activate if:
+Permit holder missing
+Performing authority missing
+Area authority missing
+No workers assigned
+Required permit-type roles are missing
+Required briefing is incomplete
+Maximum personnel count exceeded
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+8
+
+Permit closure rule: Permit cannot close if:
+Any worker is still signed in
+Emergency accountability not confirmed
+Permit holder completion sign-off missing if configured
+Permission rules: Only users with permission can:
+ptw.workforce.view
+ptw.workforce.add
+ptw.workforce.edit
+ptw.workforce.delete
+ptw.workforce.briefing
+ptw.workforce.sign_in
+ptw.workforce.sign_out
+ptw.workforce.accountability
+Audit/history rules: Every add/edit/delete/briefing/sign-in/sign-out/accountability event must create:
+audit log
+permit history event
+workforce history event
+Site isolation: Every query and mutation must enforce company_id and site_id.
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+features/ptw/components/tabs/PermitWorkforceTab.tsx
+features/ptw/components/workforce/WorkforceSummaryCard.tsx
+features/ptw/components/workforce/WorkforceBlockerBanner .tsx
+features/ptw/components/workforce/KeyRolesPanel.tsx
+features/ptw/components/workforce/WorkforceRosterTable.tsx
+features/ptw/components/workforce/WorkerForm.tsx
+features/ptw/components/workforce/BriefingPanel.tsx
+features/ptw/components/workforce/EmergencyAccountabilityPanel.tsx
+features/ptw/hooks/usePermitWorkforce.ts
+features/ptw/hooks/usePermitWorkforceMutations.ts
+features/ptw/schemas/workforce.schema.ts
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
+23. 
+24. 
+25. 
+26. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+features/ptw/services/ptw-workforce.service.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+Use React Query.
+Queries:
+workforce list
+workforce summary
+required roles
+briefing records
+workforce history
+Mutations:
+add worker
+edit worker
+delete worker
+mark briefing completed
+bulk briefing completed
+sign in worker
+sign out worker
+bulk sign in
+bulk sign out
+create briefing
+update briefing
+accountability check
+After every mutation: Invalidate/refetch:
+permit detail
+workforce tab
+workforce summary
+lifecycle blockers
+right summary panel
+permit history
+dashboard counters if status changes
+================================================== FORMS
+==================================================
+Worker Form fields:
+Worker Name
+Worker Type
+User link optional
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+Employer Company
+Contractor Company
+Trade
+Badge ID
+Contact Number
+Emergency Contact Name
+Emergency Contact Phone
+Role on Permit
+Permit role flags
+Briefing Required
+Notes
+Validation:
+Worker name required
+Worker type required
+Trade required
+Role on permit required
+Contact number required for contractor workers
+Contractor company required if worker type = Contractor
+Emergency contact required for confined space entrants if configured
+Badge ID required if site policy requires badge tracking
+Briefing Form fields:
+Briefing Title
+Briefing Topic
+Briefing Notes
+Conducted By
+Conducted At
+Required For All Workers
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+Loading: Show skeleton cards and table.
+Empty: If no workers: “No workforce assigned. Add workers before permit activation.”
+Error: Show retry button and clear error message.
+================================================== INTEGRATIONS
+==================================================
+Permit lifecycle:
+Activation blocked if workforce requirements incomplete.
+Closure blocked if workers are still signed in.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+Notification Center: Emit events:
+ptw.workforce.added
+ptw.briefing.missing
+ptw.worker .signed_in
+ptw.worker .signed_out
+ptw.accountability.incomplete
+Audit: Audit every workforce change.
+Equipment Registry: Permit workforce events should appear in linked permit history if equipment is linked.
+Offline PWA: Prepare for later offline sign-in/sign-out by keeping service methods isolated.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Workforce tab is complete only when:
+✓ Workforce summary loads from API
+✓ Required roles load based on permit type
+✓ Add worker works
+✓ Edit worker works
+✓ Delete worker works
+✓ Briefing acknowledgement works
+✓ Bulk briefing works
+✓ Sign-in works
+✓ Sign-out works
+✓ Bulk sign-in/sign-out works
+✓ Emergency accountability works
+✓ Permit activation is blocked if workforce requirements are incomplete
+✓ Permit closure is blocked if workers remain signed in
+• 
+• 
+• 
+• 
+• 
+12
+
+✓ Audit logs are created
+✓ Permit history events are created
+✓ Workforce history events are created
+✓ React Query refreshes all affected panels
+✓ No static/mock workforce data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+13

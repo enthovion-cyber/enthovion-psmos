@@ -1,0 +1,2412 @@
+
+
+--- PAGE 1 ---
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Incident Detail Shell + Overview tab in
+full detail.
+Route:
+/incidents/:id
+Tabs / Scope:
+Incident Detail Shell
+Overview tab
+Read the attached PDF/specification carefully before coding. Build the Incident Detail Shell and Overview
+tab exactly according to the PDF. After implementation, cross-check the completed work against the PDF
+line by line and fix every missing field, section, card, panel, table, drawer , dialog, API, database model,
+permission, validation rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive
+UI issue. Do not miss a single thing.
+================================================== SCOPE
+==================================================
+Work only on:
+Incident detail layout/shell
+Detail header
+Detail navigation tabs
+Incident status/summary shell
+Overview tab
+Overview summary cards
+Overview readiness/blockers
+Overview snapshot panels
+APIs/backend needed for detail shell and overview
+Do not build yet:
+Event Details tab
+Potential Severity Matrix detail tab
+People / Injury / Exposure tab
+Asset / Equipment / Chemical tab
+Timeline tab
+Evidence / Attachments tab
+Immediate Actions detail tab
+Investigation Team tab
+Root Cause Analysis tab
+Barrier / Safeguard Failure tab
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+--- PAGE 2 ---
+Corrective / Preventive Actions tab
+Linked Records tab
+Notifications / Regulatory Reporting tab
+Review & Approval tab
+Lessons Learned tab
+History tab
+Final Report / Export tab
+Do not use mock/static data.
+Use:
+Real backend
+Real database
+Real APIs
+Real permissions
+Audit logs
+Incident history events
+Universal Action Engine
+Equipment Registry
+Chemical Database / SDS
+Document Control / storage
+PTW
+MOC
+PSSR
+HAZOP/PHA
+LOPA/SIL
+Mechanical Integrity
+Notification Center
+Global Search
+IAM/RBAC
+Company/site configuration
+Existing Incident Dashboard/Register
+Existing Create Incident Wizard data
+================================================== CORE PURPOSE
+==================================================
+The Incident Detail Shell is the main workspace for one incident investigation.
+The Overview tab gives managers, investigators, HSE, process safety, and approvers a complete snapshot
+of:
+What happened
+Where it happened
+Current status
+Actual severity
+Potential severity
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+--- PAGE 3 ---
+PSM / Process Safety classification
+API RP 754 tier status
+Investigation priority
+RCA status
+Action status
+Evidence status
+Linked PSM records
+Required follow-ups
+Readiness/blockers
+Recent activity
+The Overview tab must not duplicate every detail tab, but it must summarize key facts and provide quick
+navigation to missing/incomplete sections.
+================================================== ROUTE
+==================================================
+Detail page:
+/incidents/:id
+From register:
+Clicking an incident row opens /incidents/:id
+Default tab:
+Overview
+Tabs inside /incidents/:id: 1. Overview 2. Event Details & Classification 3. Potential Severity / Risk
+Matrix 4. People / Injury / Exposure 5. Asset / Equipment / Chemical 6. Timeline 7. Evidence / Attachments 8.
+Immediate Actions 9. Investigation Team 10. Root Cause Analysis 11. Barrier / Safeguard Failure 12.
+Corrective / Preventive Actions 13. Linked Records 14. Notifications / Regulatory Reporting 15. Review &
+Approval 16. Lessons Learned 17. History 18. Final Report / Export
+For this phase:
+Create shell and tab navigation.
+Implement Overview tab only.
+Other tabs may show controlled “Not built yet” or route placeholders if required by existing layout,
+but no fake content.
+================================================== DETAIL SHELL REQUIREMENTS
+==================================================
+The Incident Detail Shell must include:
+Detail Page Header
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+3
+
+--- PAGE 4 ---
+Incident Status Bar
+Severity / PSM / Priority Badges
+Tab Navigation
+Quick Action Menu
+Right-side Context Panel if existing layout supports it
+Read-only / Locked / Restricted Banner
+Breadcrumbs
+Loading / Error / Permission / Not Found states
+================================================== 1. DETAIL PAGE HEADER
+==================================================
+Header must show:
+Incident number
+Incident title
+Event type
+Classification
+Status
+Site
+Unit
+Area
+Location
+Event date/time
+Reported date/time
+Reported by
+Investigation owner
+Due date
+Actual severity
+Potential severity
+Investigation priority
+Is PSM Incident
+Is Process Safety Event
+API RP 754 tier
+Restricted/confidential badge if applicable
+Last updated timestamp
+Header actions:
+Edit basic info if permission allows
+Assign owner
+Change status if permission allows
+Create action
+Add evidence
+Escalate/notify
+Export summary if supported
+Reopen if closed and permission allows
+Close if all requirements complete and permission allows
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+--- PAGE 5 ---
+Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disable actions with exact reason.
+Header must support dark/light theme.
+Header must be responsive.
+Closed incidents show locked/read-only state.
+Restricted incidents show safe limited state for unauthorized users.
+================================================== 2. INCIDENT STATUS BAR
+==================================================
+Show workflow status clearly.
+Statuses:
+Draft
+Reported
+Triage
+Investigation Required
+Investigation In Progress
+RCA Required
+RCA In Progress
+Actions Assigned
+Pending Review
+Changes Requested
+Approved
+Closed
+Reopened
+Cancelled / Void
+Status bar fields:
+Current status
+Previous status
+Next recommended status
+Status changed by
+Status changed at
+Reason/comment
+Workflow blockers
+Action
+Rules:
+Backend controls allowed status transitions.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+--- PAGE 6 ---
+Status transitions require permission.
+Some transitions require reason.
+Closed incidents read-only unless reopened.
+Status changes create audit log and incident history event.
+================================================== 3. SEVERITY / PSM / PRIORITY BADGES
+==================================================
+Badges must show:
+Actual Severity
+Potential Severity
+Potential Risk Score
+Investigation Priority
+Investigation Level Required
+High-Potential Near Miss
+Fatality Potential
+PSM Incident
+Process Safety Event
+API RP 754 Tier
+Regulatory Reporting Required
+Confidential/Restricted
+Rules:
+Badges use real backend values.
+Badges must be visually clear and enterprise-grade.
+Potential severity must be visually distinct from actual severity.
+PSM/PSE/API RP 754 badges must be easy to see.
+Dark/light theme must be clean.
+================================================== 4. TAB NAVIGATION
+==================================================
+Tabs:
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+--- PAGE 7 ---
+Linked Records
+Notifications / Regulatory Reporting
+Review & Approval
+Lessons Learned
+History
+Final Report / Export
+Tab behavior:
+Overview implemented now.
+Other tabs can be placeholders or disabled if not yet implemented.
+Each tab should show completion/readiness badge if backend has data.
+Tabs with blockers should show warning badge.
+Tabs with restricted content should show lock badge.
+Tabs must be responsive: horizontal scroll on desktop/tablet, dropdown/sheet on mobile if needed.
+================================================== 5. QUICK ACTION MENU
+==================================================
+Actions:
+Edit incident summary
+Assign investigation owner
+Create corrective action
+Upload evidence
+Add linked record
+Mark RCA required
+Mark PSM review required
+Mark regulatory review required
+Send notification
+Export summary
+Change status
+Close incident
+Reopen incident
+Void/cancel incident if permission allows
+Rules:
+Every action must be permission controlled.
+Every disabled action must show exact reason.
+Mutations create audit/history.
+Do not create duplicate action system; use Universal Action Engine for actions.
+================================================== 6. READ-ONLY / LOCKED / RESTRICTED
+BANNERS ==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+--- PAGE 8 ---
+Show banners for:
+Closed incident
+Approved incident
+Reopened incident
+Restricted incident
+Confidential incident
+User has limited access
+Medical information hidden
+PSM classification pending
+Needs review
+Overdue investigation
+High-potential near miss
+Regulatory reporting required
+Unsafe condition remains open
+Rules:
+Banners use backend flags.
+Banners link to relevant section/action where possible.
+Restricted banners must not expose hidden sensitive details.
+================================================== OVERVIEW TAB REQUIREMENTS
+==================================================
+The Overview tab must include:
+Overview Header
+Overview Summary Cards
+Event Snapshot Panel
+Severity & Risk Potential Panel
+PSM / Process Safety Classification Panel
+Investigation Status & Readiness Panel
+People / Injury / Exposure Snapshot Panel
+Asset / Equipment / Chemical Snapshot Panel
+Immediate Actions Snapshot Panel
+RCA / Barrier Failure Snapshot Panel
+Corrective Actions / CAPA Snapshot Panel
+Linked PSM Records Snapshot Panel
+Evidence / Attachment Snapshot Panel
+Regulatory / Notification Snapshot Panel
+Lessons Learned Snapshot Panel
+Recent Activity Timeline
+Open Blockers / Next Steps Panel
+Quick Links / Navigation Panel
+Loading / Empty / Error / Permission States
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+8
+
+--- PAGE 9 ---
+================================================== 1. OVERVIEW HEADER
+==================================================
+Header must show:
+Title: Overview
+Subtitle: Incident summary, severity, investigation status, actions, and required follow-ups
+Incident number
+Current status
+Investigation owner
+Due date
+Readiness status
+Last updated
+Button: Edit Overview / Basic Info if permission allows
+Button: Create Action
+Button: Upload Evidence
+Button: Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disable actions with reason.
+Responsive and dark/light compatible.
+================================================== 2. OVERVIEW SUMMARY CARDS
+==================================================
+Use real backend data only.
+Cards:
+Incident status
+Event type
+Classification
+Actual severity
+Potential severity
+Potential risk score
+Investigation priority
+Investigation level required
+PSM Incident Yes/No
+Process Safety Event Yes/No
+API RP 754 tier
+RCA status
+Formal team required
+Investigation due date
+Days open
+Overdue Yes/No
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+--- PAGE 10 ---
+Open actions
+Overdue actions
+Evidence status
+Linked records count
+Regulatory reporting required
+MOC required
+PSSR required
+PTW review required
+HAZOP/PHA review required
+LOPA/SIL review required
+Mechanical Integrity follow-up required
+Ready for review Yes/No
+Each card:
+Count/status/value
+Label
+Icon
+Risk/status color
+Tooltip/help text
+Click-to-navigate/filter where useful
+Rules:
+No fake counts.
+Counts/statuses respect permissions.
+Cards update after actions/status/evidence/classification changes.
+Cards must be clean and professional.
+================================================== 3. EVENT SNAPSHOT PANEL
+==================================================
+Fields:
+Incident title
+Short description
+Detailed description summary
+Event type
+Classification
+Event date/time
+Reported date/time
+Reported by
+Site
+Unit
+Area
+Exact location
+Operating mode
+Shift
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+--- PAGE 11 ---
+Workgroup/crew
+PTW involved
+MOC involved
+PSSR involved
+Emergency response activated
+Operation stopped
+Area barricaded
+Equipment isolated
+Actions:
+Open Event Details tab
+Edit event snapshot if permission allows
+Rules:
+Data comes from incident record / wizard.
+Do not build full Event Details tab yet.
+Snapshot should show missing data indicators.
+================================================== 4. SEVERITY & RISK POTENTIAL PANEL
+==================================================
+Fields:
+Actual severity
+Actual consequence category
+Potential severity
+Potential consequence category
+Likelihood
+Potential risk score
+High-potential near miss Yes/No
+Fatality potential Yes/No
+Major process safety potential Yes/No
+Investigation priority
+Investigation level required
+Potential severity basis
+Risk matrix version/configuration
+Severity review status
+Last reviewed by
+Last reviewed at
+Actions:
+Open Potential Severity / Risk Matrix tab
+Request severity review
+Edit severity if permission allows
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+--- PAGE 12 ---
+Rules:
+Actual severity and potential severity must remain separate.
+Potential severity drives investigation priority.
+Backend is source of truth for risk score/priority.
+If risk matrix config missing, show Not Determined state.
+Severity changes require permission and audit/history.
+================================================== 5. PSM / PROCESS SAFETY CLASSIFICATION
+PANEL ==================================================
+Fields:
+Is PSM Incident
+Is Process Safety Event
+API RP 754 PSE Tier
+PSE classification status
+Loss of Primary Containment status
+Released material
+Released quantity
+Release unit
+Release duration
+Threshold quantity
+Threshold exceeded
+Acute release
+Fire/explosion occurred
+Toxic exposure occurred
+Injury/fatality occurred
+Community impact
+Environmental impact
+PSE classification basis
+PSE reviewer required
+Reviewed by
+Reviewed at
+Actions:
+Request PSM review
+Edit PSM/PSE classification if permission allows
+Open regulatory/notification tab
+Open chemical/SDS record
+Rules:
+Do not hardcode thresholds.
+Use company/site PSE threshold configuration.
+If config missing, show Not Determined.
+Tier 1/Tier 2 should show high attention.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+--- PAGE 13 ---
+Classification changes require audit/history.
+================================================== 6. INVESTIGATION STATUS & READINESS
+PANEL ==================================================
+Backend-generated readiness.
+Fields:
+Investigation status
+Investigation owner
+Due date
+Days open
+Overdue Yes/No
+RCA required
+RCA status
+Formal team required
+Investigation team status
+Evidence status
+Timeline status
+Actions status
+Review status
+Readiness score/status
+Blocking items
+Next recommended step
+Readiness checklist:
+Event details complete
+Actual severity complete
+Potential severity complete
+PSM/PSE classification complete or reviewed
+People/injury/exposure checked
+Equipment/chemical checked
+Evidence attached if required
+Timeline created if required
+Immediate actions captured
+Investigation team assigned if required
+RCA complete if required
+Barrier failure analysis complete if required
+Corrective/preventive actions assigned
+Regulatory reporting checked
+Review/approval ready
+Rules:
+Backend generates readiness.
+Frontend displays only.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+
+--- PAGE 14 ---
+Blockers link to relevant tabs.
+Readiness feeds Review & Approval later .
+================================================== 7. PEOPLE / INJURY / EXPOSURE SNAPSHOT
+PANEL ==================================================
+Fields:
+People involved
+Injured person count
+Employee/contractor/visitor involved
+Injury occurred
+Illness occurred
+Exposure occurred
+Treatment type
+Lost time potential
+Medical treatment required
+Hospitalization
+Fatality
+PPE issue suspected
+Chemical exposure
+Restricted medical data hidden if no permission
+Actions:
+Open People / Injury / Exposure tab
+Rules:
+Medical/confidential data protected.
+Unauthorized users see redacted state.
+If severe injury/fatality selected, show high attention.
+================================================== 8. ASSET / EQUIPMENT / CHEMICAL
+SNAPSHOT PANEL ==================================================
+Fields:
+Equipment involved
+Equipment tag/name/type
+Equipment status
+Maintenance overdue suspected
+Safeguard involved
+Safeguard failed
+IPL involved
+SIS/SIF involved
+PSV/relief device involved
+Alarm/interlock involved
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+
+--- PAGE 15 ---
+Chemical involved
+Chemical name
+CAS number
+SDS link
+Material state
+Estimated quantity involved
+Released quantity
+Process condition
+Temperature
+Pressure
+Flow/rate if available
+Actions:
+Open Asset / Equipment / Chemical tab
+Open Equipment record
+Open SDS/Chemical record
+Create MI follow-up action if permission allows
+Rules:
+Equipment links use Equipment Registry.
+Chemical/SDS links use Chemical Database/SDS.
+If safeguard/IPL/SIS/PSV failed, show Barrier/Safeguard follow-up warning.
+================================================== 9. IMMEDIATE ACTIONS SNAPSHOT PANEL
+==================================================
+Fields:
+Area isolated
+Equipment stopped
+Spill contained
+Fire response activated
+First aid provided
+Emergency response called
+Barricade installed
+Permit suspended
+Operation stopped
+Temporary control added
+Notification sent
+Area safe now
+Restart blocked
+Temporary control expiry
+Immediate action notes
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+
+--- PAGE 16 ---
+Actions:
+Open Immediate Actions tab
+Create action
+Escalate if unsafe condition remains
+Rules:
+Immediate actions are not final CAPA.
+If area is not safe or restart is blocked, show critical blocker .
+Temporary controls with expiry should show warning.
+================================================== 10. RCA / BARRIER FAILURE SNAPSHOT PANEL
+==================================================
+Fields:
+RCA required
+RCA status
+RCA method selected
+Immediate cause status
+Contributing causes status
+Root causes status
+Barrier analysis required
+Barrier analysis status
+Failed safeguard/IPL identified
+LOPA/HAZOP review required
+MI follow-up required
+Open RCA blockers
+Actions:
+Open RCA tab
+Open Barrier/Safeguard Failure tab
+Create RCA action if permission allows
+Rules:
+This is snapshot only.
+Do not build full RCA or Barrier tabs now.
+If PSM incident/high potential, RCA should be required based on policy.
+================================================== 11. CORRECTIVE ACTIONS / CAPA SNAPSHOT
+PANEL ==================================================
+Use Universal Action Engine.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+
+--- PAGE 17 ---
+Fields:
+Total linked actions
+Open actions
+Overdue actions
+Critical actions
+Actions due this week
+Actions awaiting verification
+Blocking actions
+Latest action update
+Action mini-table:
+Action number
+Title
+Owner
+Due date
+Status
+Priority
+Blocking Yes/No
+Actions:
+Create action
+Open action
+Open CAPA tab
+Rules:
+Do not create duplicate action system.
+Use Universal Action Engine.
+Action counts/statuses come from backend integration.
+Action changes update overview.
+================================================== 12. LINKED PSM RECORDS SNAPSHOT PANEL
+==================================================
+Linked records:
+PTW
+MOC
+PSSR
+HAZOP/PHA
+LOPA/SIL
+Equipment
+Chemical/SDS
+Mechanical Integrity
+Inspection
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+
+--- PAGE 18 ---
+Maintenance Work Order
+Procedure
+Document Control
+Training
+Audit
+Emergency Response
+Other
+Fields:
+Linked record type
+Record number/title
+Status
+Relationship
+Required Yes/No
+Action
+Actions:
+Open linked record
+Add linked record if permission allows
+Open Linked Records tab
+Rules:
+Use existing Linked Records system if available.
+Respect permissions on linked records.
+Restricted linked records show safe limited state.
+================================================== 13. EVIDENCE / ATTACHMENT SNAPSHOT
+PANEL ==================================================
+Fields:
+Evidence status
+Attachment count
+Required evidence count
+Missing required evidence count
+Photos count
+Witness statements count
+DCS/alarm logs count
+Permit copies count
+SDS/lab/report evidence count
+Restricted evidence count
+Latest upload
+Actions:
+Upload evidence
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+
+--- PAGE 19 ---
+Open Evidence / Attachments tab
+Preview latest evidence if permission allows
+Rules:
+Use real storage/document system.
+Restricted evidence redacted.
+Evidence status feeds readiness.
+================================================== 14. REGULATORY / NOTIFICATION SNAPSHOT
+PANEL ==================================================
+Fields:
+Regulatory reporting required
+Reporting jurisdiction
+Reporting deadline
+Report submitted
+Report reference
+Management notification required
+HSE notification required
+Environmental notification required
+Community notification required
+Notification status
+Overdue notification/reporting Yes/No
+Actions:
+Open Notifications / Regulatory Reporting tab
+Create notification action
+Escalate if overdue
+Rules:
+Regulatory logic configurable by company/site/jurisdiction.
+Do not hardcode legal requirements.
+Missing classification should show review required.
+================================================== 15. LESSONS LEARNED SNAPSHOT PANEL
+==================================================
+Fields:
+Lessons learned required
+Lessons learned status
+Safety bulletin required
+Shared to other sites
+Training update required
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+
+--- PAGE 20 ---
+Similar equipment/process affected
+Lessons owner
+Due date
+Actions:
+Open Lessons Learned tab
+Create lesson/action if permission allows
+Rules:
+High potential/PSM incidents should recommend lessons learned based on policy.
+Snapshot only; do not build full tab yet.
+================================================== 16. RECENT ACTIVITY TIMELINE
+==================================================
+Show recent incident history events.
+Events:
+Incident created
+Status changed
+Severity changed
+PSM classification changed
+Owner assigned
+Evidence uploaded
+Action created
+RCA updated
+Linked record added
+Notification sent
+Review event
+Reopened/closed
+Fields:
+Event title
+Event type
+Actor
+Timestamp
+Related record
+Description
+Action
+Rules:
+Use incident history events.
+Read-only.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+
+--- PAGE 21 ---
+Show last 5–10 events.
+Link to History tab when built.
+Restricted events redacted.
+================================================== 17. OPEN BLOCKERS / NEXT STEPS PANEL
+==================================================
+Backend-generated next steps.
+Blockers:
+Missing event details
+Missing actual severity
+Missing potential severity
+PSM classification not reviewed
+Investigation owner missing
+Investigation overdue
+RCA required but not started
+Evidence missing
+Formal team required but not assigned
+Barrier analysis required
+Actions overdue
+Regulatory reporting overdue
+Review not ready
+Area not safe
+Restart blocked
+Temporary control expired
+Fields:
+Blocker title
+Category
+Severity
+Related tab
+Owner
+Due date
+Action
+Rules:
+Backend generates blockers.
+Blocking items should be clear .
+Each blocker links to source tab/action.
+Overview should guide user to next step.
+================================================== 18. QUICK LINKS / NAVIGATION PANEL
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+
+--- PAGE 22 ---
+Show quick navigation links:
+Edit event details
+Review potential severity
+Review PSM/PSE classification
+Add people/injury details
+Add equipment/chemical details
+Build timeline
+Upload evidence
+Add immediate action
+Assign investigation team
+Start RCA
+Review barriers
+Create CAPA action
+Add linked record
+Check regulatory reporting
+Prepare review
+Export summary
+Rules:
+Links respect permissions.
+Links to not-yet-built tabs can show placeholder route/state but no fake content.
+Disabled links show reason.
+================================================== DATABASE REQUIREMENTS
+==================================================
+Use and extend existing incident models from Register and Create Wizard.
+Ensure incidents table supports:
+incident_number
+title
+short_description
+detailed_description
+event_type
+classification
+status
+event_datetime
+reported_datetime
+reported_by
+investigation_owner_id
+due_date
+site_id
+unit_id
+area_id
+location_text
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+
+--- PAGE 23 ---
+actual_severity
+actual_consequence_category
+potential_severity
+potential_consequence_category
+likelihood
+potential_risk_score
+potential_severity_basis
+high_potential_near_miss
+fatality_potential
+major_process_safety_potential
+investigation_priority
+investigation_level_required
+is_psm_incident
+is_process_safety_event
+pse_tier
+pse_classification_status
+lopc_status
+released_material_id
+released_quantity
+release_unit
+release_duration
+threshold_quantity
+threshold_exceeded
+acute_release
+fire_explosion_occurred
+toxic_exposure_occurred
+injury_occurred
+environmental_impact
+community_impact
+regulatory_reporting_required
+formal_team_required
+rca_required
+rca_status
+moc_required
+pssr_required
+ptw_review_required
+hazop_review_required
+lopa_review_required
+mechanical_integrity_followup_required
+evidence_status
+action_status
+linked_records_count
+restricted
+confidential
+tags_json
+created_by
+updated_by
+created_at
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+23
+
+--- PAGE 24 ---
+updated_at
+closed_by
+closed_at
+reopened_by
+reopened_at
+Ensure supporting initial tables from wizard can be read for overview snapshots:
+incident_people_initial
+incident_equipment_chemical_initial
+incident_immediate_actions_initial
+incident_initial_evidence
+incident_history_events
+Add if missing: incident_overview_readiness:
+id
+company_id
+site_id
+incident_id
+readiness_status
+readiness_score
+checklist_json
+blockers_json
+next_steps_json
+generated_at
+created_at
+updated_at
+incident_status_transitions:
+id
+company_id
+site_id
+incident_id
+previous_status
+new_status
+reason
+changed_by
+changed_at
+metadata_json
+Rules:
+All records enforce company_id/site_id.
+No cross-company/site leakage.
+Restricted/confidential incidents protected.
+Medical/confidential data protected.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+24
+
+--- PAGE 25 ---
+History events immutable.
+Status changes audited.
+Closed incidents read-only unless reopened.
+================================================== BACKEND API REQUIREMENTS
+==================================================
+Detail shell:
+GET /incidents/:id
+GET /incidents/:id/header
+GET /incidents/:id/tabs
+GET /incidents/:id/status
+PATCH /incidents/:id/basic
+POST /incidents/:id/assign-owner
+POST /incidents/:id/change-status
+POST /incidents/:id/reopen
+POST /incidents/:id/close
+POST /incidents/:id/void
+GET /incidents/:id/permissions
+Overview:
+GET /incidents/:id/overview
+GET /incidents/:id/overview/summary
+GET /incidents/:id/overview/event-snapshot
+GET /incidents/:id/overview/severity-risk
+GET /incidents/:id/overview/psm-classification
+GET /incidents/:id/overview/readiness
+GET /incidents/:id/overview/people-snapshot
+GET /incidents/:id/overview/asset-chemical-snapshot
+GET /incidents/:id/overview/immediate-actions
+GET /incidents/:id/overview/rca-barrier-snapshot
+GET /incidents/:id/overview/actions-snapshot
+GET /incidents/:id/overview/linked-records-snapshot
+GET /incidents/:id/overview/evidence-snapshot
+GET /incidents/:id/overview/regulatory-notification-snapshot
+GET /incidents/:id/overview/lessons-learned-snapshot
+GET /incidents/:id/overview/recent-activity
+GET /incidents/:id/overview/blockers-next-steps
+GET /incidents/:id/overview/context
+Quick actions:
+POST /incidents/:id/create-action
+POST /incidents/:id/request-psm-review
+POST /incidents/:id/request-severity-review
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+25
+
+--- PAGE 26 ---
+POST /incidents/:id/escalate
+GET /incidents/:id/export-summary
+API rules:
+All APIs enforce company_id/site_id.
+All APIs enforce permissions.
+All APIs enforce restricted/confidential redaction.
+Status changes require permission and reason where configured.
+Mutations create audit/history.
+Overview snapshots generated from backend, not frontend.
+Errors are safe/user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-detail.service.ts
+incident-detail-header.service.ts
+incident-tab-status.service.ts
+incident-status-transition.service.ts
+incident-overview.service.ts
+incident-overview-summary.service.ts
+incident-overview-readiness.service.ts
+incident-overview-blocker.service.ts
+incident-severity-risk-summary.service.ts
+incident-psm-classification-summary.service.ts
+incident-people-snapshot.service.ts
+incident-asset-chemical-snapshot.service.ts
+incident-immediate-action-snapshot.service.ts
+incident-rca-barrier-snapshot.service.ts
+incident-action-snapshot.service.ts
+incident-linked-record-snapshot.service.ts
+incident-evidence-snapshot.service.ts
+incident-regulatory-notification-snapshot.service.ts
+incident-lessons-learned-snapshot.service.ts
+incident-recent-activity.service.ts
+incident-quick-action.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-global-search.service.ts
+incident-universal-action-integration.service.ts
+incident-equipment-integration.service.ts
+incident-chemical-sds-integration.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+26
+
+--- PAGE 27 ---
+Backend rules:
+Backend generates overview readiness.
+Backend generates blockers/next steps.
+Backend controls status transitions.
+Backend reads action status from Universal Action Engine.
+Backend reads equipment/chemical snapshots from real systems where available.
+Backend reads evidence from storage/document systems.
+Backend redacts restricted/medical/confidential info.
+Backend updates Global Search safe metadata after mutations.
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Create/update:
+Page:
+app/(app)/incidents/[id]/page.tsx or existing route equivalent
+Detail shell:
+features/incidents/components/detail/IncidentDetailPage.tsx
+features/incidents/components/detail/IncidentDetailHeader.tsx
+features/incidents/components/detail/IncidentStatusBar.tsx
+features/incidents/components/detail/IncidentDetailTabs.tsx
+features/incidents/components/detail/IncidentQuickActionsMenu.tsx
+features/incidents/components/detail/IncidentReadOnlyBanner.tsx
+features/incidents/components/detail/IncidentRestrictedBanner.tsx
+Overview:
+features/incidents/components/overview/IncidentOverviewTab.tsx
+features/incidents/components/overview/OverviewHeader.tsx
+features/incidents/components/overview/OverviewSummaryCards.tsx
+features/incidents/components/overview/EventSnapshotPanel.tsx
+features/incidents/components/overview/SeverityRiskPotentialPanel.tsx
+features/incidents/components/overview/PsmProcessSafetyPanel.tsx
+features/incidents/components/overview/InvestigationReadinessPanel.tsx
+features/incidents/components/overview/PeopleInjuryExposureSnapshotPanel.tsx
+features/incidents/components/overview/AssetEquipmentChemicalSnapshotPanel.tsx
+features/incidents/components/overview/ImmediateActionsSnapshotPanel.tsx
+features/incidents/components/overview/RcaBarrierSnapshotPanel.tsx
+features/incidents/components/overview/CorrectiveActionSnapshotPanel.tsx
+features/incidents/components/overview/LinkedPsmRecordsSnapshotPanel.tsx
+features/incidents/components/overview/EvidenceSnapshotPanel.tsx
+features/incidents/components/overview/RegulatoryNotificationSnapshotPanel.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+27
+
+--- PAGE 28 ---
+features/incidents/components/overview/LessonsLearnedSnapshotPanel.tsx
+features/incidents/components/overview/RecentActivityTimeline.tsx
+features/incidents/components/overview/OpenBlockersNextStepsPanel.tsx
+features/incidents/components/overview/QuickLinksNavigationPanel.tsx
+Dialogs/drawers:
+features/incidents/components/detail/AssignIncidentOwnerDialog.tsx
+features/incidents/components/detail/ChangeIncidentStatusDialog.tsx
+features/incidents/components/detail/ReopenIncidentDialog.tsx
+features/incidents/components/detail/CloseIncidentDialog.tsx
+features/incidents/components/detail/CreateIncidentActionDrawer.tsx
+features/incidents/components/detail/RequestReviewDialog.tsx
+Shared badges:
+features/incidents/components/shared/IncidentStatusBadge.tsx
+features/incidents/components/shared/ActualSeverityBadge.tsx
+features/incidents/components/shared/PotentialSeverityBadge.tsx
+features/incidents/components/shared/PotentialRiskScoreBadge.tsx
+features/incidents/components/shared/InvestigationPriorityBadge.tsx
+features/incidents/components/shared/InvestigationLevelBadge.tsx
+features/incidents/components/shared/PsmIncidentBadge.tsx
+features/incidents/components/shared/PseTierBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+features/incidents/components/shared/ConfidentialBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentDetail.ts
+features/incidents/hooks/useIncidentHeader.ts
+features/incidents/hooks/useIncidentTabs.ts
+features/incidents/hooks/useIncidentStatus.ts
+features/incidents/hooks/useIncidentOverview.ts
+features/incidents/hooks/useIncidentOverviewSummary.ts
+features/incidents/hooks/useIncidentOverviewReadiness.ts
+features/incidents/hooks/useIncidentRecentActivity.ts
+features/incidents/hooks/useIncidentBlockers.ts
+features/incidents/hooks/useIncidentQuickActions.ts
+features/incidents/hooks/useIncidentMutations.ts
+Services:
+features/incidents/services/incident-detail.service.ts
+features/incidents/services/incident-overview.service.ts
+features/incidents/services/incident-status.service.ts
+features/incidents/services/incident-quick-actions.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+28
+
+--- PAGE 29 ---
+Schemas:
+features/incidents/schemas/incident-status-transition.schema.ts
+features/incidents/schemas/incident-basic-edit.schema.ts
+features/incidents/schemas/incident-overview.schema.ts
+features/incidents/schemas/incident-quick-action.schema.ts
+Types:
+features/incidents/types/incident-detail.types.ts
+features/incidents/types/incident-overview.types.ts
+features/incidents/types/incident-status.types.ts
+features/incidents/types/incident-readiness.types.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+On page load:
+Fetch incident detail/header .
+Fetch permissions.
+Fetch tab statuses.
+Fetch overview data.
+Show loading state.
+Show not found if incident missing.
+Show permission denied if no access.
+Show restricted/redacted view if partial access.
+Overview behavior:
+All panels use backend data.
+Cards link to relevant tab/section.
+Missing/incomplete data shows clear warning.
+Blockers show exact reason and next action.
+Recent activity uses real incident history.
+Quick links respect permissions.
+Mutations:
+Assign owner through API.
+Change status through API.
+Request review through API.
+Create action through Universal Action Engine.
+Reopen/close through API.
+Every mutation updates overview and creates audit/history.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+29
+
+--- PAGE 30 ---
+UI:
+Clean enterprise dashboard layout.
+Cards and panels should look premium.
+Dark/light theme perfect.
+Desktop: multi-column card/panel layout.
+Tablet: stacked sections.
+Mobile: stacked cards and sheet/drawer actions.
+Every disabled action shows exact reason.
+No fake data or placeholders except disabled/unbuilt tab notices.
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.view
+incidents.detail.view
+incidents.overview.view
+incidents.edit_basic
+incidents.assign
+incidents.status.change
+incidents.close
+incidents.reopen
+incidents.void
+incidents.restricted.view
+incidents.confidential.view
+incidents.medical_fields.view
+incidents.psm.view
+incidents.psm.review.request
+incidents.severity.review.request
+incidents.actions.create
+incidents.evidence.upload
+incidents.linked_records.view
+incidents.history.view
+incidents.export_summary
+Rules:
+Backend enforces permissions.
+Frontend hides unauthorized actions.
+Restricted/confidential incidents require special permission.
+Medical fields require special permission.
+Status change requires permission.
+Close/reopen requires permission.
+PSM/severity review requires permission.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+30
+
+--- PAGE 31 ---
+================================================== REQUIRED STATES
+==================================================
+States:
+Loading incident
+Loading overview
+Not found
+Permission denied
+Restricted/redacted view
+Confidential/limited access
+Medical data hidden
+Error loading
+Refreshing
+Saving
+Assigning owner
+Changing status
+Creating action
+Requesting review
+Closing
+Reopening
+Exporting summary
+Read-only closed
+Reopened warning
+Overdue investigation
+High potential warning
+PSM review pending
+Regulatory reporting required
+Missing data
+Empty recent activity
+No actions
+No linked records
+No evidence
+Mobile layout
+================================================== TESTING
+==================================================
+Backend tests:
+Fetch incident detail.
+Fetch header .
+Fetch tab statuses.
+Fetch overview.
+Fetch summary cards.
+Fetch readiness/blockers.
+Fetch recent activity.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+31
+
+--- PAGE 32 ---
+Redact restricted/confidential incident.
+Hide medical data without permission.
+Assign owner .
+Change status.
+Close incident.
+Reopen incident.
+Request PSM review.
+Request severity review.
+Create action through Universal Action Engine.
+Enforce company_id/site_id.
+Enforce permissions.
+Create audit log.
+Create incident history event.
+Frontend tests:
+Detail shell renders.
+Header renders.
+Status bar renders.
+Tabs render .
+Overview renders.
+Summary cards render .
+All overview panels render .
+Restricted state works.
+Read-only state works.
+Permission states work.
+Quick actions work.
+Recent activity renders.
+Blockers render .
+Dark/light theme works.
+Responsive layout works.
+E2E: 1. Open incident from /incidents. 2. Navigate to /incidents/:id. 3. Confirm header and status
+bar render . 4. Confirm Overview tab loads. 5. Assign investigation owner . 6. Change status to Investigation
+In Progress. 7. Create an action. 8. Confirm audit/history event created. 9. Confirm overview updates. 10.
+Confirm restricted user sees redacted data. 11. Confirm mobile layout works.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This phase is complete only when:
+✓ /incidents/:id route exists
+✓ Incident Detail Shell works
+✓ Detail Header works
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+32
+
+--- PAGE 33 ---
+✓ Status Bar works
+✓ Tab Navigation works
+✓ Quick Action Menu works
+✓ Read-only/restricted banners work
+✓ Overview tab works
+✓ Overview summary cards use real backend data
+✓ Event snapshot works
+✓ Severity/risk potential panel works
+✓ PSM/PSE/API RP 754 panel works
+✓ Investigation readiness/blockers work
+✓ People/injury/exposure snapshot works
+✓ Asset/equipment/chemical snapshot works
+✓ Immediate actions snapshot works
+✓ RCA/barrier snapshot works
+✓ CAPA/action snapshot uses Universal Action Engine
+✓ Linked PSM records snapshot works
+✓ Evidence snapshot works
+✓ Regulatory/notification snapshot works
+✓ Lessons learned snapshot works
+✓ Recent activity timeline works
+✓ Open blockers/next steps work
+✓ Quick links/navigation work
+33
+
+--- PAGE 34 ---
+✓ Permissions work
+✓ Restricted/confidential/medical redaction works
+✓ company_id/site_id isolation works
+✓ Audit logs and incident history events work
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. Incident Detail Shell built 2. Overview tab built 3. Files reviewed 4. Files modified/created 5.
+Database changes 6. APIs added/fixed 7. Backend services added/fixed 8. Header/status/tabs completed 9.
+Overview cards completed 10. All overview panels completed 11. Readiness/blockers completed 12. Quick
+actions completed 13. Permissions connected 14. Restricted/confidential redaction completed 15. Audit/
+history connected 16. Dark/light responsive UI completed 17. Tests added 18. Bugs fixed 19. Remaining
+gaps, if any
+34

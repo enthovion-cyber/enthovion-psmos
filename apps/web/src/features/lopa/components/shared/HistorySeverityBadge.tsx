@@ -1,0 +1,1 @@
+import { AttachmentStatusBadge } from './AttachmentStatusBadge'; export function HistorySeverityBadge({ severity }: { severity?: string }) { return <AttachmentStatusBadge {...(severity ? { status: severity } : {})}/>; }

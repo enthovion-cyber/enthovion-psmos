@@ -1,0 +1,1 @@
+export { TrainingRequirementsPanel } from './TrainingComponents';

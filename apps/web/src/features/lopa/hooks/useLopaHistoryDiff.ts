@@ -1,0 +1,1 @@
+import { useQuery } from '@tanstack/react-query'; import { lopaHistoryService } from '../services/lopa-history.service'; export function useLopaHistoryDiff(studyId:string,eventId?:string){return useQuery({queryKey:['lopa','history-diff',studyId,eventId],queryFn:()=>lopaHistoryService.diff(studyId,eventId!),enabled:!!studyId&&!!eventId});}

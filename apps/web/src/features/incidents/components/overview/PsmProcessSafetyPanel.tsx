@@ -1,0 +1,7 @@
+import { PseTierBadge } from '../shared/PseTierBadge';
+import { PsmIncidentBadge } from '../shared/PsmIncidentBadge';
+import { Badge } from '../shared/IncidentStatusBadge';
+import { OverviewPanelShell, SnapshotGrid } from './OverviewPanelShell';
+export function PsmProcessSafetyPanel({ data }: { data?: Record<string, any> }) {
+  return <OverviewPanelShell title="PSM / Process Safety Classification Panel" subtitle="API RP 754 and process safety classification from backend rules."><div className="mb-3 flex flex-wrap gap-2"><PsmIncidentBadge value={!!data?.isPsmIncident}/><Badge value={data?.isProcessSafetyEvent ? 'PSE Yes' : 'PSE No'} /><PseTierBadge value={data?.apiRp754Tier}/><Badge value={data?.classificationStatus}/></div><SnapshotGrid data={data} fields={[['lopcStatus','LOPC status'],['releasedMaterial','Released material'],['releasedQuantity','Released quantity'],['releaseUnit','Release unit'],['releaseDuration','Release duration'],['thresholdQuantity','Threshold quantity'],['thresholdExceeded','Threshold exceeded'],['acuteRelease','Acute release'],['fireExplosionOccurred','Fire/explosion occurred'],['toxicExposureOccurred','Toxic exposure occurred'],['injuryFatalityOccurred','Injury/fatality occurred'],['communityImpact','Community impact'],['environmentalImpact','Environmental impact'],['basis','PSE classification basis'],['reviewerRequired','PSE reviewer required'],['reviewedBy','Reviewed by'],['reviewedAt','Reviewed at']]} /></OverviewPanelShell>;
+}

@@ -1,0 +1,818 @@
+
+--- PAGE 1 ---
+You are the senior full-stack engineer for PSM OS.
+Task: Build the Module 04 — Management of Change (MOC) Detail Page.
+Context: The MOC Create Request wizard exists or is in progress. Now build the full MOC record page where
+every tab, card, badge, action, approval status, generated action, document, and history item is real and
+API-driven.
+Route:
+• /moc/:id
+Important: Do NOT create a static demo page. Do NOT use mock MOC data. Do NOT create fake counters or
+fake cards. Do NOT redesign the platform. Keep the current dark industrial PSM OS UI style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL + Redis/BullMQ
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Storage: S3/Supabase Storage
+• Workflow: existing Workflow Engine
+• Actions: existing Universal Action Engine
+• Notifications: existing Notification Center
+• Documents: existing Document Control
+• Equipment: existing Equipment Registry
+• Search: existing Global Search
+• Site isolation: company_id and site_id required
+================================================== PAGE PURPOSE
+==================================================
+The MOC Detail Page must be the single source of truth for one change request.
+It must show:
+• MOC header
+• Current status
+• Risk level
+• Change type
+• Affected site/unit/area/equipment
+• Approval progress
+• Closed-loop action completion
+• Temporary change expiry
+• Engineering package
+1
+
+--- PAGE 2 ---
+• PSSR requirement
+• Startup readiness
+• History and attachments
+================================================== MOC ROUTING
+==================================================
+Required routes:
+• /moc MOC dashboard/register
+• /moc/new MOC create request wizard
+• /moc/:id MOC detail page
+Do not mix dashboard and detail layout.
+================================================== MOC DETAIL PAGE LAYOUT
+==================================================
+Top:
+• Back to MOC Register button
+• MOC number
+• MOC title
+• Change type badge
+• Status badge
+• Risk level badge
+• Site/unit/area
+• Originator
+• Target implementation date
+• Temporary expiry warning if temporary change
+• Primary action buttons
+Below header:
+• MOC lifecycle stepper
+• Summary cards
+Main:
+• Full tab system
+Right summary panel:
+• Approval status
+• Closed-loop action status
+• Temporary change expiry
+2
+
+--- PAGE 3 ---
+• PSSR requirement
+• Document readiness
+• Startup blocker status
+• Quick actions
+================================================== MOC STATUSES
+==================================================
+Support:
+• Draft
+• Submitted
+• Under Review
+• Approved
+• Implementation
+• Pending PSSR
+• Ready For Startup
+• Closed
+• Rejected
+• Cancelled
+• Overdue Temporary Change
+Lifecycle rules:
+• Draft → Submitted
+• Submitted → Under Review
+• Under Review → Approved / Rejected
+• Approved → Implementation
+• Implementation → Pending PSSR if PSSR required
+• Implementation → Ready For Startup if no PSSR required
+• Pending PSSR → Ready For Startup after PSSR complete
+• Ready For Startup → Closed after closure checklist complete
+• Temporary change can become Overdue Temporary Change if expiry passes
+• Closed is final
+• Cancelled is final
+Hard blockers:
+• Cannot approve if required impact assessment incomplete.
+• Cannot approve if risk ranking incomplete.
+• Cannot approve High/Critical without engineering package or approved justification.
+• Cannot move to Ready For Startup if required actions are incomplete.
+• Cannot move to Ready For Startup if PSSR required but incomplete.
+• Cannot close until all required actions are verified with evidence.
+• Cannot close temporary change if removal/reversal plan is incomplete.
+• Cannot close emergency change if 72-hour review is incomplete.
+3
+
+--- PAGE 4 ---
+================================================== HEADER ACTION BUTTONS
+==================================================
+Show actions based on status and permission:
+• Edit MOC
+• Submit
+• Approve
+• Reject
+• Return for Revision
+• Start Implementation
+• Mark Implementation Complete
+• Trigger PSSR
+• Mark Ready For Startup
+• Close MOC
+• Cancel MOC
+• Extend Temporary Change
+• Create Action
+• Upload Document
+• Download MOC Report
+• Print MOC
+• Duplicate MOC
+Rules:
+• Buttons must respect permissions.
+• Backend validates every transition.
+• Every action creates audit log and MOC history event.
+• React Query invalidates/refetches MOC detail, summary, tabs, dashboard counters, equipment
+linked records, actions, notifications, and search index where needed.
+================================================== REQUIRED TABS
+==================================================
+Create functional tabs:
+1. Overview
+2. Change Details
+3. Impact Assessment
+4. Risk Ranking
+5. Engineering Package
+6. Closed-Loop Actions
+7. Approval Workflow
+8. Temporary / Emergency Control
+9. PSSR / Startup Readiness
+10. Communication & Training
+11. History
+12. Attachments
+4
+
+--- PAGE 5 ---
+Each tab must:
+• Load from API
+• Show loading state
+• Show empty state
+• Show error state
+• Save mutations to database
+• Refetch instantly after mutation
+• Create audit log and history events for changes
+================================================== 1. OVERVIEW TAB
+==================================================
+Show:
+• MOC summary
+• Change type
+• Change category
+• Current status
+• Risk score
+• Risk level badge
+• Originator
+• Department
+• Site/unit/area
+• Primary equipment
+• Related equipment
+• Target implementation date
+• Temporary expiry date if applicable
+• Emergency review due if applicable
+• Approval progress
+• Required action completion
+• Engineering package readiness
+• PSSR requirement
+• Startup blocker status
+• Latest history events
+• Latest comments/notes if available
+Overview cards:
+• Risk Ranking Card
+• Impact Completion Card
+• Approval Status Card
+• Closed-Loop Actions Card
+• Temporary Expiry Card
+• Engineering Package Card
+• PSSR Status Card
+• Linked Equipment Card
+• Linked Documents Card
+5
+
+--- PAGE 6 ---
+• Recent Activity Card
+================================================== 2. CHANGE DETAILS TAB
+==================================================
+Show editable MOC master data:
+Basic:
+• MOC number
+• Title
+• Description
+• Change type
+• Change category
+• Priority
+• Status
+• Originator
+• Department
+• Requested start date
+• Target implementation date
+Location:
+• Company
+• Site
+• Process unit
+• Area
+• Location description
+Affected equipment:
+• Primary equipment
+• Related equipment
+• Equipment name
+• Equipment type
+• Equipment criticality
+• System/service
+• Existing open PTWs
+• Existing open MOCs
+• Open HAZOP recommendations
+• Open actions
+Change description:
+• Current condition / existing design
+• Proposed change
+• Reason for change
+• Problem statement
+6
+
+--- PAGE 7 ---
+• Business justification
+• Safety justification
+• Expected benefit
+• Pre-change state
+• Post-change state
+• Scope boundaries
+• What is not included
+• Implementation plan summary
+Actions:
+• Edit details
+• Save changes
+• Add/remove affected equipment
+================================================== 3. IMPACT ASSESSMENT TAB
+==================================================
+Show/edit all impact questions:
+Equipment:
+• Equipment affected?
+• P&ID update required?
+• Datasheet update required?
+• Equipment registry update required?
+• Written justification if No
+Process Chemistry:
+• Chemistry affected?
+• Chemicals affected
+• SDS update required?
+• PSI update required?
+• Exposure limits affected?
+• Environmental impact affected?
+Procedure:
+• SOP update required?
+• Affected SOPs
+• Operating procedure update required?
+• Emergency procedure update required?
+Operating Limits:
+• Operating limits changed?
+• HAZOP deviation review required?
+7
+
+--- PAGE 8 ---
+• Alarm/interlock setpoints changed?
+• Safe operating envelope changed?
+Safety Systems:
+• SIS affected?
+• ESD affected?
+• PSV affected?
+• Alarm system affected?
+• LOPA review required?
+• SIS revalidation required?
+Training:
+• Training required?
+• Affected roles
+• Training required before startup?
+Documents:
+• Document Control update required?
+• P&ID revision required?
+• Drawing update required?
+• Design basis update required?
+• Vendor manual update required?
+Behavior:
+• Saving impact assessment regenerates required closed-loop action checklist.
+• Existing required actions must not be deleted if already in progress; instead mark newly required or
+no longer required.
+• Every change creates audit log and history event.
+================================================== 4. RISK RANKING TAB
+==================================================
+Show risk scoring:
+Safety Impact:
+• None = 0
+• Minor = 1
+• Significant = 2
+• Major = 3
+Environmental Impact:
+• None = 0
+• Minor = 1
+8
+
+--- PAGE 9 ---
+• Significant = 2
+• Major = 3
+Production Impact:
+• None = 0
+• Minor = 1
+• Significant = 2
+• Major = 3
+Total Risk Score: Safety + Environmental + Production
+Risk Level:
+• 0–2 = Low
+• 3–4 = Medium
+• 5–7 = High
+• 8–9 = Critical
+Show:
+• Risk score
+• Risk level badge
+• Risk rationale
+• Before/after risk if available
+• Required approval impact
+• Required HAZOP/PSSR impact
+Rules:
+• Risk calculated live in frontend.
+• Risk validated and saved server-side.
+• High automatically requires HSE Director + VP Operations.
+• Critical automatically requires HAZOP review, PSSR, and Plant Manager SMS/notification.
+• Risk level always visible.
+================================================== 5. ENGINEERING PACKAGE TAB
+==================================================
+Show engineering documents and technical package.
+Required/optional items:
+• P&ID redline / markup
+• Engineering calculations
+• Equipment datasheets
+• Vendor documents
+• Hazardous area classification drawings
+9
+
+--- PAGE 10 ---
+• Design basis document
+• Software logic document
+• SIS/DCS change document
+• Drawings
+• Other supporting documents
+Features:
+• Upload document
+• Link existing Document Control document
+• Preview
+• Download
+• Delete/unlink
+• Show version/status
+• Show required document checklist
+• Browser-based P&ID redline placeholder if markup tool not available yet
+Rules:
+• High/Critical risk requires Design Basis Document or approved written justification.
+• Safety system change requires SIS/DCS supporting document.
+• Equipment change should link datasheet if available.
+• All controlled documents should use Document Control if available.
+================================================== 6. CLOSED-LOOP ACTIONS TAB
+==================================================
+Show all required compliance actions generated from impact assessment.
+Action types:
+• SOP update
+• P&ID update
+• SDS update
+• PSI update
+• Training requirement
+• HAZOP review
+• LOPA review
+• Operating limits update
+• Equipment registry update
+• Document Control revision
+• PSSR required
+• Custom action
+Each action shows:
+• Action number
+• Source impact answer
+10
+
+--- PAGE 11 ---
+• Title
+• Owner
+• Due date
+• Priority
+• Status
+• Evidence status
+• Verification status
+• Linked module
+• Required before startup: Yes/No
+• Required before closure: Yes/No
+Actions:
+• Create required actions
+• Create custom action
+• Assign owner
+• Open linked Action Engine record
+• Upload evidence if allowed
+• Verify evidence if allowed
+Rules:
+• MOC cannot close until all required actions are verified with evidence.
+• MOC cannot be Ready For Startup if startup-blocking actions are incomplete.
+• Required actions are created through Universal Action Engine.
+• Do not create separate action system inside MOC.
+================================================== 7. APPROVAL WORKFLOW TAB
+==================================================
+Show MOC workflow from Workflow Engine.
+Show:
+• Workflow template used
+• Current approval step
+• Pending approvers
+• Completed approvers
+• Rejected steps
+• Returned for revision steps
+• SLA due dates
+• Escalations
+• Approval comments
+• Workflow history
+Rules:
+• Low/Medium uses standard workflow.
+11
+
+--- PAGE 12 ---
+• High adds HSE Director + VP Operations.
+• Critical adds HAZOP Review + PSSR blocker + Plant Manager final approval.
+• Emergency uses expedited workflow but still requires post-implementation review.
+• No hardcoded approval logic inside MOC; use Workflow Engine.
+Actions:
+• Approve
+• Reject
+• Return for Revision
+• View workflow history
+• Escalate if permitted
+================================================== 8. TEMPORARY / EMERGENCY CONTROL TAB
+==================================================
+For Temporary Change: Show:
+• Expiry date
+• Duration days
+• Max allowed duration
+• Days remaining
+• Temporary risk controls
+• Reversal/removal plan
+• Owner responsible for removal
+• Extension history
+• Extension requests
+• Expiry warnings
+• Overdue status
+Rules:
+• Expiry date mandatory.
+• Default max duration = 90 days, site configurable.
+• Extension requires full re-approval workflow.
+• 30-day warning to originator and department head.
+• 7-day warning to HSE Manager and Plant Manager.
+• Expired temporary change becomes Overdue Temporary Change.
+• Active temporary changes >60 days appear as normalization risk.
+For Emergency Change: Show:
+• Emergency justification
+• Immediate controls
+• Implemented by
+• Implementation date/time
+• 72-hour review due date
+• Post-implementation review status
+12
+
+--- PAGE 13 ---
+• Review owner
+• Review findings
+• Required follow-up actions
+Rules:
+• Emergency change requires review within 72 hours.
+• Overdue review escalates.
+• Cannot close emergency MOC until review complete.
+================================================== 9. PSSR / STARTUP READINESS TAB
+==================================================
+Show:
+• PSSR required: Yes/No
+• PSSR trigger reason
+• Linked PSSR record
+• Startup blockers
+• Required actions before startup
+• Required training before startup
+• Required documents before startup
+• Required approvals before startup
+• Startup readiness score
+• Ready for startup status
+Rules:
+• High/Critical risk usually requires PSSR.
+• Safety system/equipment/process changes may require PSSR.
+• MOC cannot move to Ready For Startup if PSSR required but incomplete.
+• Trigger PSSR creates linked PSSR record when PSSR module exists.
+• If PSSR module not built yet, create placeholder linked requirement record.
+================================================== 10. COMMUNICATION & TRAINING TAB
+==================================================
+Show:
+• Stakeholders
+• Affected departments
+• Required communication
+• Required training roles
+• Training records
+• Communication acknowledgements
+• Operations briefing
+• Maintenance briefing
+• HSE briefing
+13
+
+--- PAGE 14 ---
+Actions:
+• Add stakeholder
+• Send communication
+• Mark acknowledgement
+• Create training requirement
+• Link training record if Training module exists
+Rules:
+• If training required, affected roles are mandatory.
+• Startup may be blocked until training complete if configured.
+================================================== 11. HISTORY TAB
+==================================================
+Show full MOC timeline.
+Events:
+• MOC created
+• Details edited
+• Risk ranking changed
+• Impact assessment changed
+• Engineering document uploaded
+• Required action generated
+• Action completed
+• Submitted
+• Approved
+• Rejected
+• Returned for revision
+• Implementation started
+• Temporary change extended
+• Temporary change overdue
+• Emergency review completed
+• PSSR triggered
+• Ready for startup
+• Closed
+• Cancelled
+• Attachment uploaded
+Each event shows:
+• Date/time
+• User
+• Event type
+• Description
+• Before value
+14
+
+--- PAGE 15 ---
+• After value
+• Related record link
+================================================== 12. ATTACHMENTS TAB
+==================================================
+Support non-controlled MOC attachments:
+• Field photos
+• Email evidence
+• Meeting notes
+• Sketches
+• Vendor correspondence
+• Supporting evidence
+• Other files
+Features:
+• Upload
+• Preview
+• Download
+• Delete
+• Show uploaded by/date
+• Link to Document Control when controlled document
+Rules:
+• Engineering controlled documents should be in Engineering Package tab.
+• Attachments are supporting files/evidence.
+• Upload/delete creates audit log and history event.
+================================================== RIGHT SUMMARY PANEL
+==================================================
+Show:
+• Current status
+• Risk level
+• Approval progress
+• Closed-loop action completion
+• Startup blocker status
+• Temporary expiry countdown
+• Engineering package readiness
+• PSSR status
+• Required training status
+• Document readiness
+• Quick actions
+15
+
+--- PAGE 16 ---
+================================================== BACKEND DATABASE
+==================================================
+Create/update models:
+• mocs
+• moc_affected_equipment
+• moc_risk_assessments
+• moc_impact_assessments
+• moc_engineering_documents
+• moc_required_actions
+• moc_temporary_controls
+• moc_emergency_controls
+• moc_pssr_requirements
+• moc_communication_records
+• moc_training_requirements
+• moc_history_events
+• moc_attachments
+Every table must include:
+• company_id
+• site_id
+• created_by where applicable
+• created_at
+• updated_at
+================================================== BACKEND APIs
+==================================================
+Create/update:
+Core:
+• GET /moc/:id
+• PATCH /moc/:id
+• GET /moc/:id/summary
+• POST /moc/:id/submit
+• POST /moc/:id/approve
+• POST /moc/:id/reject
+• POST /moc/:id/return
+• POST /moc/:id/start-implementation
+• POST /moc/:id/mark-implementation-complete
+• POST /moc/:id/ready-for-startup
+• POST /moc/:id/close
+• POST /moc/:id/cancel
+• POST /moc/:id/duplicate
+16
+
+--- PAGE 17 ---
+Risk:
+• GET /moc/:id/risk
+• PATCH /moc/:id/risk
+Impact:
+• GET /moc/:id/impact-assessment
+• PATCH /moc/:id/impact-assessment
+Engineering:
+• GET /moc/:id/engineering-documents
+• POST /moc/:id/engineering-documents
+• DELETE /moc/:id/engineering-documents/:documentId
+• POST /moc/:id/engineering-documents/link-document
+Actions:
+• GET /moc/:id/required-actions
+• POST /moc/:id/required-actions/generate
+• POST /moc/:id/required-actions
+• PATCH /moc/:id/required-actions/:actionId
+Workflow:
+• GET /moc/:id/workflow
+Temporary/Emergency:
+• GET /moc/:id/temporary-control
+• PATCH /moc/:id/temporary-control
+• POST /moc/:id/temporary-control/extend
+• GET /moc/:id/emergency-control
+• PATCH /moc/:id/emergency-control
+• POST /moc/:id/emergency-control/complete-review
+PSSR:
+• GET /moc/:id/pssr
+• POST /moc/:id/pssr/trigger
+Communication/Training:
+• GET /moc/:id/communication-training
+• POST /moc/:id/stakeholders
+• POST /moc/:id/communication
+• POST /moc/:id/training-requirements
+17
+
+--- PAGE 18 ---
+History/Attachments:
+• GET /moc/:id/history
+• GET /moc/:id/attachments
+• POST /moc/:id/attachments
+• DELETE /moc/:id/attachments/:attachmentId
+Report:
+• GET /moc/:id/report
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+• app/(app)/moc/[id]/page.tsx
+• features/moc/components/MOCDetailPage.tsx
+• features/moc/components/MOCHeader.tsx
+• features/moc/components/MOCLifecycleStepper.tsx
+• features/moc/components/MOCSummaryPanel.tsx
+• features/moc/components/tabs/MOCOverviewTab.tsx
+• features/moc/components/tabs/MOCChangeDetailsTab.tsx
+• features/moc/components/tabs/MOCImpactAssessmentTab.tsx
+• features/moc/components/tabs/MOCRiskRankingTab.tsx
+• features/moc/components/tabs/MOCEngineeringPackageTab.tsx
+• features/moc/components/tabs/MOCClosedLoopActionsTab.tsx
+• features/moc/components/tabs/MOCApprovalWorkflowTab.tsx
+• features/moc/components/tabs/MOCTemporaryEmergencyControlTab.tsx
+• features/moc/components/tabs/MOCPSSRStartupReadinessTab.tsx
+• features/moc/components/tabs/MOCCommunicationTrainingTab.tsx
+• features/moc/components/tabs/MOCHistoryTab.tsx
+• features/moc/components/tabs/MOCAttachmentsTab.tsx
+• features/moc/hooks/useMOCDetail.ts
+• features/moc/hooks/useMOCMutations.ts
+• features/moc/services/moc.service.ts
+• features/moc/schemas/moc-detail.schema.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• moc.view
+• moc.edit
+• moc.submit
+• moc.approve
+• moc.reject
+18
+
+--- PAGE 19 ---
+• moc.return
+• moc.implementation.start
+• moc.implementation.complete
+• moc.ready_for_startup
+• moc.close
+• moc.cancel
+• moc.temporary.extend
+• moc.pssr.trigger
+• moc.documents.upload
+• moc.attachments.upload
+• moc.actions.generate
+• moc.report.download
+Backend and frontend must enforce permissions.
+================================================== INTEGRATIONS
+==================================================
+Equipment Registry:
+• MOC appears in equipment linked records.
+• Equipment timeline receives MOC events.
+• Affected equipment list comes from Equipment Registry.
+Workflow Engine:
+• Approval tab uses Workflow Engine.
+• Do not hardcode approval flow.
+Action Engine:
+• Closed-loop actions use Universal Action Engine.
+• MOC closure depends on verified actions.
+Notification Center: Emit events:
+• moc.submitted
+• moc.approval_requested
+• moc.approved
+• moc.rejected
+• moc.high_risk
+• moc.critical_risk
+• moc.temporary_expiring_30_days
+• moc.temporary_expiring_7_days
+• moc.temporary_overdue
+• moc.emergency_review_due
+• moc.pssr_required
+• moc.closed
+19
+
+--- PAGE 20 ---
+Document Control:
+• Engineering documents link to controlled docs.
+• P&ID/SOP/SDS updates become required actions.
+PSSR:
+• Trigger PSSR if required.
+Global Search:
+• Index MOC number/title/status/type/risk/equipment/site/area.
+Audit:
+• Every mutation creates audit log.
+Multi-site:
+• Every query/mutation enforces company_id and site_id.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+MOC Detail Page is complete only when:
+✓ /moc/:id loads real MOC data
+✓ Header works
+✓ Lifecycle stepper works
+✓ Action buttons respect status and permissions
+✓ Overview tab works
+✓ Change Details tab works
+✓ Impact Assessment tab works
+✓ Risk Ranking tab works
+✓ Engineering Package tab works
+✓ Closed-Loop Actions tab works
+✓ Approval Workflow tab works
+20
+
+--- PAGE 21 ---
+✓ Temporary / Emergency Control tab works
+✓ PSSR / Startup Readiness tab works
+✓ Communication & Training tab works
+✓ History tab works
+✓ Attachments tab works
+✓ Right summary panel works
+✓ Required actions regenerate from impact assessment
+✓ High/Critical rules work
+✓ Temporary expiry rules work
+✓ Emergency 72-hour review rules work
+✓ PSSR trigger works
+✓ MOC cannot close until required actions verified
+✓ MOC cannot be ready for startup until startup blockers cleared
+✓ Audit logs are created
+✓ MOC history events are created
+✓ React Query refetches all affected panels
+✓ No static/mock MOC data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+21

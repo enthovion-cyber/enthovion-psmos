@@ -1,0 +1,31 @@
+import { z } from 'zod';
+
+export const lopaIplRegistrySchema = z.object({
+  iplName: z.string().min(2, 'IPL name is required'),
+  iplType: z.string().min(1, 'IPL type is required'),
+  description: z.string().optional(),
+  siteId: z.string().optional(),
+  serviceApplication: z.string().optional(),
+  equipmentType: z.string().optional(),
+  processService: z.string().optional(),
+  protectedEquipment: z.string().optional(),
+  safeState: z.string().optional(),
+  demandSource: z.string().optional(),
+  riskReductionClaim: z.string().optional(),
+  pfdavg: z.coerce.number().positive().max(1).optional().or(z.literal('').transform(() => undefined)),
+  rrf: z.coerce.number().positive().optional().or(z.literal('').transform(() => undefined)),
+  pfdBasis: z.string().optional(),
+  rrfBasis: z.string().optional(),
+  sourceType: z.string().optional(),
+  sourceReference: z.string().optional(),
+  standardReference: z.string().optional(),
+  proofTestInterval: z.string().optional(),
+  proofTestBasis: z.string().optional(),
+  inspectionRequirement: z.string().optional(),
+  maintenanceRequirement: z.string().optional(),
+  ownerId: z.string().optional(),
+  reviewDueDate: z.string().optional(),
+  proofTestDueDate: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  revisionNotes: z.string().optional()
+});

@@ -1,0 +1,1558 @@
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Linked Records tab.
+Route:
+/incidents/:id
+Tab:
+Linked Records
+Read the attached PDF/specification carefully before coding. Build this tab exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive UI issue. Do not miss a
+single thing.
+Keep this implementation detailed but not unnecessarily oversized. Build only what belongs to this tab.
+================================================== SCOPE
+==================================================
+Work only on:
+Linked Records
+Do not build yet:
+Notifications / Regulatory Reporting
+Review & Approval
+Lessons Learned
+History
+Final Report / Export
+Use existing modules/data:
+Incident Dashboard/Register
+Incident Detail Shell
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+Universal Action Engine
+Document Control
+Equipment Registry
+Chemical/SDS
+PTW
+MOC
+PSSR
+Mechanical Integrity
+HAZOP/PHA
+LOPA/SIL
+SOP/Procedure Library
+Audit Log
+Notification Center
+Global Search
+IAM/RBAC
+Company/site configuration
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one large tab file.
+Tab container must be clean only:
+features/incidents/components/detail/LinkedRecordsTab.tsx
+Create separate folder:
+features/incidents/components/linked-records/
+Shared badges/components:
+features/incidents/components/shared/
+Also separate:
+hooks
+services
+schemas
+types
+SQL migrations
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+No messy single-file implementation.
+================================================== CORE PURPOSE
+==================================================
+This tab must answer:
+Which PSM, EHS, engineering, maintenance, document, action, and compliance records are
+connected to this incident?
+Which records were the source of the incident context?
+Which records were created because of the incident?
+Which records need review, update, revision, action, or closure before the incident can close?
+Are linked MOC, PSSR, PTW, MI, HAZOP , LOPA, SDS, SOP , CAPA, equipment, chemical, evidence, RCA,
+barrier , and regulatory records current and valid?
+Are there missing required links?
+Are there stale, superseded, restricted, or broken links?
+Is linked-record readiness complete for review and closure?
+================================================== REQUIRED SECTIONS
+==================================================
+Build these panels:
+Linked Records Header
+Linked Records Summary Cards
+Required Links / Readiness Panel
+Linked Records Register
+Add / Link Record Drawer
+Module-Based Linked Records Panels
+Source vs Generated Records Panel
+Record Impact / Update Required Panel
+Broken / Stale / Superseded Links Panel
+Linked Actions / CAPA Snapshot Panel
+Document Control / Procedure / SDS Links Panel
+PSM Review Links Panel
+Linked Records Review Panel
+Linked Records Change History Panel
+Linked Records Readiness / Missing Data Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. LINKED RECORDS HEADER
+==================================================
+Show:
+Incident number
+Incident title
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+• 
+• 
+3
+
+Incident status
+Investigation priority
+PSM/PSE/API tier
+Total linked records
+Required links missing
+Records needing update
+Broken links
+Superseded/stale links
+Restricted linked records
+Linked actions count
+Linked documents count
+Review status
+Last updated
+Actions:
+Link Record
+Auto-Detect Related Records
+Create Follow-up Action
+Refresh Link Status
+Request Review
+Export Linked Records Index
+Save Changes
+Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents are read-only unless reopened.
+Restricted/confidential records must be redacted.
+================================================== 2. LINKED RECORDS SUMMARY CARDS
+==================================================
+Cards:
+Total linked records
+Required links complete
+Missing required links
+Linked CAPA/actions
+Linked evidence
+Linked equipment
+Linked chemicals/SDS
+Linked PTW
+Linked MOC
+Linked PSSR
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+Linked MI/work orders
+Linked HAZOP/PHA
+Linked LOPA/SIL/IPL
+Linked documents/procedures
+Records needing update
+Broken/stale links
+Review status
+Ready for review/closure
+Rules:
+No fake counts.
+Values come from backend.
+Cards update Overview and Dashboard/Register .
+================================================== 3. REQUIRED LINKS / READINESS PANEL
+==================================================
+Backend-generated checklist based on incident data.
+Examples:
+Equipment linked if equipment involved
+Chemical/SDS linked if chemical involved
+PTW linked if permit work involved
+MOC linked if change involved
+PSSR linked if restart/return-to-service required
+MI/work order linked if equipment failure or inspection required
+HAZOP/PHA linked if hazard scenario review required
+LOPA/SIL/IPL linked if credited IPL/SIF/barrier failure exists
+CAPA linked if root cause or barrier failure requires action
+Evidence linked to critical records
+Document/procedure linked if procedure gap exists
+Regulatory/notification link if reporting required
+Fields:
+Required link
+Required Yes/No
+Source reason
+Status
+Linked record
+Missing Yes/No
+Blocking Yes/No
+Action
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+Rules:
+Backend generates required links.
+No hidden frontend rules.
+Missing required links create readiness blockers.
+Missing items must link to related tab/section.
+================================================== 4. LINKED RECORDS REGISTER
+==================================================
+Columns:
+Link number
+Record type
+Module
+Record title / number
+Relationship
+Source / generated
+Link status
+Impact status
+Update required Yes/No
+Owner
+Due date
+Restricted Yes/No
+Created by
+Linked at
+Last refreshed
+Actions
+Record types:
+Equipment
+Chemical
+SDS
+Document / procedure
+Evidence
+Timeline event
+Immediate action
+CAPA / Universal Action
+RCA causal factor
+RCA root cause
+Barrier / safeguard
+PTW
+MOC
+PSSR
+MI / work order
+HAZOP/PHA
+LOPA/SIL/IPL
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+SOP
+Training record
+Audit record
+Regulatory record
+Other
+Relationships:
+Source record
+Related record
+Generated from incident
+Follow-up required
+Evidence support
+Review required
+Update required
+Supersedes
+Superseded by
+Reference only
+Link statuses:
+Active
+Pending review
+Needs update
+Broken
+Stale
+Superseded
+Restricted
+Archived
+Not accessible
+Actions:
+Open record
+View link details
+Edit relationship
+Refresh status
+Mark update required
+Create follow-up action
+Unlink with reason
+Replace link
+Export row
+================================================== 5. ADD / LINK RECORD DRAWER
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+Fields:
+Module
+Record type
+Search/select record
+Record title/number snapshot
+Relationship
+Source/generated flag
+Reason for link
+Update required Yes/No
+Owner
+Due date
+Notes
+Restricted flag if inherited
+Change reason
+Rules:
+Search must use real module lookups or Global Search.
+Store snapshot metadata for audit.
+Validate user has access to linked record.
+Unlinking requires permission and reason.
+Drawer must be responsive and full-screen on mobile.
+Save creates audit/history.
+================================================== 6. MODULE-BASED LINKED RECORDS PANELS
+==================================================
+Create compact panels for:
+Equipment / Asset links
+Chemical / SDS links
+Evidence links
+CAPA / Universal Action links
+RCA links
+Barrier / Safeguard links
+PTW links
+MOC links
+PSSR links
+MI / Work Order links
+HAZOP/PHA links
+LOPA/SIL/IPL links
+Document / SOP / Procedure links
+Each panel shows:
+Count
+Critical missing links
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+Records needing update
+Restricted records
+Open follow-ups
+Quick actions
+Rules:
+Use real backend data only.
+Panels can be compact but must cover all required modules from PDF/spec.
+Clicking opens filtered register .
+================================================== 7. SOURCE VS GENERATED RECORDS PANEL
+==================================================
+Show:
+Records that existed before the incident
+Records imported during investigation
+Records created because of incident
+Records requiring revision because of incident
+Records generated as follow-up actions
+Fields:
+Record
+Source/generated type
+Created/linked date
+Owner
+Status
+Action
+Rules:
+Helps audit trail and final report.
+Backend determines source/generated status.
+================================================== 8. RECORD IMPACT / UPDATE REQUIRED
+PANEL ==================================================
+Fields:
+Linked record
+Impact type
+Update required
+Reason
+Owner
+Due date
+Update status
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+Linked action
+Notes
+Impact types:
+No change required
+Review required
+Revision required
+Revalidation required
+Inspection required
+MOC required
+PSSR required
+Training update required
+Procedure update required
+Risk assessment update required
+LOPA/SIL review required
+MI/work order required
+Rules:
+Backend can recommend impact from RCA, barriers, CAPA, and classification.
+Manual override requires permission and reason.
+Update-required records must create or link follow-up action.
+================================================== 9. BROKEN / STALE / SUPERSEDED LINKS
+PANEL ==================================================
+Fields:
+Linked record
+Problem type
+Last known status
+Current status
+Last refreshed
+Resolution
+Owner
+Action
+Problem types:
+Broken link
+Access denied
+Record archived
+Record superseded
+Record deleted
+Revision changed
+Status changed
+Missing permission
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+Integration unavailable
+Rules:
+Backend refreshes link status from source modules.
+Broken/stale critical links create readiness blocker .
+Restricted records show safe redacted state.
+================================================== 10. LINKED ACTIONS / CAPA SNAPSHOT PANEL
+==================================================
+Show:
+Linked Universal Actions
+Incident CAPA actions
+Immediate actions converted to CAPA
+Actions generated from RCA/barrier/follow-ups
+Open/overdue actions
+Fields:
+Action number
+Action title
+Source
+Owner
+Due date
+Status
+Verification status
+Action
+Rules:
+Use Universal Action Engine.
+Do not duplicate action system.
+Overdue critical actions feed Overview blockers.
+================================================== 11. DOCUMENT CONTROL / PROCEDURE / SDS
+LINKS PANEL ==================================================
+Fields:
+Document number
+Title
+Document type
+Revision
+Status
+Owner
+Relationship
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+Revision/update required
+Linked action
+Action
+Document types:
+SDS
+SOP
+Operating procedure
+Emergency procedure
+Work instruction
+Inspection record
+Maintenance record
+Training record
+Permit document
+MOC/PSSR document
+Other
+Rules:
+Use Document Control/SDS library.
+If procedure/SDS outdated or missing, create follow-up.
+Respect document permissions and redaction.
+================================================== 12. PSM REVIEW LINKS PANEL
+==================================================
+Show linked/recommended PSM reviews:
+MOC
+PSSR
+PTW
+Mechanical Integrity
+HAZOP/PHA
+LOPA/SIL/IPL
+SIS/SIF
+Alarm management
+Training/procedure review
+Emergency response review
+Fields:
+Review type
+Linked record
+Required Yes/No
+Reason
+Status
+Owner
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+Action
+Rules:
+Backend generates recommendation from incident data.
+Required review without linked record creates blocker .
+Follow-up actions use Universal Action Engine.
+================================================== 13. LINKED RECORDS REVIEW PANEL
+==================================================
+Fields:
+Review required
+Reviewer
+Due date
+Review status
+Review comments
+Approved by
+Approved at
+Rejection reason
+Rework required
+Actions:
+Request review
+Approve
+Reject
+Reopen
+Create action
+Rules:
+Approval requires readiness checks passed.
+Review decisions require permission and comment.
+Audit/history required.
+================================================== 14. LINKED RECORDS CHANGE HISTORY
+PANEL ==================================================
+Show read-only history:
+Changed field
+Previous value
+New value
+Changed by
+Changed at
+Reason
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+
+Related linked record
+Audit reference
+Rules:
+Use incident history/audit data.
+Redact restricted values.
+No fake history.
+================================================== 15. READINESS / MISSING DATA PANEL
+==================================================
+Backend-generated checklist:
+Required links generated
+Required equipment/chemical/SDS links complete
+Required PTW/MOC/PSSR/MI links complete
+Required HAZOP/LOPA/SIL links complete
+Required CAPA/action links complete
+Records needing update assigned
+Broken/stale links resolved
+Restricted links handled correctly
+Linked records review complete
+Ready for review/closure
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+supabase/migrations/<timestamp>_incident_linked_records_tables.sql
+supabase/migrations/<timestamp>_incident_linked_records_rls_policies.sql
+supabase/migrations/<timestamp>_incident_linked_records_indexes.sql
+supabase/migrations/<timestamp>_incident_linked_records_constraints.sql
+Add/fix tables:
+incident_linked_records
+id
+company_id
+site_id
+incident_id
+link_number
+module
+record_type
+record_id
+record_number_snapshot
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+
+record_title_snapshot
+relationship
+source_generated_type
+link_status
+impact_status
+update_required
+owner_id
+due_date
+restricted
+notes
+created_by
+updated_by
+linked_at
+last_refreshed_at
+deleted_at
+incident_required_links
+id
+company_id
+site_id
+incident_id
+required_link_type
+required
+source_reason
+status
+linked_record_id
+blocking
+created_by
+updated_by
+created_at
+updated_at
+incident_record_impacts
+id
+company_id
+site_id
+incident_id
+linked_record_id
+impact_type
+update_required
+reason
+owner_id
+due_date
+update_status
+universal_action_id
+notes
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+
+created_by
+updated_by
+created_at
+updated_at
+incident_linked_record_reviews
+id
+company_id
+site_id
+incident_id
+status
+reviewer_id
+due_date
+comments
+approved_by
+approved_at
+rejected_by
+rejected_at
+rejection_reason
+rework_required
+created_by
+updated_by
+created_at
+updated_at
+Also update/use:
+incident_history_events
+SQL rules:
+Include indexes, foreign keys, constraints, RLS/company-site isolation.
+Include audit/history triggers if project pattern uses DB triggers.
+Include rollback/down migration if current project supports it.
+Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Add/fix:
+GET /incidents/:id/linked-records
+GET /incidents/:id/linked-records/summary
+GET /incidents/:id/linked-records/readiness
+GET /incidents/:id/linked-records/register
+POST /incidents/:id/linked-records
+GET /incidents/:id/linked-records/:linkId
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+
+PATCH /incidents/:id/linked-records/:linkId
+DELETE /incidents/:id/linked-records/:linkId
+POST /incidents/:id/linked-records/auto-detect
+POST /incidents/:id/linked-records/:linkId/refresh-status
+POST /incidents/:id/linked-records/refresh-all-statuses
+GET /incidents/:id/linked-records/required-links
+GET /incidents/:id/linked-records/module-panels
+GET /incidents/:id/linked-records/source-generated
+GET /incidents/:id/linked-records/record-impacts
+PATCH /incidents/:id/linked-records/record-impacts/:impactId
+GET /incidents/:id/linked-records/broken-stale
+GET /incidents/:id/linked-records/actions-snapshot
+GET /incidents/:id/linked-records/document-links
+GET /incidents/:id/linked-records/psm-review-links
+POST /incidents/:id/linked-records/create-followup-action
+GET /incidents/:id/linked-records/review
+POST /incidents/:id/linked-records/request-review
+POST /incidents/:id/linked-records/approve-review
+POST /incidents/:id/linked-records/reject-review
+GET /incidents/:id/linked-records/history
+GET /incidents/:id/linked-records/context
+GET /incidents/:id/linked-records/export
+Lookups:
+GET /incidents/:id/lookups/global-record-search
+GET /incidents/:id/lookups/equipment
+GET /incidents/:id/lookups/chemicals
+GET /incidents/:id/lookups/sds
+GET /incidents/:id/lookups/documents
+GET /incidents/:id/lookups/evidence
+GET /incidents/:id/lookups/actions
+GET /incidents/:id/lookups/ptw
+GET /incidents/:id/lookups/moc
+GET /incidents/:id/lookups/pssr
+GET /incidents/:id/lookups/mi
+GET /incidents/:id/lookups/hazop
+GET /incidents/:id/lookups/lopa
+GET /incidents/:id/lookups/sil
+API rules:
+Enforce company_id/site_id.
+Enforce permissions.
+Enforce restricted/confidential redaction.
+Validate access to linked records.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+
+Backend generates summary, readiness, required links, stale/broken link status, PSM review links,
+and blockers.
+All mutations create audit log and incident history.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-linked-records.service.ts
+incident-linked-records-summary.service.ts
+incident-required-links.service.ts
+incident-linked-record-register.service.ts
+incident-linked-record-auto-detect.service.ts
+incident-linked-record-status-refresh.service.ts
+incident-record-impact.service.ts
+incident-linked-actions-snapshot.service.ts
+incident-linked-documents.service.ts
+incident-psm-review-links.service.ts
+incident-linked-record-review.service.ts
+incident-linked-record-history.service.ts
+incident-linked-record-readiness.service.ts
+incident-global-record-search.service.ts
+incident-universal-action-integration.service.ts
+incident-document-control-integration.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-notification.service.ts
+incident-global-search.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tab:
+features/incidents/components/detail/LinkedRecordsTab.tsx
+Components:
+features/incidents/components/linked-records/LinkedRecordsHeader.tsx
+features/incidents/components/linked-records/LinkedRecordsSummaryCards.tsx
+features/incidents/components/linked-records/RequiredLinksReadinessPanel.tsx
+features/incidents/components/linked-records/LinkedRecordsRegister.tsx
+features/incidents/components/linked-records/AddLinkRecordDrawer.tsx
+features/incidents/components/linked-records/ModuleBasedLinkedRecordsPanel.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+
+features/incidents/components/linked-records/SourceGeneratedRecordsPanel.tsx
+features/incidents/components/linked-records/RecordImpactUpdatePanel.tsx
+features/incidents/components/linked-records/
+BrokenStaleSupersededLinksPanel.tsx
+features/incidents/components/linked-records/
+LinkedActionsCapaSnapshotPanel.tsx
+features/incidents/components/linked-records/
+DocumentProcedureSdsLinksPanel.tsx
+features/incidents/components/linked-records/PsmReviewLinksPanel.tsx
+features/incidents/components/linked-records/LinkedRecordsReviewPanel.tsx
+features/incidents/components/linked-records/
+LinkedRecordsChangeHistoryPanel.tsx
+features/incidents/components/linked-records/LinkedRecordsReadinessPanel.tsx
+Shared:
+features/incidents/components/shared/LinkedRecordTypeBadge.tsx
+features/incidents/components/shared/LinkedRecordStatusBadge.tsx
+features/incidents/components/shared/RecordImpactBadge.tsx
+features/incidents/components/shared/RelationshipBadge.tsx
+features/incidents/components/shared/ReviewStatusBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentLinkedRecords.ts
+features/incidents/hooks/useIncidentLinkedRecordsSummary.ts
+features/incidents/hooks/useIncidentRequiredLinks.ts
+features/incidents/hooks/useIncidentLinkedRecordImpacts.ts
+features/incidents/hooks/useIncidentLinkedRecordReview.ts
+features/incidents/hooks/useIncidentLinkedRecordReadiness.ts
+Services:
+features/incidents/services/incident-linked-records.service.ts
+features/incidents/services/incident-linked-record-lookups.service.ts
+features/incidents/services/incident-linked-record-impact.service.ts
+features/incidents/services/incident-linked-record-review.service.ts
+Schemas:
+features/incidents/schemas/incident-linked-record.schema.ts
+features/incidents/schemas/incident-required-link.schema.ts
+features/incidents/schemas/incident-record-impact.schema.ts
+features/incidents/schemas/incident-linked-record-review.schema.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+
+Types:
+features/incidents/types/incident-linked-record.types.ts
+features/incidents/types/incident-required-link.types.ts
+features/incidents/types/incident-record-impact.types.ts
+features/incidents/types/incident-linked-record-readiness.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.linked_records.view
+incidents.linked_records.create
+incidents.linked_records.edit
+incidents.linked_records.delete
+incidents.linked_records.auto_detect
+incidents.linked_records.refresh
+incidents.linked_records.export
+incidents.linked_records.review.request
+incidents.linked_records.review.approve
+incidents.linked_records.review.reject
+incidents.record_impacts.manage
+incidents.followups.create
+incidents.history.view
+incidents.restricted.view
+incidents.confidential.view
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized controls.
+Disabled controls show exact reason.
+Unlink/replace/override requires permission and reason.
+================================================== REQUIRED STATES
+==================================================
+Implement:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Read-only closed
+Saving
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+
+Save failed
+Required links missing
+Broken link
+Stale/superseded link
+Integration unavailable
+Record access denied
+Update required
+Follow-up required
+Review requested
+Review approved
+Review rejected
+Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+Nice, clean, professional enterprise UI.
+Use cards, badges, tables, drawers, module panels, readiness checklist, impact matrix, warning
+banners, and mini summaries.
+All UI must use real backend data only.
+No mock/static data.
+Dark/light theme must be polished.
+Desktop: clean multi-column layout.
+Tablet/mobile: stacked cards and full-screen drawers.
+Every disabled button must show exact reason.
+Every panel must be easy to edit/debug because it is separated into its own file.
+================================================== TESTING
+==================================================
+Add tests for:
+Fetch Linked Records tab
+Summary cards
+Required links readiness
+Link record
+Edit relationship
+Unlink with reason
+Auto-detect related records
+Refresh link status
+Broken/stale/superseded detection
+Record impact update
+Create follow-up action
+Request/approve/reject review
+Export linked records index
+Enforce permissions
+Enforce company_id/site_id isolation
+Redact restricted/confidential data
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+
+Create audit log
+Create incident history event
+Update Overview/Register
+Dark/light UI
+Responsive layout
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Linked Records tab exists
+✓ Uses real backend data only
+✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ Linked records register works
+✓ Add/Link Record drawer works
+✓ Required links/readiness works
+✓ Module-based panels work
+✓ Source vs generated records work
+✓ Record impact/update-required logic works
+✓ Broken/stale/superseded links work
+✓ Linked CAPA/action snapshot works
+✓ Document/SDS/procedure links work
+✓ PSM review links work
+✓ Review/readiness works
+✓ Global Search and module lookups work
+✓ Overview and Dashboard/Register update after changes
+• 
+• 
+• 
+• 
+• 
+22
+
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. Linked Records tab completed 11. Required links/readiness
+completed 12. Module integrations connected 13. Broken/stale link detection completed 14. Follow-up
+action logic connected 15. Permissions connected 16. Audit/history connected 17. Overview/Register
+updates connected 18. Dark/light responsive UI completed 19. Tests added/fixed 20. Remaining gaps, if any
+23

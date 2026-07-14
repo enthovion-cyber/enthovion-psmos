@@ -1,0 +1,919 @@
+\n\n--- PAGE 1 ---\nYou are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Dashboard / Register module in full
+detail.
+Route:
+• /incidents
+This is the main register and command center for all reported incidents, near misses, unsafe conditions,
+process safety events, occupational safety events, environmental events, asset/reliability events, and
+investigation records.
+Work only on:
+• Incident Dashboard
+• Incident Register
+• Register filters/search
+• Incident summary analytics
+• Investigation attention panels
+• API/backend/data foundation needed for the register
+Do not build yet:
+• Create Incident Wizard
+• Incident Detail Shell
+• Overview tab
+• Event Details
+• Potential Severity Matrix tab
+• People/Injury/Exposure
+• Asset/Equipment/Chemical
+• Timeline
+• Evidence/Attachments
+• Immediate Actions
+• Investigation Team
+• RCA
+• Barrier/Safeguard Failure
+• Corrective/Preventive Actions
+• Linked Records
+• Notifications/Regulatory Reporting
+• Review & Approval
+• Lessons Learned
+• History
+• Final Report / Export
+Use real backend, real database, real APIs, permissions, audit logs, incident history events, Universal Action
+Engine, Equipment Registry, Chemical Database/SDS, Document Control, MOC, PSSR, PTW, HAZOP/PHA,
+1\n\n\n--- PAGE 2 ---\nLOPA/SIL, Mechanical Integrity, Notification Center, Global Search, IAM/RBAC, and company/site
+configuration where available.
+Do not use mock/static data.
+UI must be modern, clean, professional, responsive, and must work correctly in dark theme and light
+theme.
+Backend must enforce:
+• company_id
+• site_id
+• user permissions
+• site/unit/area access
+• incident visibility rules
+• restricted/confidential incident rules
+• investigation ownership rules
+• PSM vs Occupational classification rules
+• actual severity / potential severity rules
+• API RP 754 tier classification support
+• audit/history rules
+Every create/update/status/classification/assignment/bulk action/export must create audit log and incident
+history event.
+================================================== CORE PURPOSE
+==================================================
+The Incident Dashboard / Register is the central place to view, filter, prioritize, and manage all incident and
+near-miss records.
+It must answer:
+• How many incidents are open?
+• Which investigations are overdue?
+• Which near misses have high potential severity?
+• Which events are Process Safety / PSM incidents?
+• Which events may be API RP 754 Tier 1 or Tier 2?
+• Which incidents need RCA?
+• Which incidents need a formal investigation team?
+• Which incidents need MOC, PSSR, PTW, HAZOP, LOPA, or Mechanical Integrity follow-up?
+• Which actions are overdue?
+• Which incidents are ready for review?
+• Which incidents are closed?
+• Which incidents are repeated or trending?
+2\n\n\n--- PAGE 3 ---\n================================================== REQUIRED PAGE SECTIONS
+==================================================
+The /incidents page must include:
+1. Incident Dashboard Header
+2. Incident Summary Cards
+3. Critical Attention Panel
+4. Process Safety / PSM Event Panel
+5. Potential Severity / High-Potential Near Miss Panel
+6. Investigation Status Panel
+7. Corrective Action / CAPA Snapshot Panel
+8. Incident Trend Snapshot Panel
+9. Incident Register Table
+10. Advanced Filters / Search
+11. Saved Views
+12. Bulk Actions
+13. Export / Report Actions
+14. Loading / Empty / Error / Permission States
+================================================== 1. INCIDENT DASHBOARD HEADER
+==================================================
+Header must show:
+• Title: Incident / Near Miss Register
+• Subtitle: Track incidents, near misses, investigations, RCA, actions, and process safety events
+• Current company/site selector if existing layout supports it
+• Total incidents
+• Open investigations
+• High potential near misses
+• PSM incidents
+• Overdue investigations
+• Open corrective actions
+• Button: Report Incident
+• Button: Import if supported
+• Button: Export Register
+• Button: Refresh
+• Last updated timestamp
+Header actions:
+• Report Incident → route to /incidents/new
+• Export Register → permission controlled
+• Refresh → reload dashboard/register data
+3\n\n\n--- PAGE 4 ---\nRules:
+• Hide unauthorized actions.
+• Disable actions with exact reason.
+• Header must be responsive.
+• Header must work in dark and light themes.
+================================================== 2. INCIDENT SUMMARY CARDS
+==================================================
+Use real backend values only.
+Required cards:
+• Total incidents
+• Open incidents
+• Closed incidents
+• Draft reports
+• New reports pending triage
+• Near misses
+• Unsafe conditions
+• Actual injury events
+• Environmental events
+• Asset/reliability events
+• Process safety incidents
+• API RP 754 Tier 1 events
+• API RP 754 Tier 2 events
+• API RP 754 Tier 3 events
+• API RP 754 Tier 4 events
+• High potential severity events
+• Fatality potential near misses
+• Major potential events
+• Overdue investigations
+• Investigations due this week
+• RCA required
+• RCA completed
+• Formal investigation team required
+• Open corrective/preventive actions
+• Overdue actions
+• MOC required
+• PSSR required
+• HAZOP/PHA review required
+• LOPA/SIL review required
+• Mechanical Integrity follow-up required
+• Regulatory reporting required
+• Repeat events
+• Ready for review
+4\n\n\n--- PAGE 5 ---\n• Reopened incidents
+Each card must show:
+• Count/status
+• Label
+• Icon
+• Risk/status color
+• Trend vs previous period if available
+• Tooltip/help text
+• Click-to-filter behavior
+Rules:
+• No fake/static counts.
+• Counts must respect company_id/site_id and user permissions.
+• Restricted incidents must be excluded or redacted based on permissions.
+• Summary card filters must update the register.
+================================================== 3. CRITICAL ATTENTION PANEL
+==================================================
+Show incidents requiring immediate management attention.
+Include:
+• Fatality / major injury potential
+• High potential near misses
+• Tier 1 / Tier 2 process safety events
+• Toxic release / fire / explosion events
+• Regulatory reporting deadline approaching
+• Overdue investigation
+• Overdue critical action
+• Open incident with high potential severity
+• Repeat event at same equipment/unit
+• Incident linked to failed IPL / SIS / PSV
+• Incident involving restricted chemical
+• Incident needing MOC/PSSR before restart
+• Incident with open shutdown/isolation status if available
+Fields:
+• Incident number
+• Title/short description
+• Site/unit/area
+• Event date/time
+• Actual severity
+• Potential severity
+5\n\n\n--- PAGE 6 ---\n• PSM flag
+• API RP 754 tier
+• Investigation status
+• Due date
+• Owner
+• Reason attention required
+• Action
+Actions:
+• Open incident
+• Assign owner
+• Create action
+• Escalate/notify if permission exists
+Rules:
+• Backend determines attention items.
+• Frontend displays only.
+• Attention reasons must be explicit.
+• Restricted events show redacted state.
+================================================== 4. PROCESS SAFETY / PSM EVENT PANEL
+==================================================
+Purpose: Separate process safety incidents from occupational safety incidents.
+Fields:
+• Total PSM incidents
+• Process Safety Events
+• Loss of Primary Containment events
+• API RP 754 Tier 1
+• API RP 754 Tier 2
+• API RP 754 Tier 3
+• API RP 754 Tier 4
+• Not determined
+• PSM classification pending review
+• Toxic release events
+• Fire/explosion events
+• Safeguard/IPL failure events
+• Operating envelope exceedance events
+Incident-level fields:
+• is_psm_incident
+• is_process_safety_event
+• pse_tier
+6\n\n\n--- PAGE 7 ---\n• lopc_status
+• released_material
+• released_quantity
+• threshold_quantity
+• threshold_exceeded
+• pse_classification_status
+• pse_classification_basis
+Rules:
+• Add PSM/PSE fields to data model.
+• API RP 754 tier classification must be configurable and reviewable.
+• Do not hardcode company-specific thresholds.
+• Use company/site chemical threshold configuration where available.
+• If threshold config missing, mark as Not Determined and require review.
+• PSM classification changes require audit/history.
+================================================== 5. POTENTIAL SEVERITY / HIGH-POTENTIAL
+NEAR MISS PANEL ==================================================
+Purpose: Prioritize near misses by what could reasonably have happened, not only actual outcome.
+Must distinguish:
+• Actual Severity = what actually happened
+• Potential Severity = what could reasonably have happened
+Examples:
+• Dropped tool hits nobody:
+• Actual Severity: Negligible
+• Potential Severity: Fatality
+• Investigation Priority: High
+Fields:
+• High potential near misses
+• Fatality potential events
+• Major injury potential events
+• Major process safety potential events
+• Actual low / potential high events
+• Investigation priority
+• Potential severity review pending
+Severity values should be configurable, but support:
+• Negligible
+• Minor
+7\n\n\n--- PAGE 8 ---\n• Moderate
+• Serious
+• Major
+• Fatality
+• Catastrophic
+Risk matrix fields:
+• Actual severity
+• Potential severity
+• Likelihood
+• Potential risk score
+• Investigation priority
+• Investigation level required
+Rules:
+• Potential severity must exist on incident record.
+• Near misses can have low actual severity and high potential severity.
+• Investigation priority must be driven by potential severity and risk potential.
+• High potential events require formal investigation team if company policy requires.
+• Severity matrix must be configurable by company/site.
+================================================== 6. INVESTIGATION STATUS PANEL
+==================================================
+Show investigation workflow health.
+Statuses:
+• Draft
+• Reported
+• Triage
+• Investigation Required
+• Investigation In Progress
+• RCA Required
+• RCA In Progress
+• Actions Assigned
+• Pending Review
+• Changes Requested
+• Approved
+• Closed
+• Reopened
+• Cancelled / Void
+Panel fields:
+• Open investigations
+8\n\n\n--- PAGE 9 ---\n• Pending triage
+• RCA required
+• RCA overdue
+• Investigation overdue
+• Pending review
+• Changes requested
+• Closed this month
+• Reopened incidents
+• Average investigation cycle time if available
+Register quick filters:
+• My investigations
+• Overdue
+• Due this week
+• Awaiting RCA
+• Awaiting review
+• High potential
+• PSM incidents
+• Tier 1/Tier 2
+• Regulatory reporting required
+Rules:
+• Status transitions must be backend controlled.
+• Register only displays workflow state.
+• Closed incidents read-only unless reopened with permission.
+================================================== 7. CORRECTIVE ACTION / CAPA SNAPSHOT
+PANEL ==================================================
+Use Universal Action Engine.
+Show:
+• Open actions
+• Overdue actions
+• Critical actions
+• Actions due this week
+• Actions awaiting verification
+• Actions linked to high potential events
+• Actions linked to PSM incidents
+• Actions requiring MOC
+• Actions requiring PSSR
+• Actions requiring HAZOP/LOPA review
+9\n\n\n--- PAGE 10 ---\nFields:
+• Incident number
+• Action number
+• Action title
+• Owner
+• Due date
+• Status
+• Priority
+• Blocking Yes/No
+• Source/root cause if available
+Rules:
+• Do not create duplicate action system.
+• Use Universal Action Engine.
+• Action counts/statuses come from backend integration.
+• Clicking action opens existing action drawer/page.
+================================================== 8. INCIDENT TREND SNAPSHOT PANEL
+==================================================
+Show trend analytics.
+Charts/cards:
+• Incidents by month
+• Near misses by month
+• PSM incidents by month
+• Actual severity distribution
+• Potential severity distribution
+• Incidents by site/unit/area
+• Incidents by event type
+• Incidents by classification
+• Incidents by root cause category if available
+• Repeat events by equipment/unit
+• Tier 1/Tier 2 trend if available
+Rules:
+• Use real backend aggregation.
+• No mock chart data.
+• Support empty states.
+• Respect permissions and restricted data.
+• Use accessible charts and dark/light compatible UI.
+================================================== 9. INCIDENT REGISTER TABLE
+==================================================
+10\n\n\n--- PAGE 11 ---\nThe register table is the main view.
+Required columns:
+• Incident number
+• Title / short description
+• Event type
+• Classification
+• PSM Incident
+• PSE Tier
+• Actual severity
+• Potential severity
+• Potential risk score
+• Investigation priority
+• Status
+• Site
+• Unit
+• Area
+• Location
+• Event date/time
+• Reported date/time
+• Reported by
+• Investigation owner
+• Due date
+• RCA status
+• Action count
+• Overdue actions
+• Regulatory reporting required
+• Linked records count
+• Evidence status
+• Last updated
+• Actions
+Event types:
+• Incident
+• Near Miss
+• Unsafe Condition
+• Process Upset
+• Loss of Containment
+• Spill
+• Release
+• Fire
+• Explosion
+• Injury
+• Illness
+• Exposure
+• Equipment Damage
+11\n\n\n--- PAGE 12 ---\n• Environmental Event
+• Security Event
+• Quality Event
+• Other
+Classification:
+• Occupational Safety
+• Process Safety
+• Environmental
+• Asset / Reliability
+• Security
+• Quality
+• Other
+PSM/PSE:
+• PSM Incident Yes/No
+• PSE Tier: Tier 1 / Tier 2 / Tier 3 / Tier 4 / Not Applicable / Not Determined
+Actions per row:
+• Open incident
+• Edit triage/classification if permission allows
+• Assign owner
+• Create action
+• Export summary if supported
+• Archive/void if permission allows
+Rules:
+• Server-side pagination.
+• Server-side sorting.
+• Server-side filtering.
+• Search must be backend-driven.
+• Restricted incidents show safe redacted row.
+• Closed incidents show locked/read-only badge.
+• Do not use mock data.
+================================================== 10. ADVANCED FILTERS / SEARCH
+==================================================
+Filters:
+• Date range
+• Site
+• Unit
+• Area
+• Location
+12\n\n\n--- PAGE 13 ---\n• Event type
+• Classification
+• PSM Incident Yes/No
+• PSE Tier
+• LOPC Yes/No
+• Actual severity
+• Potential severity
+• Potential risk score range
+• Investigation priority
+• Status
+• Investigation owner
+• Reported by
+• RCA required Yes/No
+• RCA status
+• Corrective action status
+• Overdue investigation Yes/No
+• Overdue actions Yes/No
+• Regulatory reporting required Yes/No
+• MOC required Yes/No
+• PSSR required Yes/No
+• HAZOP review required Yes/No
+• LOPA review required Yes/No
+• Mechanical Integrity follow-up required Yes/No
+• Equipment involved
+• Chemical involved
+• Contractor involved Yes/No
+• Injury involved Yes/No
+• Environmental impact Yes/No
+• Fire/explosion Yes/No
+• Repeat event Yes/No
+• Restricted/confidential Yes/No
+• Tags
+Search:
+• Incident number
+• Title
+• Description
+• Equipment tag
+• Chemical name/CAS
+• Location
+• Reporter
+• Owner
+• Root cause keyword if available
+• Action number
+• Linked record number
+• Notes/tags
+13\n\n\n--- PAGE 14 ---\nRules:
+• Filters must update URL query parameters if existing pattern supports it.
+• Filters must persist in saved views if saved.
+• Search must be debounced.
+• Backend validates all filters.
+================================================== 11. SAVED VIEWS
+==================================================
+Allow users to save common register views.
+Default views:
+• All incidents
+• My investigations
+• Pending triage
+• High potential near misses
+• PSM incidents
+• Tier 1 / Tier 2 PSE
+• Overdue investigations
+• Open actions
+• Ready for review
+• Closed incidents
+Fields:
+• View name
+• Filters
+• Columns
+• Sort
+• Visibility: Private / Team / Site / Company
+• Default Yes/No
+Rules:
+• Saved views require permission if shared.
+• Personal views belong to user.
+• Shared views respect company/site access.
+• Saved view changes create audit/history if policy requires.
+================================================== 12. BULK ACTIONS
+==================================================
+Bulk actions if permission allows:
+• Assign investigation owner
+• Update status
+14\n\n\n--- PAGE 15 ---\n• Update classification
+• Mark PSM review required
+• Mark RCA required
+• Create bulk action
+• Export selected
+• Archive selected
+• Add tag
+• Change investigation priority
+Rules:
+• Bulk actions require permission.
+• Bulk changes require confirmation.
+• Bulk status/classification changes require reason.
+• Bulk actions create audit log and incident history events.
+• Closed incidents cannot be bulk edited unless reopened/authorized.
+================================================== 13. EXPORT / REPORT ACTIONS
+==================================================
+Export options:
+• Export register CSV
+• Export register XLSX
+• Export PSM incident list
+• Export Tier 1/Tier 2 list
+• Export high potential near misses
+• Export overdue investigation list
+• Export action summary
+• Export filtered register
+Rules:
+• Export requires permission.
+• Export respects filters.
+• Export respects redaction/permissions.
+• Export action creates audit log and incident history event.
+• Do not expose restricted confidential incidents.
+================================================== 14. REQUIRED UI STATES
+==================================================
+Required states:
+• Loading
+• Empty register
+• No filter results
+• Error
+15\n\n\n--- PAGE 16 ---\n• Permission denied
+• Restricted/redacted records
+• Backend unavailable
+• Saving filters
+• Exporting
+• Export failed
+• Bulk action processing
+• Bulk action failed
+• Read-only locked records
+• Partial access
+• Refreshing
+Rules:
+• Every disabled action must show exact reason.
+• Errors must be user-readable.
+• Do not expose sensitive backend stack traces.
+• Mobile must use cards or horizontal table scroll.
+• Drawers/dialogs must be responsive.
+• Dark/light theme must be perfect.
+================================================== DATABASE REQUIREMENTS
+==================================================
+Create/update models if missing.
+incidents:
+• id
+• company_id
+• site_id
+• incident_number
+• title
+• short_description
+• event_type
+• classification
+• status
+• event_datetime
+• reported_datetime
+• reported_by
+• investigation_owner_id nullable
+• due_date nullable
+• site_area_id nullable
+• unit_id nullable
+• area_id nullable
+• location_text
+• actual_severity
+• potential_severity
+16\n\n\n--- PAGE 17 ---\n• likelihood nullable
+• potential_risk_score nullable
+• investigation_priority
+• investigation_level_required
+• is_psm_incident
+• is_process_safety_event
+• pse_tier
+• lopc_status
+• released_material_id nullable
+• released_quantity nullable
+• release_unit nullable
+• threshold_quantity nullable
+• threshold_exceeded nullable
+• release_duration nullable
+• fire_explosion_occurred
+• injury_occurred
+• environmental_impact
+• community_impact
+• regulatory_reporting_required
+• contractor_involved
+• equipment_involved
+• chemical_involved
+• rca_required
+• rca_status
+• formal_team_required
+• moc_required
+• pssr_required
+• hazop_review_required
+• lopa_review_required
+• mechanical_integrity_followup_required
+• evidence_status
+• action_status
+• linked_records_count
+• restricted
+• confidential
+• tags_json
+• created_by
+• updated_by
+• created_at
+• updated_at
+• closed_by nullable
+• closed_at nullable
+• reopened_by nullable
+• reopened_at nullable
+incident_history_events:
+• id
+17\n\n\n--- PAGE 18 ---\n• company_id
+• site_id
+• incident_id
+• event_number
+• event_type
+• event_category
+• event_title
+• event_description
+• related_record_type nullable
+• related_record_id nullable
+• actor_user_id nullable
+• actor_role nullable
+• severity
+• reason nullable
+• before_values_json nullable
+• after_values_json nullable
+• metadata_json nullable
+• source_system nullable
+• audit_log_id nullable
+• correlation_id nullable
+• created_at
+incident_register_saved_views:
+• id
+• company_id
+• site_id nullable
+• user_id
+• view_name
+• filters_json
+• columns_json
+• sort_json
+• visibility
+• default_view
+• created_at
+• updated_at
+incident_classification_reviews:
+• id
+• company_id
+• site_id
+• incident_id
+• review_type
+• previous_value_json
+• new_value_json
+• basis
+• reviewed_by
+18\n\n\n--- PAGE 19 ---\n• reviewed_at
+• status
+• created_at
+• updated_at
+incident_dashboard_metrics_cache if needed:
+• id
+• company_id
+• site_id
+• metric_key
+• metric_value_json
+• generated_at
+Rules:
+• All records require company_id/site_id where applicable.
+• No cross-company/site data leakage.
+• Restricted/confidential incidents require special permission.
+• History events are immutable.
+• Status/classification/severity changes create audit/history.
+• Closed incidents read-only unless reopened.
+• Data model must prepare for future detail tabs.
+================================================== BACKEND API REQUIREMENTS
+==================================================
+Main dashboard/register:
+• GET /incidents
+• GET /incidents/summary
+• GET /incidents/attention
+• GET /incidents/psm-events
+• GET /incidents/high-potential
+• GET /incidents/investigation-status
+• GET /incidents/action-snapshot
+• GET /incidents/trends
+• GET /incidents/register
+• GET /incidents/filters/context
+• GET /incidents/:id/register-summary
+Saved views:
+• GET /incidents/saved-views
+• POST /incidents/saved-views
+• PATCH /incidents/saved-views/:viewId
+• DELETE /incidents/saved-views/:viewId
+19\n\n\n--- PAGE 20 ---\nBulk/export:
+• POST /incidents/bulk-update
+• POST /incidents/bulk-assign
+• POST /incidents/bulk-create-action
+• GET /incidents/export
+• GET /incidents/export/psm-events
+• GET /incidents/export/high-potential
+• GET /incidents/export/overdue
+Context/search:
+• GET /incidents/context
+• GET /incidents/equipment-search
+• GET /incidents/chemical-search
+• GET /incidents/user-search
+API rules:
+• Enforce company_id/site_id.
+• Enforce permissions.
+• Enforce site/unit/area access.
+• All list endpoints support pagination, filtering, sorting, and search.
+• Export respects filters and permissions.
+• Restricted incidents are redacted or excluded based on permission.
+• Bulk mutations create audit/history.
+• All errors must be safe/user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+• incident-register.service.ts
+• incident-summary.service.ts
+• incident-attention.service.ts
+• incident-psm-classification.service.ts
+• incident-potential-severity.service.ts
+• incident-investigation-status.service.ts
+• incident-action-snapshot.service.ts
+• incident-trend.service.ts
+• incident-filter-context.service.ts
+• incident-saved-view.service.ts
+• incident-bulk-action.service.ts
+• incident-export.service.ts
+• incident-permission.service.ts
+• incident-history.service.ts
+20\n\n\n--- PAGE 21 ---\n• incident-audit-log-integration.service.ts
+• incident-global-search.service.ts
+• incident-universal-action-integration.service.ts
+• incident-equipment-integration.service.ts
+• incident-chemical-sds-integration.service.ts
+• incident-notification.service.ts
+Backend rules:
+• Backend calculates summary/attention/trends.
+• Backend determines investigation priority from actual severity, potential severity, PSM/PSE status,
+and company policy.
+• Backend supports API RP 754 tier field and classification workflow.
+• Backend does not hardcode company thresholds.
+• Backend uses configuration where available.
+• Backend logs all classification/severity/status changes.
+• Backend indexes safe incident metadata to Global Search.
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Create/update:
+Page:
+• app/(app)/incidents/page.tsx or existing route structure equivalent
+Main components:
+• features/incidents/components/register/IncidentDashboardPage.tsx
+• features/incidents/components/register/IncidentDashboardHeader.tsx
+• features/incidents/components/register/IncidentSummaryCards.tsx
+• features/incidents/components/register/CriticalAttentionPanel.tsx
+• features/incidents/components/register/PsmEventPanel.tsx
+• features/incidents/components/register/HighPotentialNearMissPanel.tsx
+• features/incidents/components/register/InvestigationStatusPanel.tsx
+• features/incidents/components/register/CorrectiveActionSnapshotPanel.tsx
+• features/incidents/components/register/IncidentTrendSnapshotPanel.tsx
+• features/incidents/components/register/IncidentRegisterTable.tsx
+• features/incidents/components/register/IncidentAdvancedFilters.tsx
+• features/incidents/components/register/IncidentSavedViews.tsx
+• features/incidents/components/register/IncidentBulkActions.tsx
+• features/incidents/components/register/IncidentExportActions.tsx
+Shared:
+• features/incidents/components/shared/IncidentStatusBadge.tsx
+21\n\n\n--- PAGE 22 ---\n• features/incidents/components/shared/ActualSeverityBadge.tsx
+• features/incidents/components/shared/PotentialSeverityBadge.tsx
+• features/incidents/components/shared/PsmIncidentBadge.tsx
+• features/incidents/components/shared/PseTierBadge.tsx
+• features/incidents/components/shared/InvestigationPriorityBadge.tsx
+• features/incidents/components/shared/IncidentClassificationBadge.tsx
+Hooks:
+• features/incidents/hooks/useIncidentSummary.ts
+• features/incidents/hooks/useIncidentRegister.ts
+• features/incidents/hooks/useIncidentAttention.ts
+• features/incidents/hooks/useIncidentPsmEvents.ts
+• features/incidents/hooks/useHighPotentialIncidents.ts
+• features/incidents/hooks/useIncidentTrends.ts
+• features/incidents/hooks/useIncidentFilters.ts
+• features/incidents/hooks/useIncidentSavedViews.ts
+• features/incidents/hooks/useIncidentBulkActions.ts
+• features/incidents/hooks/useIncidentExport.ts
+Services:
+• features/incidents/services/incident-register.service.ts
+• features/incidents/services/incident-summary.service.ts
+• features/incidents/services/incident-filters.service.ts
+• features/incidents/services/incident-saved-views.service.ts
+• features/incidents/services/incident-export.service.ts
+Schemas:
+• features/incidents/schemas/incident-register-filter.schema.ts
+• features/incidents/schemas/incident-bulk-action.schema.ts
+• features/incidents/schemas/incident-saved-view.schema.ts
+Types:
+• features/incidents/types/incident.types.ts
+• features/incidents/types/incident-register.types.ts
+• features/incidents/types/incident-summary.types.ts
+• features/incidents/types/incident-filter.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• incidents.view
+• incidents.register.view
+22\n\n\n--- PAGE 23 ---\n• incidents.summary.view
+• incidents.create
+• incidents.edit
+• incidents.assign
+• incidents.bulk_update
+• incidents.export
+• incidents.restricted.view
+• incidents.confidential.view
+• incidents.psm.view
+• incidents.psm.classify
+• incidents.severity.review
+• incidents.saved_views.create
+• incidents.saved_views.share
+• incidents.actions.create
+• incidents.history.view
+Rules:
+• Backend enforces permissions.
+• Frontend hides unauthorized actions.
+• Restricted/confidential incident access requires special permission.
+• PSM/PSE classification requires permission.
+• Severity review requires permission.
+• Bulk updates require permission.
+• Export requires permission.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This phase is complete only when:
+✓ /incidents route exists
+✓ Incident Dashboard Header works
+✓ Incident Summary Cards work with real backend data
+✓ Critical Attention Panel works
+✓ PSM Event Panel works
+✓ Potential Severity / High-Potential Near Miss Panel works
+✓ Investigation Status Panel works
+✓ Corrective Action Snapshot Panel uses Universal Action Engine
+23\n\n\n--- PAGE 24 ---\n✓ Trend Snapshot Panel uses real backend aggregations
+✓ Incident Register Table works with server-side pagination/filter/sort/search
+✓ Advanced Filters work
+✓ Saved Views work
+✓ Bulk Actions work with permissions/audit/history
+✓ Export actions work with permissions/redaction
+✓ Actual Severity and Potential Severity exist
+✓ PSM Incident and API RP 754 tier fields exist
+✓ Restricted/confidential incident redaction works
+✓ company_id/site_id isolation works
+✓ Permissions work
+✓ Audit logs and incident history events work
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. Incident Dashboard/Register built 2. Files reviewed 3. Files modified/created 4. Database
+changes 5. APIs added/fixed 6. Backend services added/fixed 7. Summary cards completed 8. Attention
+panels completed 9. PSM/PSE panel completed 10. Potential Severity panel completed 11. Register table
+completed 12. Filters/search/saved views completed 13. Bulk/export actions completed 14. Permissions
+connected 15. Audit/history connected 16. Dark/light responsive UI completed 17. Tests added 18. Bugs
+fixed 19. Remaining gaps, if any
+24

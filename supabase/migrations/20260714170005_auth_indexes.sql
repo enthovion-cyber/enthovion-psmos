@@ -1,0 +1,10 @@
+create index if not exists idx_auth_security_events_user on public.auth_security_events (user_id, created_at desc);
+create index if not exists idx_auth_security_events_company on public.auth_security_events (company_id, created_at desc);
+create index if not exists idx_auth_security_events_event_type on public.auth_security_events (event_type, created_at desc);
+create index if not exists idx_auth_oauth_accounts_user on public.auth_oauth_accounts (user_id);
+create index if not exists idx_auth_oauth_accounts_provider_user on public.auth_oauth_accounts (provider, provider_user_id);
+create index if not exists idx_auth_oauth_accounts_provider_email on public.auth_oauth_accounts (provider_email);
+create index if not exists idx_auth_session_states_user on public.auth_session_states (user_id);
+create index if not exists idx_auth_password_events_user on public.auth_password_events (user_id, created_at desc);
+create index if not exists idx_auth_rate_limit_email_hash on public.auth_rate_limit_events (email_or_user_hash, event_type, created_at desc);
+create index if not exists idx_auth_rate_limit_ip on public.auth_rate_limit_events (ip_address, event_type, created_at desc);

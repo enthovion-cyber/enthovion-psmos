@@ -1,0 +1,3 @@
+import { buttonSecondary } from '../shared/IncidentTabPrimitives';
+import { LinkedRecordSimplePanel } from './LinkedRecordsPrimitives';
+export function LinkedRecordsReviewPanel({ review, onRequest, onApprove, onReject }: any) { return <div className="grid gap-3"><LinkedRecordSimplePanel title="Linked Records Review Panel" data={{ status: review?.status, rows: review ? [review] : [] }} empty="No linked records review request exists." /><div className="flex flex-wrap gap-2"><button className={buttonSecondary} onClick={onRequest}>Request Review</button><button className={buttonSecondary} onClick={onApprove}>Approve</button><button className={buttonSecondary} onClick={onReject}>Reject</button></div></div>; }

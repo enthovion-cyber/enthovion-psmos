@@ -1,0 +1,3 @@
+import { Download } from 'lucide-react';
+import { Panel } from './Panel';
+export function IncidentExportActions({ canExport, busy, onExport }: { canExport?:boolean; busy:boolean; onExport:(kind:string)=>void }) { const kinds=['register','psm','highPotential','overdue']; return <Panel title="Export / Report Actions" subtitle="Exports respect current filters, permissions, and redaction rules."><div className="flex flex-wrap gap-2">{kinds.map(k=><button key={k} disabled={!canExport || busy} title={canExport?`Export ${k}`:'Missing incidents.export'} onClick={()=>onExport(k)} className="lopa-button-secondary disabled:opacity-50"><Download size={14}/>{k}</button>)}</div></Panel>; }

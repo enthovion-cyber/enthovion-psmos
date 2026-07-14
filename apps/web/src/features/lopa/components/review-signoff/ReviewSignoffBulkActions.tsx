@@ -1,0 +1,2 @@
+import { BellRing, RefreshCw } from 'lucide-react';
+export function ReviewSignoffBulkActions({ onRemind, onRefresh, busy }: { onRemind: () => void; onRefresh: () => void; busy?: boolean }) { return <div className="flex flex-wrap gap-2"><button disabled={busy} onClick={onRemind} className="lopa-button-secondary"><BellRing size={14} /> Remind pending reviewers</button><button disabled={busy} onClick={onRefresh} className="lopa-button-secondary"><RefreshCw size={14} /> Refresh readiness</button></div>; }

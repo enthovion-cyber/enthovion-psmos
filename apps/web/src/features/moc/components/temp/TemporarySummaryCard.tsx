@@ -1,0 +1,1 @@
+export { TemporarySummaryCard } from './TempEmergencyComponents';

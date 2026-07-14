@@ -1,0 +1,1 @@
+export type LopaEvidenceMapping = { id:string; attachment_id?:string; document_link_id?:string; related_tab:string; related_record_type?:string; related_record_id?:string; evidence_purpose:string; required:boolean; blocking_if_missing:boolean; notes?:string };

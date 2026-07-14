@@ -1,0 +1,40 @@
+.prisma/
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds and caches
+.next/
+dist/
+build/
+coverage/
+.turbo/
+.vercel/
+
+# runtime/generated files
+.local/
+apps/api/.uploads/
+apps/api/uploads/
+uploads/
+storage/uploads/
+storage/tmp/
+tmp/
+
+# local env/secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

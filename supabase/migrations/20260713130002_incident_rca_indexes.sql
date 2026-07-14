@@ -1,0 +1,14 @@
+create index if not exists idx_incident_rca_incident on public.incident_rca(tenant_id, incident_id);
+create index if not exists idx_incident_rca_status on public.incident_rca(tenant_id, site_id, rca_status);
+create index if not exists idx_incident_rca_causal_factors_incident on public.incident_rca_causal_factors(tenant_id, incident_id);
+create index if not exists idx_incident_rca_causal_factors_status on public.incident_rca_causal_factors(tenant_id, incident_id, status);
+create index if not exists idx_incident_rca_five_why_incident on public.incident_rca_five_why_chains(tenant_id, incident_id);
+create index if not exists idx_incident_rca_five_why_steps_chain on public.incident_rca_five_why_steps(tenant_id, chain_id);
+create index if not exists idx_incident_rca_fishbone_incident on public.incident_rca_fishbone_items(tenant_id, incident_id);
+create index if not exists idx_incident_rca_tree_nodes_incident on public.incident_rca_cause_tree_nodes(tenant_id, incident_id);
+create index if not exists idx_incident_rca_tree_edges_incident on public.incident_rca_cause_tree_edges(tenant_id, incident_id);
+create index if not exists idx_incident_rca_root_causes_incident on public.incident_rca_root_causes(tenant_id, incident_id);
+create index if not exists idx_incident_rca_root_causes_review on public.incident_rca_root_causes(tenant_id, incident_id, review_status);
+create index if not exists idx_incident_rca_systemic_incident on public.incident_rca_systemic_weaknesses(tenant_id, incident_id);
+create index if not exists idx_incident_rca_hypotheses_incident on public.incident_rca_hypotheses(tenant_id, incident_id);
+create index if not exists idx_incident_rca_reviews_incident on public.incident_rca_reviews(tenant_id, incident_id);

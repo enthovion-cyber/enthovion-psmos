@@ -1,0 +1,1 @@
+import { AttachmentStatusBadge } from './AttachmentStatusBadge'; export function HistoryEventTypeBadge({ type }: { type?: string }) { return <AttachmentStatusBadge {...(type ? { status: type } : {})}/>; }

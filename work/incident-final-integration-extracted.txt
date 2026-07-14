@@ -1,0 +1,647 @@
+PDF: C:\Users\Jibrael Khan\Downloads\Incident Module Final Integration.pdf
+Pages: 16
+
+
+--- PAGE 1 ---
+You are the senior full-stack engineer, QA engineer, security reviewer, and process safety product architect
+for PSM OS.
+Task: Perform Final Incident Module Integration + Cross-Check + Production Hardening for the
+complete Incident / Near Miss / Accident Investigation module.
+This is not a new feature tab. This is the final end-to-end integration, bug fixing, PDF/spec cross-check,
+production hardening, permissions check, database check, workflow check, and UI/UX polish phase.
+Read all attached Incident module PDFs/specifications carefully before coding. Cross-check the current
+implementation against every attached PDF/spec line by line. Fix every missing field, card, panel, table,
+drawer, API, DB model, SQL migration, permission, validation rule, workflow rule, status rule, audit/history
+hook, integration, UI state, dark/light theme issue, responsive issue, test gap, and production bug. Do not
+miss a single thing.
+================================================== MODULE SCOPE
+==================================================
+Fully verify, integrate, and harden the complete Incident module:
+1. Incident Dashboard / Register
+2. Create Incident Wizard
+3. Incident Detail Shell + Overview
+4. Event Details & Classification
+5. Potential Severity / Risk Matrix
+6. People / Injury / Exposure
+7. Asset / Equipment / Chemical
+8. Timeline
+9. Evidence / Attachments
+10. Immediate Actions
+11. Investigation Team
+12. Root Cause Analysis
+13. Barrier / Safeguard Failure
+14. Corrective / Preventive Actions
+15. Linked Records
+16. Notifications / Regulatory Reporting
+17. Review & Approval
+18. Lessons Learned
+19. History
+20. Final Report / Export
+Do not build unrelated modules. Only fix Incident module integration and production readiness.
+1
+
+
+--- PAGE 2 ---
+================================================== ABSOLUTE RULES
+==================================================
+• No mock data.
+• No static fake counts.
+• No frontend-only business logic for safety-critical rules.
+• No duplicate action system.
+• No duplicate notification system.
+• No duplicate workflow system.
+• No duplicate e-signature system.
+• No duplicate document/export system.
+• Use existing Universal Action Engine, Notification Center, Workflow Engine, Universal E-Signature,
+Document Control, Storage, IAM/RBAC, Audit Log, Global Search, Equipment Registry, Chemical/SDS,
+PTW, MOC, PSSR, MI, HAZOP/PHA, LOPA/SIL where already available.
+• Backend must be source of truth for readiness, permissions, status transitions, blockers, risk
+calculations, review gates, closure, reporting, redaction, and audit/history.
+• Every mutation must create audit log and incident history event.
+• Every record must enforce company_id and site_id isolation.
+• Closed/approved/locked records must be read-only unless reopened by authorized permission.
+• Restricted, confidential, and medical data must be redacted without permission.
+• Every disabled button must show exact reason.
+• Dark/light theme must be polished.
+• Desktop, tablet, and mobile must be fully responsive.
+• Components must remain separated by tab folders. Do not merge everything into one large page.
+================================================== CROSS-CHECK ALL ROUTES
+==================================================
+Verify routes:
+• /incidents
+• /incidents/new
+• /incidents/:id
+Verify every tab loads correctly from /incidents/:id .
+Verify:
+• Deep links to tabs work.
+• Refresh preserves current tab.
+• Invalid incident ID shows safe error.
+• Unauthorized incident shows permission-denied state.
+• Closed incident shows read-only state.
+• Mobile tab navigation works.
+• Breadcrumbs, title, status badges, actions, and layout are consistent.
+================================================== DASHBOARD / REGISTER INTEGRATION
+==================================================
+2
+
+
+--- PAGE 3 ---
+Verify Incident Dashboard/Register receives real updated data from all tabs.
+Dashboard/Register must reflect:
+• Incident status
+• Investigation priority
+• Actual severity
+• Potential severity
+• PSM/PSE/API tier
+• RCA status
+• Barrier analysis status
+• CAPA status
+• Overdue actions
+• Regulatory/reporting status
+• Review/approval status
+• Lessons status
+• Final report status
+• Open blockers
+• Missing required data
+• Closure readiness
+• Last updated
+Fix:
+• Broken filters
+• Wrong counts
+• Fake counts
+• Missing columns
+• Bad sorting
+• Broken pagination
+• Slow queries
+• Export issues
+• Permission leakage
+• Mobile table/card layout
+================================================== CREATE INCIDENT WIZARD INTEGRATION
+==================================================
+Verify wizard creates complete valid incident records.
+Check:
+• Draft save
+• Final submit
+• Incident number generation
+• Company/site isolation
+• Reporter data
+• Event type/classification
+3
+
+
+--- PAGE 4 ---
+• Location/time
+• People/injury
+• Equipment/chemical
+• Actual severity
+• Potential severity
+• PSM/API classification
+• Immediate actions
+• Initial evidence
+• Investigation priority
+• Required follow-ups
+• Audit/history creation
+• Redirect to detail page
+Fix:
+• Missing validation
+• Incomplete payloads
+• Duplicate incidents
+• Bad draft recovery
+• Broken attachment upload
+• Broken submit state
+• Missing audit/history
+================================================== INCIDENT DETAIL SHELL + OVERVIEW
+INTEGRATION ==================================================
+Verify Overview is the live summary of the whole investigation.
+Overview must update from:
+• Event Details
+• Severity Matrix
+• People/Injury
+• Asset/Chemical
+• Timeline
+• Evidence
+• Immediate Actions
+• Investigation Team
+• RCA
+• Barrier Failure
+• CAPA
+• Linked Records
+• Notifications/Reporting
+• Review & Approval
+• Lessons Learned
+• History
+• Final Report
+4
+
+
+--- PAGE 5 ---
+Fix:
+• Wrong summary cards
+• Missing blockers
+• Missing readiness status
+• Missing quick links
+• Wrong badge status
+• Broken tab navigation
+• Stale cache
+• Missing refresh after mutations
+• Permission/redaction issues
+================================================== TAB-BY-TAB FINAL CROSS-CHECK
+==================================================
+For each tab, check:
+• All PDF/spec panels exist
+• All fields exist
+• All tables have required columns
+• All drawers/dialogs work
+• All APIs are connected
+• All hooks/services/schemas/types exist
+• All SQL migrations exist
+• All permissions are enforced
+• All read-only/restricted states work
+• All audit/history events are created
+• All Overview/Register updates happen
+• All dark/light/mobile states work
+• All tests exist or are added
+Tabs to cross-check:
+1. Event Details & Classification
+2. Potential Severity / Risk Matrix
+3. People / Injury / Exposure
+4. Asset / Equipment / Chemical
+5. Timeline
+6. Evidence / Attachments
+7. Immediate Actions
+8. Investigation Team
+9. Root Cause Analysis
+10. Barrier / Safeguard Failure
+11. Corrective / Preventive Actions
+12. Linked Records
+13. Notifications / Regulatory Reporting
+14. Review & Approval
+15. Lessons Learned
+5
+
+
+--- PAGE 6 ---
+16. History
+17. Final Report / Export
+Do not skip any tab.
+================================================== WORKFLOW + STATUS HARDENING
+==================================================
+Verify full lifecycle:
+• Draft
+• Reported
+• Triage / Classification
+• Investigation Required
+• Investigation In Progress
+• RCA In Progress
+• CAPA In Progress
+• Review Requested
+• Approved
+• Closure Requested
+• Closed
+• Reopened
+Backend must enforce:
+• Who can move status
+• Which readiness gates are required
+• Which blockers stop transition
+• Which overrides are allowed
+• Which changes require reason
+• Which changes trigger reapproval
+• Which changes create notifications
+• Which changes lock/unlock data
+Fix:
+• Invalid transitions
+• Missing transition reasons
+• Missing reapproval trigger
+• Closure allowed with blockers
+• Reopen without reason
+• Status mismatch between dashboard/detail
+================================================== READINESS + BLOCKER ENGINE CHECK
+==================================================
+6
+
+
+--- PAGE 7 ---
+Verify backend readiness for:
+• Incident overview readiness
+• Event details readiness
+• Severity readiness
+• People/injury readiness
+• Asset/chemical readiness
+• Timeline readiness
+• Evidence readiness
+• Immediate action readiness
+• Team readiness
+• RCA readiness
+• Barrier readiness
+• CAPA readiness
+• Linked records readiness
+• Reporting readiness
+• Review/approval readiness
+• Lessons readiness
+• Final report readiness
+• Closure readiness
+Each readiness result must include:
+• Status
+• Missing item
+• Source tab
+• Blocking Yes/No
+• Owner if available
+• Due date if available
+• Deep link to source section
+• Safe user-readable reason
+Fix:
+• Frontend-only readiness
+• Missing blockers
+• Wrong blockers
+• Readiness not updating
+• Closure not blocked
+• Missing links to source tab
+================================================== PERMISSIONS + RBAC HARDENING
+==================================================
+Audit all Incident permissions.
+7
+
+
+--- PAGE 8 ---
+Verify:
+• Dashboard view/create/export
+• Detail view/edit
+• Each tab view/edit/delete/review/approve/reject permissions
+• Medical fields permissions
+• Restricted/confidential permissions
+• Evidence upload/download permissions
+• CAPA create/verify permissions
+• Notification/reporting permissions
+• E-signature permission
+• Closure/reopen permission
+• Final report export/download/publish permissions
+• History/audit export permission
+Backend must enforce all permissions. Frontend must hide unauthorized controls. Disabled controls must
+show exact reason. API must never return restricted data to unauthorized users.
+Fix:
+• Frontend-only permission checks
+• Leaking medical/restricted data
+• Unauthorized mutation allowed
+• Hidden button but API still open
+• Missing permission constants
+• Missing permission seeds
+================================================== COMPANY/SITE ISOLATION + RLS CHECK
+==================================================
+Verify every Incident table has:
+• company_id
+• site_id where applicable
+• Correct indexes
+• Correct foreign keys
+• Correct constraints
+• Correct RLS policies
+• No cross-company leakage
+• No cross-site leakage
+• Safe access to shared/global config
+Check all SQL migrations:
+• Tables
+• Indexes
+• RLS policies
+• Constraints
+8
+
+
+--- PAGE 9 ---
+• Foreign keys
+• Audit triggers if used
+• Rollback/down migrations if project pattern supports it
+Fix:
+• Missing company_id
+• Missing site_id
+• Missing RLS
+• Bad indexes
+• Bad FK relationships
+• Unsafe joins
+• Slow queries
+• Duplicate migrations
+• Broken migration order
+================================================== AUDIT LOG + INCIDENT HISTORY HARDENING
+==================================================
+Every mutation must create: 1. Audit log entry 2. Incident history event
+Check mutations for:
+• Create incident
+• Edit incident
+• Delete/archive/supersede records
+• Status transitions
+• Classification changes
+• Severity changes
+• Evidence upload/link/delete/version
+• Immediate action changes
+• Team assignment changes
+• RCA changes
+• Barrier changes
+• CAPA changes
+• Linked record changes
+• Notification/reporting changes
+• Review decisions
+• E-signatures
+• Lessons distribution
+• Final report export/download/publish
+• Closure/reopen
+History must show:
+• Before value
+• After value
+• Changed by
+9
+
+
+--- PAGE 10 ---
+• Changed at
+• Reason
+• Related record
+• Audit reference
+Fix:
+• Missing audit entries
+• Missing history entries
+• Fake history
+• Editable history
+• Missing before/after values
+• Sensitive data not redacted
+================================================== INTEGRATION HARDENING
+==================================================
+Verify integrations:
+Universal Action Engine:
+• CAPA uses it
+• Immediate action conversion uses it
+• Follow-up actions use it
+• Linked actions show real status
+Notification Center:
+• Internal notifications use it
+• Review requests use it
+• CAPA reminders use it
+• Reporting deadline escalation uses it
+• Lessons distribution uses it
+Workflow Engine:
+• Review & Approval uses it
+• Approval workflow versioning/snapshot works
+Universal E-Signature:
+• Review/closure signatures use it
+• Signature snapshot works
+Document Control:
+• Procedures/SDS/report publishing works
+• Final report official publish works
+10
+
+
+--- PAGE 11 ---
+Storage:
+• Evidence uploads/downloads/previews work
+• Report exports stored correctly
+• Evidence package works
+Global Search:
+• Linked records lookup works
+• Similar incident/lesson lookup works
+Equipment/Chemical/PTW/MOC/PSSR/MI/HAZOP/LOPA:
+• Linked records work
+• Follow-up requirements work
+• No duplicate module logic
+================================================== UI / UX PRODUCTION POLISH
+==================================================
+Fix UI across all Incident pages:
+• Professional enterprise design
+• Consistent spacing
+• Consistent cards
+• Consistent badges
+• Consistent tables
+• Consistent drawers
+• Consistent empty states
+• Consistent error states
+• Consistent loading skeletons
+• Consistent warning banners
+• Clean charts/infographics
+• No overflowing tables
+• No broken mobile layout
+• No unreadable dark mode text
+• No low-contrast badges
+• No hidden buttons on mobile
+• No broken sticky headers
+• No duplicated section titles
+• No messy single-file components
+Responsive:
+• Desktop: clean multi-column layout
+• Tablet: stacked sections
+• Mobile: stacked cards, full-screen drawers, usable tabs
+11
+
+
+--- PAGE 12 ---
+Dark/light:
+• Check every tab manually
+• Fix all color/contrast issues
+• No hardcoded unreadable colors
+================================================== PERFORMANCE HARDENING
+==================================================
+Fix performance issues:
+• Server-side pagination for large registers
+• Server-side filters/search where needed
+• Avoid loading all evidence/history/CAPA at once
+• Avoid N+1 backend queries
+• Add missing indexes
+• Use proper cache invalidation after mutation
+• Use debounced search
+• Use loading skeletons
+• Use safe error boundaries
+• Avoid unnecessary re-renders
+• Optimize report preview/export jobs
+Large data cases to test:
+• 500+ incidents
+• 100+ evidence files
+• 1000+ history events
+• 100+ CAPA/actions
+• 50+ linked records
+• Large final report export
+================================================== SECURITY HARDENING
+==================================================
+Check:
+• Authentication required
+• Authorization enforced server-side
+• RLS works
+• File upload validation
+• File preview/download authorization
+• Export/download authorization
+• Redaction enforced backend-side
+• No sensitive data in logs
+• No unsafe raw SQL
+• No XSS in rich text/comments
+• No insecure direct object reference
+12
+
+
+--- PAGE 13 ---
+• No cross-tenant access
+• No unrestricted public URLs for evidence/reports
+• Safe error messages
+• Rate limiting/retry protection if project supports it
+Fix all security gaps.
+================================================== FINAL REPORT / EXPORT HARDENING
+==================================================
+Verify Final Report pulls real data from every tab.
+Check:
+• Readiness gate
+• Template selection
+• Section builder
+• Source snapshots
+• Redaction preview
+• Report preview
+• PDF export
+• DOCX export if supported
+• Excel/CSV indexes
+• Evidence package
+• Version history
+• Mark official
+• Publish to Document Control
+• Download/export audit log
+• Permissions/redaction
+• Failed export recovery
+Fix:
+• Missing sections
+• Wrong source data
+• Leaked restricted/medical data
+• Broken export
+• Fake preview
+• Missing audit/history
+• Official report overwrite instead of version/supersede
+================================================== TESTING REQUIREMENTS
+==================================================
+Add or fix tests.
+13
+
+
+--- PAGE 14 ---
+Backend tests:
+• Create incident
+• Update each tab
+• Permissions
+• RLS/company/site isolation
+• Readiness/blockers
+• Status transitions
+• Closure/reopen
+• Audit/history
+• Evidence upload/link
+• RCA
+• Barrier
+• CAPA
+• Linked Records
+• Notifications/Reporting
+• Review/Approval
+• Lessons
+• Final Report export
+• Redaction
+Frontend tests:
+• Dashboard/Register
+• Create wizard
+• Detail shell
+• Every tab renders
+• Every drawer opens/saves
+• Permission states
+• Read-only state
+• Restricted/medical hidden state
+• Empty/error/loading states
+• Dark/light theme
+• Responsive layout
+E2E test: 1. Create incident. 2. Complete classification. 3. Add people/equipment/chemical. 4. Add timeline/
+evidence. 5. Add immediate actions. 6. Assign investigation team. 7. Complete RCA. 8. Add barrier failure. 9.
+Generate CAPA. 10. Link records. 11. Run reporting determination. 12. Request review. 13. Approve/e-sign.
+14. Add lessons learned. 15. Check history. 16. Generate final report. 17. Publish official report. 18. Close
+incident. 19. Reopen incident with reason. 20. Confirm audit/history and dashboard updates.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This task is complete only when:
+✓ All attached PDFs/specs reviewed
+14
+
+
+--- PAGE 15 ---
+✓ Entire Incident module cross-checked line by line
+✓ All missing fields/panels/APIs/DB/SQL/permissions fixed
+✓ No mock/static data remains
+✓ Dashboard/Register updates from all tabs
+✓ Overview updates from all tabs
+✓ All tabs load and save correctly
+✓ All readiness/blocker gates work
+✓ Status workflow works
+✓ Closure is blocked when required data is missing
+✓ Reopen/reapproval works
+✓ Universal Action Engine integration works
+✓ Notification Center integration works
+✓ Workflow Engine integration works
+✓ Universal E-Signature integration works
+✓ Document Control/report publishing works
+✓ Evidence/storage works
+✓ Linked Records integrations work
+✓ company_id/site_id isolation works
+✓ RLS policies work
+✓ Permissions work backend and frontend
+✓ Restricted/confidential/medical redaction works
+✓ Audit log works
+15
+
+
+--- PAGE 16 ---
+✓ Incident history works
+✓ Final Report / Export works
+✓ Dark/light theme is polished
+✓ Desktop/tablet/mobile UI works
+✓ Performance issues fixed
+✓ Security issues fixed
+✓ Backend tests added/fixed
+✓ Frontend tests added/fixed
+✓ E2E test added/fixed
+✓ Production build passes
+✓ TypeScript passes
+✓ Lint passes
+✓ Migrations run cleanly
+Final output: 1. PDFs/specs reviewed 2. Current Incident implementation reviewed 3. Cross-check gaps
+found 4. Gaps fixed 5. Files modified/created 6. SQL migrations fixed 7. API fixes completed 8. Backend
+service fixes completed 9. Frontend component fixes completed 10. Dashboard/Register integration
+completed 11. Overview integration completed 12. All tabs integrated 13. Readiness/blocker engine
+completed 14. Status workflow completed 15. Permissions/RBAC fixed 16. RLS/company-site isolation
+verified 17. Audit/history verified 18. External integrations verified 19. Final Report/Export verified 20. Dark/
+light UI polished 21. Responsive UI fixed 22. Performance hardening completed 23. Security hardening
+completed 24. Backend tests added/fixed 25. Frontend tests added/fixed 26. E2E tests added/fixed 27.
+Production build/typecheck/lint passed 28. Remaining issues, if any, with exact file paths and reasons
+16

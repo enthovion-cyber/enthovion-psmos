@@ -1,0 +1,4 @@
+import { OverviewPanelShell, SnapshotGrid } from './OverviewPanelShell';
+export function EventSnapshotPanel({ data }: { data?: Record<string, any> }) {
+  return <OverviewPanelShell title="Event Snapshot Panel" subtitle="Core event data from the incident record and create wizard."><SnapshotGrid data={data} fields={[['title','Incident title'],['shortDescription','Short description'],['eventType','Event type'],['classification','Classification'],['eventDateTime','Event date/time'],['reportedDateTime','Reported date/time'],['exactLocation','Exact location'],['operatingMode','Operating mode'],['shift','Shift'],['workgroup','Workgroup / crew'],['ptwInvolved','PTW involved'],['mocInvolved','MOC involved'],['pssrInvolved','PSSR involved'],['emergencyResponseActivated','Emergency response'],['operationStopped','Operation stopped'],['areaBarricaded','Area barricaded'],['equipmentIsolated','Equipment isolated']]} /></OverviewPanelShell>;
+}

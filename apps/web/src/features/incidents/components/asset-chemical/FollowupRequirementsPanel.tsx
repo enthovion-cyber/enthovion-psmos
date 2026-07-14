@@ -1,0 +1,2 @@
+import { TabPanel } from '../shared/IncidentTabPrimitives';
+export function FollowupRequirementsPanel({ rows }: any) { return <TabPanel title="Follow-up Requirements Panel">{!rows?.length ? <p className="text-xs text-slate-500">No follow-up requirements were returned.</p> : <div className="grid gap-2 sm:grid-cols-2">{rows.map((row: any) => <div key={row.label} className="rounded-lg border border-slate-200 p-2 text-xs dark:border-cyan-300/10"><b>{row.label}</b><div className="text-slate-500">{row.required ? 'Required' : 'Not required'}</div></div>)}</div>}</TabPanel>; }

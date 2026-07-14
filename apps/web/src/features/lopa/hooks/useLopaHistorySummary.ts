@@ -1,0 +1,1 @@
+import { useQuery } from '@tanstack/react-query'; import { lopaHistoryService } from '../services/lopa-history.service'; export function useLopaHistorySummary(id:string){return useQuery({queryKey:['lopa','history-summary',id],queryFn:()=>lopaHistoryService.get(id).then(data=>data.summary),enabled:!!id});}

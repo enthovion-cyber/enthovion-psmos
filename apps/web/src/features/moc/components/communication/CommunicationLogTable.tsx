@@ -1,0 +1,1 @@
+export { CommunicationLogTable } from './CommunicationComponents';

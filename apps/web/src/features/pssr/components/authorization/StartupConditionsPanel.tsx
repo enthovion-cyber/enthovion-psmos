@@ -1,0 +1,5 @@
+'use client';
+import { Badge, EmptyState, PSSRCard } from '../pssr-ui';
+export function StartupConditionsPanel({ conditions, onAdd }: { conditions: any[]; onAdd: () => void }) {
+  return <PSSRCard title="Startup Conditions Panel" action={<button onClick={onAdd} className="rounded-md border border-blue-300/20 px-3 py-2 text-xs font-black text-blue-100">Add Condition</button>}>{conditions.length ? <div className="grid gap-2 md:grid-cols-2">{conditions.map((item) => <div key={item.id} className="rounded-lg border border-white/10 bg-slate-950/30 p-3"><div className="flex justify-between gap-3"><p className="font-bold text-white">{item.condition_type}</p><Badge tone={item.status === 'Closed' ? 'green' : item.required ? 'amber' : 'blue'}>{item.status}</Badge></div><p className="mt-1 text-sm text-slate-400">{item.description}</p><p className="mt-2 text-xs text-slate-500">Owner {item.owner_id ?? '-'} · Due {item.due_date ?? '-'}</p></div>)}</div> : <EmptyState title="No startup conditions" detail="Operating restrictions, temporary controls, monitoring requirements, and control room notes appear here." />}</PSSRCard>;
+}

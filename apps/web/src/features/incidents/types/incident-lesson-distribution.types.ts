@@ -1,0 +1,1 @@
+export type IncidentLessonDistribution = { id: string; lesson_id?: string; audience_json?: any[]; channel?: string; distribution_status?: string; distributed_by?: string; distributed_at?: string; notification_id?: string };

@@ -1,0 +1,1820 @@
+
+--- PAGE 1 ---
+
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Lessons Learned tab and History tab.
+Route:
+/incidents/:id
+Tabs: 1. Lessons Learned 2. History
+Read the attached PDF/specification carefully before coding. Build both tabs exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive UI issue. Do not miss a
+single thing.
+Keep this implementation detailed but not unnecessarily oversized. Build only what belongs to these two
+tabs.
+================================================== SCOPE
+==================================================
+Work only on:
+Lessons Learned
+History
+Do not build yet:
+Final Report / Export
+Use existing modules/data:
+Incident Dashboard/Register
+Incident Detail Shell
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+--- PAGE 2 ---
+
+Linked Records
+Notifications / Regulatory Reporting
+Review & Approval
+Document Control
+SOP/Procedure Library
+Training system if available
+Universal Action Engine
+Notification Center
+IAM/RBAC
+Audit Log
+Incident History
+Global Search
+Company/site configuration
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one large tab file.
+Tab containers must be clean only:
+features/incidents/components/detail/LessonsLearnedTab.tsx
+features/incidents/components/detail/IncidentHistoryTab.tsx
+Create separate folders:
+features/incidents/components/lessons-learned/
+features/incidents/components/history/
+features/incidents/components/shared/
+Also separate:
+hooks
+services
+schemas
+types
+SQL migrations
+No messy single-file implementation.
+================================================== CORE PURPOSE
+==================================================
+These tabs must answer:
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+--- PAGE 3 ---
+
+Lessons Learned:
+What lessons were learned from this incident?
+Which root causes, barrier failures, CAPA, evidence, and reviews support each lesson?
+Which lessons apply to this site, other sites, equipment types, chemicals, procedures, roles, or tasks?
+Which lessons require communication, training, procedure update, MOC, HAZOP/LOPA update, MI
+action, or management-system improvement?
+Has lesson sharing been approved, distributed, acknowledged, and verified?
+History:
+What changed during the incident lifecycle?
+Who changed it, when, why, and what was the before/after value?
+Which approvals, reviews, signatures, status transitions, notifications, evidence uploads, CAPA
+changes, and closure/reopen events occurred?
+Is there a complete audit trail for compliance and investigation defensibility?
+================================================== TAB 1 — LESSONS LEARNED
+==================================================
+Required sections:
+Lessons Learned Header
+Lessons Summary Cards
+Lessons Readiness / Source Panel
+Lessons Learned Register
+Add/Edit Lesson Drawer
+Lesson Source Mapping Panel
+Applicability / Replication Panel
+Communication & Distribution Panel
+Training / Procedure / Document Update Panel
+Lesson Acknowledgement Panel
+Effectiveness / Verification Panel
+Lessons Review Panel
+Lessons Change History Panel
+Lessons Readiness / Missing Data Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. LESSONS LEARNED HEADER
+==================================================
+Show:
+Incident number
+Incident title
+Incident status
+Actual severity
+Potential severity
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+• 
+• 
+• 
+• 
+• 
+3
+
+--- PAGE 4 ---
+
+PSM/PSE/API tier
+Lessons required Yes/No
+Total lessons
+Approved lessons
+Lessons pending review
+Lessons requiring training
+Lessons requiring procedure/document update
+Lessons distributed
+Acknowledgement status
+Verification status
+Review status
+Last updated
+Actions:
+Add Lesson
+Generate Lessons from RCA/CAPA
+Share / Distribute Lessons
+Create Training Action
+Create Procedure Update Action
+Request Review
+Export Lessons
+Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents are read-only unless reopened.
+Restricted/confidential/medical data must be redacted.
+================================================== 2. LESSONS SUMMARY CARDS
+==================================================
+Cards:
+Lessons required
+Total lessons
+Draft lessons
+Approved lessons
+Lessons pending review
+Site-applicable lessons
+Cross-site lessons
+Training required
+Procedure update required
+Document update required
+Actions generated
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+--- PAGE 5 ---
+
+Distributed lessons
+Acknowledgements pending
+Verification pending
+Review status
+Ready for final report
+Rules:
+No fake counts.
+Values come from backend.
+Cards update Overview and Dashboard/Register .
+================================================== 3. LESSONS READINESS / SOURCE PANEL
+==================================================
+Backend-generated source checklist:
+RCA complete
+Root causes identified
+Barrier failures reviewed
+CAPA created/linked
+Review & Approval status checked
+Significant findings available
+Lessons required decision complete
+Sensitive data redaction checked
+Distribution audience determined
+Review complete if required
+Missing items must link to the source tab/section.
+================================================== 4. LESSONS LEARNED REGISTER
+==================================================
+Columns:
+Lesson number
+Lesson title
+Lesson type
+Source
+Applicability
+Severity relevance
+Requires training
+Requires procedure update
+Requires action
+Owner
+Due date
+Review status
+Distribution status
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+--- PAGE 6 ---
+
+Acknowledgement status
+Verification status
+Actions
+Lesson types:
+Process safety lesson
+Occupational safety lesson
+Environmental lesson
+Equipment/MI lesson
+Chemical/SDS lesson
+Procedure/PTW lesson
+MOC/PSSR lesson
+HAZOP/LOPA lesson
+Emergency response lesson
+Training/competency lesson
+Management-system lesson
+Contractor management lesson
+Other
+Statuses:
+Draft
+In Review
+Approved
+Changes Requested
+Distributed
+Acknowledgement Pending
+Verified
+Archived
+Actions:
+View details
+Edit
+Link source
+Create action
+Distribute
+Request acknowledgement
+Verify effectiveness
+Archive/supersede with permission and reason
+================================================== 5. ADD / EDIT LESSON DRAWER
+==================================================
+Fields:
+Lesson title
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+--- PAGE 7 ---
+
+Lesson statement
+Lesson type
+Source type
+Linked RCA root cause
+Linked barrier failure
+Linked CAPA
+Linked evidence
+Linked incident finding
+Applicability scope
+Target audience
+Recommended action
+Training required Yes/No
+Procedure/document update required Yes/No
+Communication required Yes/No
+Owner
+Due date
+Review status
+Notes
+Change reason
+Rules:
+Title, statement, type, source, applicability, and owner are required unless config says otherwise.
+Sensitive data must be redacted before distribution.
+Drawer must be responsive and full-screen on mobile.
+Save creates audit/history.
+================================================== 6. LESSON SOURCE MAPPING PANEL
+==================================================
+Map lessons to:
+RCA root causes
+Causal factors
+Barrier/safeguard failures
+CAPA actions
+Evidence
+Timeline events
+People/injury findings
+Equipment/chemical findings
+Regulatory/reporting findings
+Review/approval comments
+Fields:
+Source item
+Source type
+Lesson linked
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+--- PAGE 8 ---
+
+Coverage status
+Justification if no lesson
+Action
+Rules:
+Important root causes and high-potential findings should have lessons or approved justification.
+Mapping/unmapping creates audit/history.
+================================================== 7. APPLICABILITY / REPLICATION PANEL
+==================================================
+Fields:
+Applicable site
+Applicable unit/area
+Applicable equipment type
+Applicable chemical/material
+Applicable job/task
+Applicable role/group
+Cross-site applicability
+Similar prior incidents
+Replication risk
+Notes
+Rules:
+Use real company/site/equipment/chemical/user data.
+Cross-site lessons require permission/config.
+Similar incidents can use Global Search/history if available.
+================================================== 8. COMMUNICATION & DISTRIBUTION PANEL
+==================================================
+Fields:
+Distribution required
+Audience
+Distribution channel
+Message
+Distributed by
+Distributed at
+Notification status
+Failed recipients
+Notes
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+--- PAGE 9 ---
+
+Actions:
+Send distribution
+Resend failed
+Export communication list
+Create action
+Rules:
+Use Notification Center .
+Do not create duplicate notification system.
+Restricted/medical data must be redacted.
+Distribution creates audit/history.
+================================================== 9. TRAINING / PROCEDURE / DOCUMENT
+UPDATE PANEL ==================================================
+Fields:
+Training required
+Training audience
+Training action linked
+Procedure update required
+Document/procedure linked
+SDS/SOP update required
+MOC required
+Owner
+Due date
+Status
+Rules:
+Use Universal Action Engine for actions.
+Use Document Control for procedure/SOP/SDS links.
+Do not duplicate training/document/action systems.
+Missing required updates create readiness blocker .
+================================================== 10. LESSON ACKNOWLEDGEMENT PANEL
+==================================================
+Fields:
+Acknowledgement required
+Audience
+Total recipients
+Acknowledged count
+Pending count
+Overdue count
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+--- PAGE 10 ---
+
+Acknowledgement due date
+Reminder status
+Notes
+Rules:
+Acknowledgement uses Notification Center or training system if available.
+Overdue acknowledgements create blocker if configured.
+Counts must respect permissions.
+================================================== 11. EFFECTIVENESS / VERIFICATION PANEL
+==================================================
+Fields:
+Verification required
+Verification method
+Verification owner
+Verification due date
+Verification evidence
+Effective Yes/No/Not Determined
+Verified by
+Verified at
+Rework required
+Notes
+Rules:
+Verification creates audit/history.
+Ineffective lesson communication requires rework/action.
+Verification status feeds final report readiness.
+================================================== 12. LESSONS REVIEW PANEL
+==================================================
+Fields:
+Review required
+Reviewer
+Due date
+Review status
+Review comments
+Approved by
+Approved at
+Rejection reason
+Rework required
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+--- PAGE 11 ---
+
+Actions:
+Request review
+Approve
+Reject
+Reopen
+Create action
+Rules:
+Approval requires readiness checks passed.
+Review decisions require permission and comment.
+Audit/history required.
+================================================== TAB 2 — HISTORY
+==================================================
+Required sections:
+History Header
+History Summary Cards
+Full Incident Timeline / Audit Trail
+Event Type Filter Panel
+Status Transition History Panel
+Field Change Diff Panel
+Review / Approval / E-Signature History Panel
+Evidence / Attachment History Panel
+CAPA / Action History Panel
+Notification / Reporting History Panel
+User Activity / Access History Panel
+Export History Log Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. HISTORY HEADER
+==================================================
+Show:
+Incident number
+Incident title
+Incident status
+Total history events
+Last activity
+Last changed by
+Status changes count
+Approval events count
+Evidence events count
+CAPA/action events count
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+--- PAGE 12 ---
+
+Restricted events hidden count
+Audit completeness status
+Actions:
+Refresh History
+Export History Log
+Export Audit Trail
+Filter Events
+View Diff
+Rules:
+Use real incident history/audit data.
+History is read-only.
+Restricted/medical values must be redacted.
+No fake history events.
+================================================== 2. HISTORY SUMMARY CARDS
+==================================================
+Cards:
+Total events
+Status transitions
+Field changes
+Reviews/approvals
+E-signatures
+Evidence events
+CAPA/action events
+Notifications/reporting events
+User access events if available
+Restricted events hidden
+Last activity
+Audit completeness
+================================================== 3. FULL INCIDENT TIMELINE / AUDIT TRAIL
+==================================================
+Show chronological audit trail:
+Event date/time
+Event type
+Module/tab
+Title/summary
+Changed by
+Role
+Before/after summary
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+--- PAGE 13 ---
+
+Reason/comment
+Related record
+Audit reference
+Event types:
+Created
+Updated
+Deleted/archived
+Status changed
+Assignment changed
+Review requested
+Approved
+Rejected
+E-signed
+Evidence uploaded
+CAPA created/updated
+Notification sent
+Regulatory report submitted
+Closure/reopen
+Permission/access event if available
+Rules:
+Server-side pagination/search/filter .
+History events immutable.
+Redact sensitive values.
+No edit/delete actions except system-admin audit policies if existing.
+================================================== 4. EVENT TYPE FILTER PANEL
+==================================================
+Filters:
+Date range
+User
+Module/tab
+Event type
+Severity
+Record type
+Restricted/visible
+Approval/e-signature
+Evidence
+CAPA/action
+Notifications/reporting
+Closure/reopen
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+
+--- PAGE 14 ---
+
+Rules:
+Filters are server-side.
+Export must respect filters and permissions.
+================================================== 5. STATUS TRANSITION HISTORY PANEL
+==================================================
+Show:
+Previous status
+New status
+Changed by
+Changed at
+Reason
+Workflow step
+Approval reference
+Rules:
+Status changes must match incident lifecycle.
+Closure/reopen events must be clearly highlighted.
+================================================== 6. FIELD CHANGE DIFF PANEL
+==================================================
+Show selected history event diff:
+Field name
+Previous value
+New value
+Changed by
+Changed at
+Reason
+Rules:
+Redact restricted/medical values.
+Support structured diff for JSON fields where practical.
+No fake diff data.
+================================================== 7. REVIEW / APPROVAL / E-SIGNATURE
+HISTORY PANEL ==================================================
+Show:
+Reviewer/signer
+Decision
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+
+--- PAGE 15 ---
+
+Signature status
+Signature meaning
+Signed at
+Workflow step
+Comment
+Audit reference
+Rules:
+Use Workflow Engine and Universal E-Signature data.
+Redact restricted comments if needed.
+================================================== 8. EVIDENCE / ATTACHMENT HISTORY PANEL
+==================================================
+Show:
+Evidence uploaded
+Evidence replaced/versioned
+Evidence downloaded/previewed if audit policy supports
+Evidence archived/restored
+Evidence mapping changed
+User
+Time
+Related evidence
+Rules:
+Respect evidence permissions.
+Restricted evidence events redacted.
+================================================== 9. CAPA / ACTION HISTORY PANEL
+==================================================
+Show:
+Action created
+Owner changed
+Due date changed
+Status changed
+Evidence submitted
+Effectiveness verified
+Escalated
+Closed/reopened
+Rules:
+Use Universal Action Engine events.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+
+--- PAGE 16 ---
+
+Link to action where permission allows.
+================================================== 10. NOTIFICATION / REPORTING HISTORY
+PANEL ==================================================
+Show:
+Notification sent/failed/acknowledged
+Report generated
+Report submitted
+Report acknowledged/rejected
+Deadline/escalation event
+Rules:
+Restricted/legal/medical content redacted.
+================================================== 11. USER ACTIVITY / ACCESS HISTORY PANEL
+==================================================
+Show if audit policy supports:
+Viewed record
+Downloaded evidence
+Exported report
+Accessed restricted data
+User
+Time
+IP/device if available and permitted
+Rules:
+Only show if existing audit system captures it.
+Do not invent access logs.
+Enforce permission.
+================================================== 12. EXPORT HISTORY LOG PANEL
+==================================================
+Export options:
+Full history log
+Filtered history
+Audit trail
+Approval/e-signature history
+Evidence history
+CAPA/action history
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+
+--- PAGE 17 ---
+
+Rules:
+Export respects permissions/redaction.
+Export creates audit/history event.
+Use existing export/storage/document system where available.
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+supabase/migrations/<timestamp>_incident_lessons_learned_tables.sql
+supabase/migrations/<timestamp>_incident_lessons_learned_rls_policies.sql
+supabase/migrations/<timestamp>_incident_lessons_learned_indexes.sql
+supabase/migrations/<timestamp>_incident_history_indexes.sql
+supabase/migrations/<timestamp>_incident_history_rls_policies.sql
+Add/fix tables:
+incident_lessons
+id
+company_id
+site_id
+incident_id
+lesson_number
+title
+lesson_statement
+lesson_type
+source_type
+applicability_scope
+target_audience_json
+training_required
+procedure_update_required
+communication_required
+owner_id
+due_date
+review_status
+distribution_status
+acknowledgement_status
+verification_status
+notes
+created_by
+updated_by
+created_at
+updated_at
+archived_at
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+
+--- PAGE 18 ---
+
+incident_lesson_source_links
+id
+company_id
+site_id
+incident_id
+lesson_id
+source_type
+source_id
+source_title_snapshot
+coverage_status
+justification_if_no_lesson
+created_by
+created_at
+incident_lesson_distributions
+id
+company_id
+site_id
+incident_id
+lesson_id
+audience_json
+channel
+message_snapshot
+distribution_status
+distributed_by
+distributed_at
+notification_id
+created_by
+updated_by
+created_at
+updated_at
+incident_lesson_acknowledgements
+id
+company_id
+site_id
+incident_id
+lesson_id
+recipient_user_id
+acknowledgement_status
+acknowledged_at
+overdue
+reminder_sent_at
+created_by
+updated_by
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+
+--- PAGE 19 ---
+
+created_at
+updated_at
+incident_lesson_reviews
+id
+company_id
+site_id
+incident_id
+status
+reviewer_id
+due_date
+comments
+approved_by
+approved_at
+rejected_by
+rejected_at
+rejection_reason
+rework_required
+created_by
+updated_by
+created_at
+updated_at
+Also update/use:
+incident_history_events
+Audit Log tables
+SQL rules:
+Include indexes, foreign keys, constraints, RLS/company-site isolation.
+History tables must remain immutable.
+Include rollback/down migration if current project supports it.
+Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Lessons Learned:
+GET /incidents/:id/lessons
+GET /incidents/:id/lessons/summary
+GET /incidents/:id/lessons/readiness
+GET /incidents/:id/lessons/register
+POST /incidents/:id/lessons
+GET /incidents/:id/lessons/:lessonId
+PATCH /incidents/:id/lessons/:lessonId
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+
+--- PAGE 20 ---
+
+DELETE /incidents/:id/lessons/:lessonId
+POST /incidents/:id/lessons/generate-from-rca-capa
+POST /incidents/:id/lessons/:lessonId/link-source
+GET /incidents/:id/lessons/source-mapping
+GET /incidents/:id/lessons/applicability
+POST /incidents/:id/lessons/:lessonId/distribute
+GET /incidents/:id/lessons/acknowledgements
+POST /incidents/:id/lessons/:lessonId/verify
+GET /incidents/:id/lessons/review
+POST /incidents/:id/lessons/request-review
+POST /incidents/:id/lessons/approve-review
+POST /incidents/:id/lessons/reject-review
+GET /incidents/:id/lessons/history
+GET /incidents/:id/lessons/context
+History:
+GET /incidents/:id/history
+GET /incidents/:id/history/summary
+GET /incidents/:id/history/events
+GET /incidents/:id/history/status-transitions
+GET /incidents/:id/history/diff/:eventId
+GET /incidents/:id/history/review-approval
+GET /incidents/:id/history/evidence
+GET /incidents/:id/history/actions
+GET /incidents/:id/history/notifications-reporting
+GET /incidents/:id/history/access
+GET /incidents/:id/history/export
+GET /incidents/:id/history/context
+API rules:
+Enforce company_id/site_id.
+Enforce permissions.
+Enforce restricted/confidential/medical redaction.
+Backend generates summary, readiness, source mapping, acknowledgement status, and history
+filters.
+All mutations create audit log and incident history.
+History APIs are read-only except export/audit event.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-lessons.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+
+--- PAGE 21 ---
+
+incident-lessons-summary.service.ts
+incident-lessons-generation.service.ts
+incident-lesson-source-mapping.service.ts
+incident-lesson-applicability.service.ts
+incident-lesson-distribution.service.ts
+incident-lesson-acknowledgement.service.ts
+incident-lesson-verification.service.ts
+incident-lesson-review.service.ts
+incident-lesson-readiness.service.ts
+incident-history-timeline.service.ts
+incident-history-summary.service.ts
+incident-history-diff.service.ts
+incident-history-export.service.ts
+incident-audit-log-integration.service.ts
+incident-notification.service.ts
+incident-document-control-integration.service.ts
+incident-universal-action-integration.service.ts
+incident-permission.service.ts
+incident-global-search.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tabs:
+features/incidents/components/detail/LessonsLearnedTab.tsx
+features/incidents/components/detail/IncidentHistoryTab.tsx
+Lessons components:
+features/incidents/components/lessons-learned/LessonsLearnedHeader.tsx
+features/incidents/components/lessons-learned/LessonsSummaryCards.tsx
+features/incidents/components/lessons-learned/LessonsSourceReadinessPanel.tsx
+features/incidents/components/lessons-learned/LessonsRegister.tsx
+features/incidents/components/lessons-learned/AddEditLessonDrawer.tsx
+features/incidents/components/lessons-learned/LessonSourceMappingPanel.tsx
+features/incidents/components/lessons-learned/
+ApplicabilityReplicationPanel.tsx
+features/incidents/components/lessons-learned/
+CommunicationDistributionPanel.tsx
+features/incidents/components/lessons-learned/
+TrainingProcedureDocumentUpdatePanel.tsx
+features/incidents/components/lessons-learned/LessonAcknowledgementPanel.tsx
+features/incidents/components/lessons-learned/
+LessonEffectivenessVerificationPanel.tsx
+features/incidents/components/lessons-learned/LessonsReviewPanel.tsx
+features/incidents/components/lessons-learned/LessonsChangeHistoryPanel.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+
+--- PAGE 22 ---
+
+features/incidents/components/lessons-learned/LessonsReadinessPanel.tsx
+History components:
+features/incidents/components/history/HistoryHeader.tsx
+features/incidents/components/history/HistorySummaryCards.tsx
+features/incidents/components/history/FullIncidentTimelineAuditTrail.tsx
+features/incidents/components/history/HistoryFilterPanel.tsx
+features/incidents/components/history/StatusTransitionHistoryPanel.tsx
+features/incidents/components/history/FieldChangeDiffPanel.tsx
+features/incidents/components/history/ReviewApprovalSignatureHistoryPanel.tsx
+features/incidents/components/history/EvidenceAttachmentHistoryPanel.tsx
+features/incidents/components/history/CapaActionHistoryPanel.tsx
+features/incidents/components/history/NotificationReportingHistoryPanel.tsx
+features/incidents/components/history/UserActivityAccessHistoryPanel.tsx
+features/incidents/components/history/ExportHistoryLogPanel.tsx
+Shared:
+features/incidents/components/shared/LessonTypeBadge.tsx
+features/incidents/components/shared/LessonStatusBadge.tsx
+features/incidents/components/shared/DistributionStatusBadge.tsx
+features/incidents/components/shared/AcknowledgementStatusBadge.tsx
+features/incidents/components/shared/HistoryEventTypeBadge.tsx
+features/incidents/components/shared/ReviewStatusBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentLessons.ts
+features/incidents/hooks/useIncidentLessonsSummary.ts
+features/incidents/hooks/useIncidentLessonsReadiness.ts
+features/incidents/hooks/useIncidentLessonDistribution.ts
+features/incidents/hooks/useIncidentLessonAcknowledgements.ts
+features/incidents/hooks/useIncidentHistory.ts
+features/incidents/hooks/useIncidentHistorySummary.ts
+features/incidents/hooks/useIncidentHistoryEvents.ts
+features/incidents/hooks/useIncidentHistoryDiff.ts
+Services:
+features/incidents/services/incident-lessons.service.ts
+features/incidents/services/incident-lesson-distribution.service.ts
+features/incidents/services/incident-lesson-review.service.ts
+features/incidents/services/incident-history.service.ts
+features/incidents/services/incident-history-export.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+
+--- PAGE 23 ---
+
+Schemas:
+features/incidents/schemas/incident-lesson.schema.ts
+features/incidents/schemas/incident-lesson-source-link.schema.ts
+features/incidents/schemas/incident-lesson-distribution.schema.ts
+features/incidents/schemas/incident-lesson-review.schema.ts
+features/incidents/schemas/incident-history-filter.schema.ts
+Types:
+features/incidents/types/incident-lesson.types.ts
+features/incidents/types/incident-lesson-distribution.types.ts
+features/incidents/types/incident-history.types.ts
+features/incidents/types/incident-history-diff.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.lessons.view
+incidents.lessons.create
+incidents.lessons.edit
+incidents.lessons.delete
+incidents.lessons.generate
+incidents.lessons.distribute
+incidents.lessons.verify
+incidents.lessons.review.request
+incidents.lessons.review.approve
+incidents.lessons.review.reject
+incidents.history.view
+incidents.history.export
+incidents.audit_trail.view
+incidents.access_history.view
+incidents.medical_fields.view
+incidents.restricted.view
+incidents.confidential.view
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized controls.
+Disabled controls show exact reason.
+History export and restricted access require permission.
+================================================== REQUIRED STATES
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+23
+
+--- PAGE 24 ---
+
+Implement:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Medical data hidden
+Read-only closed
+Lessons not required
+Lessons required but missing
+Distribution pending
+Acknowledgement overdue
+Verification pending
+Review requested
+Review approved
+Review rejected
+No history found
+History export running
+History export failed
+Audit data unavailable
+Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+Nice, clean, professional enterprise UI.
+Use cards, badges, tables, drawers, timeline/audit trail, diff viewer , readiness checklist, warning
+banners, distribution panels, and mini summaries.
+All UI must use real backend data only.
+No mock/static data.
+Dark/light theme must be polished.
+Desktop: clean multi-column layout.
+Tablet/mobile: stacked cards and full-screen drawers.
+Every disabled button must show exact reason.
+Every panel must be easy to edit/debug because it is separated into its own file.
+================================================== TESTING
+==================================================
+Add tests for:
+Fetch Lessons Learned tab
+Generate lessons from RCA/CAPA
+Add/edit/delete lesson
+Link lesson source
+Distribution/acknowledgement
+Training/procedure/document update actions
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+24
+
+--- PAGE 25 ---
+
+Verify lesson effectiveness
+Request/approve/reject lesson review
+Fetch History tab
+Filter history events
+View status transitions
+View field diff
+View approval/e-signature history
+View evidence/action/notification history
+Export history log
+Enforce permissions
+Enforce company_id/site_id isolation
+Redact restricted/confidential/medical data
+Create audit log
+Create incident history event
+Update Overview/Register
+Dark/light UI
+Responsive layout
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Lessons Learned tab exists
+✓ History tab exists
+✓ Both tabs use real backend data only
+✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ Lessons register works
+✓ Add/Edit Lesson drawer works
+✓ Lesson source mapping works
+✓ Applicability/replication works
+✓ Distribution/acknowledgement works
+✓ Training/procedure/document update links work
+✓ Lesson verification/review/readiness works
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+25
+
+--- PAGE 26 ---
+
+✓ History audit trail works
+✓ Filters and diff viewer work
+✓ Status transition history works
+✓ Approval/e-signature history works
+✓ Evidence/CAPA/notification history works
+✓ History export works
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. Lessons Learned tab completed 11. History tab completed 12.
+Lesson generation/distribution/acknowledgement completed 13. History audit trail/diff/export completed
+14. Permissions connected 15. Audit/history connected 16. Overview/Register updates connected 17. Dark/
+light responsive UI completed 18. Tests added/fixed 19. Remaining gaps, if any
+26

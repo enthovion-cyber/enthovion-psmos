@@ -1,0 +1,42 @@
+export type HazopSession = {
+  id: string;
+  session_number: number;
+  title: string;
+  session_type?: string | null;
+  description?: string | null;
+  session_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  location?: string | null;
+  meeting_link?: string | null;
+  facilitator_id?: string | null;
+  scribe_id?: string | null;
+  planned_node_ids?: string[];
+  agenda?: string | null;
+  status: string;
+  attendance_status?: string;
+  minutes_status?: string;
+  actions_status?: string;
+  facilitator?: any;
+  scribe?: any;
+  plannedNodes?: any[];
+  attendance?: any[];
+  minutes?: any[];
+  decisions?: any[];
+  actionLinks?: any[];
+  history?: any[];
+  openActions?: number;
+};
+
+export type HazopSessionFilters = {
+  search?: string;
+  status?: string;
+  sessionType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  facilitatorId?: string;
+  nodeId?: string;
+  attendanceIncomplete?: string;
+  minutesMissing?: string;
+  openActions?: string;
+};

@@ -1,0 +1,1633 @@
+
+
+===== PAGE 1 =====
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Review & Approval tab.
+Route:
+/incidents/:id
+Tab:
+Review & Approval
+Read the attached PDF/specification carefully before coding. Build this tab exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive UI issue. Do not miss a
+single thing.
+Keep this implementation detailed but not unnecessarily oversized. Build only what belongs to this tab.
+================================================== SCOPE
+==================================================
+Work only on:
+Review & Approval
+Do not build yet:
+Lessons Learned
+History
+Final Report / Export
+Use existing modules/data:
+Incident Dashboard/Register
+Incident Detail Shell
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+Investigation Team
+Root Cause Analysis
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+===== PAGE 2 =====
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+Linked Records
+Notifications / Regulatory Reporting
+Universal E-Signature
+Workflow Engine
+Universal Action Engine
+Notification Center
+Document Control
+IAM/RBAC
+Audit Log
+Incident History
+Global Search
+Company/site approval configuration
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+Important:
+Do not create a duplicate workflow system.
+Review and approval must use the existing Workflow Engine and Universal E-Signature where
+available.
+Backend is the source of truth for readiness, approval steps, blockers, status transitions, and closure
+rules.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one large tab file.
+Tab container must be clean only:
+features/incidents/components/detail/ReviewApprovalTab.tsx
+Create separate folder:
+features/incidents/components/review-approval/
+Shared badges/components:
+features/incidents/components/shared/
+Also separate:
+hooks
+services
+schemas
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+===== PAGE 3 =====
+types
+SQL migrations
+No messy single-file implementation.
+================================================== CORE PURPOSE
+==================================================
+This tab must answer:
+Is the incident investigation ready for formal review?
+Are all required investigation sections complete?
+Are there unresolved blockers, missing evidence, open actions, overdue CAPA, missing regulatory
+reports, or incomplete RCA?
+Who must review and approve the incident?
+Which approval workflow applies based on severity, potential severity, PSM/PSE tier , regulatory
+reporting, injury, fatality, chemical release, barrier failure, and company/site rules?
+Has each reviewer approved, rejected, requested changes, or signed electronically?
+What comments, decisions, and signatures exist?
+Can the incident be closed?
+If not, why exactly?
+Is closure supported by audit trail and required approvals?
+================================================== REQUIRED SECTIONS
+==================================================
+Build these panels:
+Review & Approval Header
+Summary Cards
+Investigation Readiness Gate Panel
+Section Completion Checklist Panel
+Approval Workflow Panel
+Reviewers / Approvers Register
+Add/Edit Reviewer Drawer
+Review Comments & Decision Log Panel
+E-Signature Panel
+Blockers / Open Items Panel
+Change Request / Rework Panel
+Closure Decision Panel
+Reopen / Reapproval Control Panel
+Review & Approval Change History Panel
+Review & Approval Readiness Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. REVIEW & APPROVAL HEADER
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+3
+
+===== PAGE 4 =====
+Show:
+Incident number
+Incident title
+Incident status
+Actual severity
+Potential severity
+PSM/PSE/API tier
+Investigation priority
+Review status
+Approval workflow status
+Required approvals count
+Completed approvals count
+Pending approvals count
+Rejected / changes requested count
+Open blockers count
+Ready for closure Yes/No
+Last updated
+Actions:
+Run Readiness Check
+Start Review Workflow
+Request Approval
+Add Reviewer
+Request Changes
+Approve
+Reject
+E-Sign
+Close Incident
+Reopen Incident
+Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents are read-only unless reopened.
+Restricted/confidential/medical data must be redacted.
+Approval/closure must be blocked if backend readiness fails.
+================================================== 2. SUMMARY CARDS
+==================================================
+Cards:
+Review status
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+===== PAGE 5 =====
+Workflow status
+Sections complete
+Sections incomplete
+Open blockers
+Missing evidence
+Open RCA items
+Open CAPA actions
+Overdue CAPA
+Regulatory reports pending
+Required approvals
+Pending approvals
+E-signatures complete
+Changes requested
+Ready for closure
+Final closure status
+Rules:
+No fake counts.
+Values come from backend.
+Cards update Overview and Dashboard/Register .
+================================================== 3. INVESTIGATION READINESS GATE PANEL
+==================================================
+Backend-generated readiness gate from all prior tabs.
+Check:
+Event Details complete
+Severity/Risk Matrix complete
+People/Injury complete if applicable
+Asset/Equipment/Chemical complete if applicable
+Timeline complete
+Evidence complete
+Immediate Actions complete
+Investigation Team complete
+RCA complete if required
+Barrier/Safeguard analysis complete if required
+CAPA created/linked and critical actions resolved
+Linked Records complete
+Notifications/Regulatory Reporting complete if required
+Audit/history available
+Required reviews complete
+No critical unresolved blockers
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+===== PAGE 6 =====
+Fields:
+Gate item
+Source tab
+Status
+Blocking Yes/No
+Missing item
+Owner
+Due date
+Action link
+Rules:
+Backend generates readiness.
+Missing items must deep-link to source tab/section.
+Closure cannot proceed if blocking items remain unless authorized override is configured.
+Override requires permission, reason, and audit/history.
+================================================== 4. SECTION COMPLETION CHECKLIST PANEL
+==================================================
+Show each incident tab/section with:
+Section name
+Required Yes/No
+Completion percentage
+Readiness status
+Last updated
+Owner
+Open blockers
+Action
+Sections:
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+Linked Records
+Notifications / Regulatory Reporting
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+===== PAGE 7 =====
+Rules:
+Use backend readiness from each section.
+Do not calculate fake frontend completion.
+Clicking a row opens the related tab.
+================================================== 5. APPROVAL WORKFLOW PANEL
+==================================================
+Show approval workflow generated from company/site configuration.
+Fields:
+Workflow name
+Workflow version
+Trigger basis
+Required approval levels
+Current step
+Step owner
+Step status
+Due date
+Escalation status
+Workflow started by
+Workflow started at
+Workflow completed at
+Notes
+Workflow triggers:
+Potential severity
+Actual severity
+PSM/PSE/API tier
+Fatality/hospitalization
+Chemical release/LOPC
+Environmental/community impact
+Regulatory reporting
+High-potential near miss
+Barrier/IPL/SIF failure
+Company/site policy
+Rules:
+Use existing Workflow Engine.
+Do not hardcode approval workflow.
+Workflow must be versioned/snapshotted at start.
+Changes to workflow after start require permission and reason.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+===== PAGE 8 =====
+================================================== 6. REVIEWERS / APPROVERS REGISTER
+==================================================
+Columns:
+Reviewer/approver
+Role
+Department
+Approval level
+Required Yes/No
+Status
+Decision
+Comments
+Due date
+Signed Yes/No
+Signed at
+Escalation status
+Actions
+Roles:
+Investigation Lead
+HSE Manager
+Process Safety Manager
+Operations Manager
+Maintenance/MI Manager
+Engineering Manager
+Environmental Representative
+HR/Medical Reviewer
+Site Manager
+Corporate Reviewer
+Regulatory/Compliance Reviewer
+Legal/Insurance Reviewer
+Other
+Statuses:
+Not Started
+Pending
+In Review
+Approved
+Rejected
+Changes Requested
+Delegated
+Escalated
+Skipped by authorized override
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+===== PAGE 9 =====
+Actions:
+Send request
+Approve
+Reject
+Request changes
+Delegate
+Escalate
+E-sign
+View comments
+================================================== 7. ADD / EDIT REVIEWER DRAWER
+==================================================
+Fields:
+User/reviewer
+Role
+Approval level
+Required Yes/No
+Due date
+Reason for adding
+Delegation allowed Yes/No
+E-signature required Yes/No
+Notification message
+Notes
+Change reason
+Rules:
+User lookup must use IAM/users/contacts.
+Adding/removing required approver requires permission and reason.
+Drawer must be responsive and full-screen on mobile.
+Save creates audit/history and notification if configured.
+================================================== 8. REVIEW COMMENTS & DECISION LOG
+PANEL ==================================================
+Show:
+Reviewer
+Decision
+Comment
+Related section
+Related blocker/action
+Created at
+Edited status if allowed
+Attachments/evidence if any
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+===== PAGE 10 =====
+Decision types:
+Approved
+Approved with comments
+Rejected
+Changes requested
+Information requested
+Delegated
+Escalated
+Override approved
+Rules:
+Comments must be immutable after final approval unless project pattern allows amendment.
+Sensitive/medical comments redacted without permission.
+All decisions create audit/history.
+================================================== 9. E-SIGNATURE PANEL
+==================================================
+Use Universal E-Signature.
+Fields:
+Signature required Yes/No
+Signer
+Signature meaning
+Signature status
+Signed at
+Authentication method/reference
+Signature reason
+Signature certificate/reference
+Signed record snapshot
+Signature meanings:
+I reviewed the incident investigation
+I approve RCA conclusions
+I approve CAPA plan
+I approve regulatory reporting status
+I approve closure
+Other configured meaning
+Rules:
+Do not create duplicate e-sign system.
+Use existing Universal E-Signature.
+Signature must lock/snapshot approved content where required.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+===== PAGE 11 =====
+Signature removal/reversal requires permission and reason.
+E-signature events create audit/history.
+================================================== 10. BLOCKERS / OPEN ITEMS PANEL
+==================================================
+Backend-generated blockers:
+Missing required section data
+Missing evidence
+Open timeline gaps
+Unsupported RCA assumptions
+Root cause without CAPA
+Open high-priority CAPA
+Overdue CAPA
+Failed barrier without follow-up
+Required linked record missing
+Regulatory report pending/overdue
+Required approval missing
+E-signature missing
+Restricted data review pending
+Fields:
+Blocker type
+Source tab
+Description
+Severity
+Owner
+Due date
+Status
+Action
+Rules:
+Backend generates blockers.
+Critical blockers prevent approval/closure.
+Resolving blocker must be done in source module or via approved override.
+================================================== 11. CHANGE REQUEST / REWORK PANEL
+==================================================
+Fields:
+Change request number
+Requested by
+Requested at
+Source section
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+===== PAGE 12 =====
+Description
+Owner
+Due date
+Status
+Resolution notes
+Resolved by
+Resolved at
+Actions:
+Create change request
+Assign owner
+Mark resolved
+Reopen
+Link action
+Rules:
+Rejection or changes requested must create rework item.
+Change request closure requires evidence/comment where configured.
+All changes create audit/history.
+================================================== 12. CLOSURE DECISION PANEL
+==================================================
+Fields:
+Ready for closure Yes/No
+Closure decision
+Closure type
+Closure reason
+Closure summary
+Closed by
+Closed at
+Closure comments
+Closure evidence/report link
+Open items accepted by exception
+Exception reason
+Exception approver
+Closure statuses:
+Not Ready
+Ready for Closure
+Closure Requested
+Approved for Closure
+Closed
+Closure Rejected
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+===== PAGE 13 =====
+Reopened
+Rules:
+Backend validates closure eligibility.
+Closure requires required approvals and e-signatures.
+Closure locks incident fields according to existing locked-record rules.
+Closing creates audit/history and updates Dashboard/Register .
+Closure with exceptions requires permission, reason, and approval.
+================================================== 13. REOPEN / REAPPROVAL CONTROL PANEL
+==================================================
+Fields:
+Reopen allowed Yes/No
+Reopen reason
+Reopened by
+Reopened at
+Reapproval required Yes/No
+Affected sections
+Previous approval snapshot
+Current approval status
+Rules:
+Reopening closed incident requires permission and reason.
+Material changes after approval must trigger reapproval if configured.
+Reopen/reapproval creates audit/history and notifications.
+================================================== 14. CHANGE HISTORY PANEL
+==================================================
+Show read-only history:
+Changed field
+Previous value
+New value
+Changed by
+Changed at
+Reason
+Related approval/reviewer
+Audit reference
+Rules:
+Use incident history/audit data.
+Redact restricted/medical values.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+
+===== PAGE 14 =====
+No fake history.
+================================================== 15. READINESS PANEL
+==================================================
+Backend-generated checklist:
+Readiness gate completed
+Required sections complete
+Required reviewers assigned
+Required approvals completed
+Required e-signatures completed
+Change requests resolved
+Critical blockers resolved
+Regulatory/reporting closure complete
+CAPA closure or exception accepted
+Closure decision recorded
+Ready for Lessons Learned / Final Report
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+supabase/migrations/<timestamp>_incident_review_approval_tables.sql
+supabase/migrations/<timestamp>_incident_review_approval_rls_policies.sql
+supabase/migrations/<timestamp>_incident_review_approval_indexes.sql
+supabase/migrations/<timestamp>_incident_review_approval_constraints.sql
+Add/fix tables:
+incident_review_approvals
+id
+company_id
+site_id
+incident_id
+review_status
+workflow_id
+workflow_version
+workflow_snapshot_json
+readiness_status
+ready_for_closure
+closure_status
+closed_by
+closed_at
+closure_summary
+exception_reason
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+
+===== PAGE 15 =====
+created_by
+updated_by
+created_at
+updated_at
+incident_reviewers
+id
+company_id
+site_id
+incident_id
+reviewer_user_id
+role
+approval_level
+required
+status
+decision
+due_date
+delegated_to_user_id
+escalation_status
+e_signature_required
+e_signature_id
+comments
+created_by
+updated_by
+created_at
+updated_at
+incident_review_decisions
+id
+company_id
+site_id
+incident_id
+reviewer_id
+decision
+comment
+related_section
+related_blocker_id
+signed
+signed_at
+created_by
+created_at
+incident_review_blockers
+id
+company_id
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+
+===== PAGE 16 =====
+site_id
+incident_id
+blocker_type
+source_tab
+description
+severity
+owner_id
+due_date
+status
+blocking
+resolved_by
+resolved_at
+override_reason
+created_by
+updated_by
+created_at
+updated_at
+incident_change_requests
+id
+company_id
+site_id
+incident_id
+request_number
+requested_by
+source_section
+description
+owner_id
+due_date
+status
+resolution_notes
+resolved_by
+resolved_at
+created_by
+updated_by
+created_at
+updated_at
+Also update/use:
+incident_history_events
+Workflow Engine tables
+Universal E-Signature tables
+SQL rules:
+Include indexes, foreign keys, constraints, RLS/company-site isolation.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+
+===== PAGE 17 =====
+Include audit/history triggers if project pattern uses DB triggers.
+Include rollback/down migration if current project supports it.
+Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Add/fix:
+GET /incidents/:id/review-approval
+GET /incidents/:id/review-approval/summary
+GET /incidents/:id/review-approval/readiness
+POST /incidents/:id/review-approval/run-readiness-check
+GET /incidents/:id/review-approval/section-checklist
+GET /incidents/:id/review-approval/workflow
+POST /incidents/:id/review-approval/start-workflow
+GET /incidents/:id/review-approval/reviewers
+POST /incidents/:id/review-approval/reviewers
+PATCH /incidents/:id/review-approval/reviewers/:reviewerId
+DELETE /incidents/:id/review-approval/reviewers/:reviewerId
+POST /incidents/:id/review-approval/reviewers/:reviewerId/request
+POST /incidents/:id/review-approval/reviewers/:reviewerId/approve
+POST /incidents/:id/review-approval/reviewers/:reviewerId/reject
+POST /incidents/:id/review-approval/reviewers/:reviewerId/request-changes
+POST /incidents/:id/review-approval/reviewers/:reviewerId/delegate
+POST /incidents/:id/review-approval/reviewers/:reviewerId/escalate
+GET /incidents/:id/review-approval/decisions
+GET /incidents/:id/review-approval/e-signatures
+POST /incidents/:id/review-approval/e-sign
+GET /incidents/:id/review-approval/blockers
+POST /incidents/:id/review-approval/blockers/:blockerId/override
+GET /incidents/:id/review-approval/change-requests
+POST /incidents/:id/review-approval/change-requests
+PATCH /incidents/:id/review-approval/change-requests/:requestId
+POST /incidents/:id/review-approval/change-requests/:requestId/resolve
+GET /incidents/:id/review-approval/closure
+POST /incidents/:id/review-approval/request-closure
+POST /incidents/:id/review-approval/approve-closure
+POST /incidents/:id/review-approval/close
+POST /incidents/:id/review-approval/reopen
+GET /incidents/:id/review-approval/history
+GET /incidents/:id/review-approval/context
+Lookups:
+GET /incidents/:id/lookups/reviewers
+GET /incidents/:id/lookups/workflow-config
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+
+===== PAGE 18 =====
+GET /incidents/:id/lookups/approval-roles
+GET /incidents/:id/lookups/e-signature-meanings
+GET /incidents/:id/lookups/blockers
+GET /incidents/:id/lookups/actions
+API rules:
+Enforce company_id/site_id.
+Enforce permissions.
+Enforce restricted/confidential/medical redaction.
+Backend generates readiness, blockers, section checklist, workflow steps, closure eligibility, and
+reapproval requirements.
+All mutations create audit log and incident history.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-review-approval.service.ts
+incident-review-summary.service.ts
+incident-review-readiness.service.ts
+incident-section-checklist.service.ts
+incident-approval-workflow.service.ts
+incident-reviewer.service.ts
+incident-review-decision.service.ts
+incident-e-signature-integration.service.ts
+incident-review-blocker.service.ts
+incident-change-request.service.ts
+incident-closure.service.ts
+incident-reopen-reapproval.service.ts
+incident-workflow-engine-integration.service.ts
+incident-notification.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-global-search.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tab:
+features/incidents/components/detail/ReviewApprovalTab.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+
+===== PAGE 19 =====
+Components:
+features/incidents/components/review-approval/ReviewApprovalHeader.tsx
+features/incidents/components/review-approval/ReviewApprovalSummaryCards.tsx
+features/incidents/components/review-approval/
+InvestigationReadinessGatePanel.tsx
+features/incidents/components/review-approval/
+SectionCompletionChecklistPanel.tsx
+features/incidents/components/review-approval/ApprovalWorkflowPanel.tsx
+features/incidents/components/review-approval/ReviewersApproversRegister.tsx
+features/incidents/components/review-approval/AddEditReviewerDrawer.tsx
+features/incidents/components/review-approval/
+ReviewCommentsDecisionLogPanel.tsx
+features/incidents/components/review-approval/ESignaturePanel.tsx
+features/incidents/components/review-approval/BlockersOpenItemsPanel.tsx
+features/incidents/components/review-approval/ChangeRequestReworkPanel.tsx
+features/incidents/components/review-approval/ClosureDecisionPanel.tsx
+features/incidents/components/review-approval/ReopenReapprovalControlPanel.tsx
+features/incidents/components/review-approval/
+ReviewApprovalChangeHistoryPanel.tsx
+features/incidents/components/review-approval/ReviewApprovalReadinessPanel.tsx
+Shared:
+features/incidents/components/shared/ReviewStatusBadge.tsx
+features/incidents/components/shared/ApprovalStatusBadge.tsx
+features/incidents/components/shared/WorkflowStatusBadge.tsx
+features/incidents/components/shared/ESignatureStatusBadge.tsx
+features/incidents/components/shared/ClosureStatusBadge.tsx
+features/incidents/components/shared/BlockerSeverityBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentReviewApproval.ts
+features/incidents/hooks/useIncidentReviewSummary.ts
+features/incidents/hooks/useIncidentReviewReadiness.ts
+features/incidents/hooks/useIncidentSectionChecklist.ts
+features/incidents/hooks/useIncidentApprovalWorkflow.ts
+features/incidents/hooks/useIncidentReviewers.ts
+features/incidents/hooks/useIncidentReviewBlockers.ts
+features/incidents/hooks/useIncidentChangeRequests.ts
+features/incidents/hooks/useIncidentClosure.ts
+Services:
+features/incidents/services/incident-review-approval.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+
+===== PAGE 20 =====
+features/incidents/services/incident-review-workflow.service.ts
+features/incidents/services/incident-reviewers.service.ts
+features/incidents/services/incident-e-signature.service.ts
+features/incidents/services/incident-review-blockers.service.ts
+features/incidents/services/incident-change-requests.service.ts
+features/incidents/services/incident-closure.service.ts
+Schemas:
+features/incidents/schemas/incident-review-approval.schema.ts
+features/incidents/schemas/incident-reviewer.schema.ts
+features/incidents/schemas/incident-review-decision.schema.ts
+features/incidents/schemas/incident-change-request.schema.ts
+features/incidents/schemas/incident-closure.schema.ts
+Types:
+features/incidents/types/incident-review-approval.types.ts
+features/incidents/types/incident-reviewer.types.ts
+features/incidents/types/incident-review-blocker.types.ts
+features/incidents/types/incident-change-request.types.ts
+features/incidents/types/incident-closure.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.review_approval.view
+incidents.review_approval.start_workflow
+incidents.review_approval.add_reviewer
+incidents.review_approval.edit_reviewer
+incidents.review_approval.remove_reviewer
+incidents.review_approval.approve
+incidents.review_approval.reject
+incidents.review_approval.request_changes
+incidents.review_approval.delegate
+incidents.review_approval.escalate
+incidents.review_approval.override_blocker
+incidents.review_approval.e_sign
+incidents.review_approval.request_closure
+incidents.review_approval.close
+incidents.review_approval.reopen
+incidents.history.view
+incidents.medical_fields.view
+incidents.restricted.view
+incidents.confidential.view
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+
+===== PAGE 21 =====
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized controls.
+Disabled controls show exact reason.
+Approval, closure, reopen, override, and e-sign require permission and reason where applicable.
+================================================== REQUIRED STATES
+==================================================
+Implement:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Medical data hidden
+Read-only closed
+Not ready for review
+Ready for review
+Workflow not started
+Workflow in progress
+Approval pending
+Changes requested
+Rejected
+Approved
+E-signature required
+Blockers open
+Closure blocked
+Ready for closure
+Closed
+Reopened
+Reapproval required
+Save failed
+Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+Nice, clean, professional enterprise UI.
+Use cards, badges, tables, drawers, workflow stepper , readiness checklist, blocker list, decision log, e-
+signature panel, closure panel, and warning banners.
+All UI must use real backend data only.
+No mock/static data.
+Dark/light theme must be polished.
+Desktop: clean multi-column layout.
+Tablet/mobile: stacked cards and full-screen drawers.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+
+===== PAGE 22 =====
+Every disabled button must show exact reason.
+Every panel must be easy to edit/debug because it is separated into its own file.
+================================================== TESTING
+==================================================
+Add tests for:
+Fetch Review & Approval tab
+Summary cards
+Run readiness check
+Section checklist
+Start workflow
+Add/edit/remove reviewer
+Approve/reject/request changes
+E-signature integration
+Blocker override
+Change request creation/resolution
+Closure eligibility
+Close incident
+Reopen incident
+Reapproval required after material change
+Enforce permissions
+Enforce company_id/site_id isolation
+Redact restricted/confidential/medical data
+Create audit log
+Create incident history event
+Update Overview/Register
+Dark/light UI
+Responsive layout
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Review & Approval tab exists
+✓ Uses real backend data only
+✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ Readiness gate works
+✓ Section completion checklist works
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+
+===== PAGE 23 =====
+✓ Workflow Engine integration works
+✓ Reviewers/approvers register works
+✓ Add/Edit Reviewer drawer works
+✓ Decision log works
+✓ Universal E-Signature integration works
+✓ Blockers/open items panel works
+✓ Change request/rework works
+✓ Closure decision works
+✓ Reopen/reapproval works
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. Review & Approval tab completed 11. Workflow Engine integration
+completed 12. Universal E-Signature integration completed 13. Readiness/closure blockers completed 14.
+Change request/rework completed 15. Permissions connected 16. Audit/history connected 17. Overview/
+Register updates connected 18. Dark/light responsive UI completed 19. Tests added/fixed 20. Remaining
+gaps, if any
+23

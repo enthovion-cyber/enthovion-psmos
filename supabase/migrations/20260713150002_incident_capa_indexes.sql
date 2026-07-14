@@ -1,0 +1,10 @@
+create index if not exists idx_incident_capa_tenant_incident on public.incident_capa (tenant_id, incident_id);
+create index if not exists idx_incident_capa_items_tenant_incident on public.incident_capa_items (tenant_id, incident_id);
+create index if not exists idx_incident_capa_items_site on public.incident_capa_items (tenant_id, site_id);
+create index if not exists idx_incident_capa_items_status on public.incident_capa_items (tenant_id, status, implementation_status);
+create index if not exists idx_incident_capa_items_due on public.incident_capa_items (tenant_id, due_date) where deleted_at is null;
+create index if not exists idx_incident_capa_items_universal_action on public.incident_capa_items (tenant_id, universal_action_id);
+create index if not exists idx_incident_capa_source_links_incident on public.incident_capa_source_links (tenant_id, incident_id);
+create index if not exists idx_incident_capa_source_links_source on public.incident_capa_source_links (tenant_id, source_type, source_id);
+create index if not exists idx_incident_capa_verifications_item on public.incident_capa_verifications (tenant_id, capa_item_id);
+create index if not exists idx_incident_capa_reviews_incident on public.incident_capa_reviews (tenant_id, incident_id, created_at desc);

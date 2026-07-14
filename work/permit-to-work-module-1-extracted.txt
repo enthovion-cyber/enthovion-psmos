@@ -1,0 +1,375 @@
+
+--- PAGE 1 ---
+You are the senior full-stack engineer for PSM OS.
+Task: Fix and complete Module 07 — Permit to Work (PTW) according to the attached PTW specification file
+and attached PTW mockup screenshot.
+Important: Do NOT create a static demo UI. Do NOT create fake cards, fake counters, or mock lists. Do NOT
+redesign the screen. Keep the current dark industrial UI style from the mockup, but make every visible part
+functional, API-driven, saved to database, and instantly refreshed in the UI.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL + Redis/BullMQ
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Storage: S3/Supabase Storage
+• Offline: PWA + IndexedDB/Dexie.js
+• PDF: existing PDF engine
+PTW must be site-aware: Every record must use company_id and site_id. Backend must enforce data
+isolation. Do not rely only on frontend filters.
+Core rule: Everything shown in the PTW mockup must work with real data:
+• Sidebar permit list
+• Permit counters
+• Permit status badges
+• Permit lifecycle stepper
+• Action buttons
+• All tabs
+• All cards
+• Gas readings
+• Isolation status
+• Workforce table
+• Shift handover
+• Conflicts
+• Signatures
+• History
+• Permit summary
+• Area map
+• Permit actions
+Required permit types:
+• Hot Work
+• Cold Work
+• Confined Space Entry
+1
+
+--- PAGE 2 ---
+• Electrical Isolation / LOTO
+• Excavation
+• Radiography
+• Working at Height
+• Line Breaking / Equipment Opening
+• SIMOPS
+Required tabs: 1. Details 2. Isolation 3. Gas Test 4. Workforce 5. Shift Handover 6. Conflicts 7. Signatures 8.
+History 9. Attachments
+Details tab: Show real permit information:
+• Permit number
+• Permit type
+• Status
+• Risk level
+• Location
+• Site
+• Unit
+• Area
+• Equipment tag
+• Equipment name
+• Permit holder
+• Issued by
+• Issue date/time
+• Expiry date/time
+• Work description
+• Equipment context
+• Linked equipment tags
+• Linked records
+• Required documents
+Isolation tab: Build full LOTO/isolation register:
+• Energy source
+• Lock number
+• Isolation point
+• Valve tag
+• Required position
+• Holder
+• Confirmed by
+• Confirmed timestamp
+• Signature
+• De-isolation status
+Rules:
+• Permit cannot activate until required isolations are confirmed.
+2
+
+--- PAGE 3 ---
+• De-isolation required before closure.
+• Generate isolation certificate PDF.
+Gas Test tab: Build full gas testing workflow:
+• O2
+• LEL
+• H2S
+• CO
+• SO2
+• Cl2
+• NH3
+• HF
+• Custom gases
+• Tester identity
+• Instrument ID
+• Instrument calibration date
+• Test timestamp
+• Next retest due
+• Gas test history
+Rules:
+• O2 valid range: 19.5–23.5%.
+• LEL limits must be site-configurable.
+• Default confined space limit: <10% LEL.
+• Default hot work limit: 0% LEL preferred.
+• Site admin may configure hot work limit up to <5% only if company policy allows.
+• Permit auto-suspends if gas test fails or retest is overdue.
+Workforce tab: Build permit workforce management:
+• Permit holder
+• Performing authority
+• Workers
+• Contractor company
+• Trade
+• Briefing completed
+• Sign in
+• Sign out
+• Maximum personnel count
+• Emergency accountability list
+Rules:
+• Workers must acknowledge PTW briefing.
+• Permit cannot activate if required briefing is incomplete.
+• Workforce sign-in/out must save immediately.
+3
+
+--- PAGE 4 ---
+Shift Handover tab: Build digital shift handover:
+• Active permit summary
+• Outgoing supervisor
+• Incoming supervisor
+• Current shift
+• Permit risks
+• Gas test validity
+• Isolation validity
+• Permit expiry countdown
+• Open conflicts
+• Permits expiring within 2 hours
+• Incoming supervisor acknowledgement
+• Handover signature
+• Timestamp
+• IP address
+Rules:
+• Incoming supervisor must acknowledge active permits.
+• Permit may be suspended during handover.
+• Handover creates audit log and history event.
+Conflicts tab: Build conflict detection:
+• Same equipment conflict
+• Same area conflict
+• Hot work + confined space conflict
+• Hot work + line breaking conflict
+• SIMOPS conflict
+• Configurable incompatible permit matrix
+Rules:
+• Conflict blocks activation unless Area Authority overrides.
+• Override requires written justification.
+• Notify Permit Issuer, Area Authority, and Control Room.
+• Conflict override must be audit-logged.
+Signatures tab: Build electronic signatures for:
+• Permit Holder
+• Permit Issuer
+• Area Authority
+• Gas Tester
+• Isolation Authority
+• HSE
+• Incoming Supervisor
+4
+
+--- PAGE 5 ---
+• Closure Authority
+Rules:
+• Signature requires authenticated user confirmation.
+• Store user, role, timestamp, IP address.
+• Permit cannot move lifecycle stage unless required signatures are complete.
+History tab: Show full permit timeline:
+• Created
+• Submitted
+• Approved
+• Issued
+• Activated
+• Suspended
+• Extended
+• Closed
+• Cancelled
+• Isolation added
+• Isolation confirmed
+• Gas test added
+• Gas test failed
+• Conflict detected
+• Conflict overridden
+• Handover completed
+• Attachment uploaded
+• Signature completed
+Attachments tab: Support:
+• Photo evidence
+• Job safety analysis
+• Rescue plan
+• Excavation drawing
+• Radiography plan
+• LOTO photos
+• Gas test certificate
+• Other files
+Features:
+• Upload
+• Preview
+• Download
+• Delete
+• Show uploaded by/date
+• Refresh instantly after upload/delete
+5
+
+--- PAGE 6 ---
+Permit lifecycle:
+• Draft
+• Submitted
+• Approved
+• Issued
+• Active
+• Suspended
+• Extended
+• Closed
+• Cancelled
+Action buttons must work:
+• Submit
+• Approve
+• Issue Permit
+• Activate
+• Suspend
+• Extend
+• Close Permit
+• Cancel
+• Download Permit
+• Print Permit
+• Duplicate Permit
+• Create MOC from Permit
+Rules:
+• No lifecycle step can be skipped.
+• Backend must validate every transition.
+• Workflow Engine must be used for approval.
+• Notification events must be emitted.
+• Audit logs must be created.
+• React Query must invalidate/refetch after every mutation.
+Dashboard/list: Build real PTW dashboard:
+• Active permits
+• Pending permits
+• Expiring permits
+• Suspended permits
+• Closed permits
+• Open conflicts
+• Gas retest due
+• Search permits
+• Filter by type/status/site/unit/area/equipment/holder
+• Pagination
+6
+
+--- PAGE 7 ---
+• Real counters from API
+Permit map: Build real area map/list:
+• Active permits by area
+• Conflict markers
+• Expiring permit markers
+• Suspended permit markers
+• Equipment tag markers
+• If SVG map is not available, create data-driven list/map placeholder that can accept future SVG
+layouts.
+Mobile/offline: Build PWA offline support:
+• Offline permit view
+• Offline gas test entry
+• Offline isolation confirmation
+• Offline photo upload queue
+• QR equipment scan
+• GPS logging on activation/closure
+• Sync status
+• Re-run validation after sync
+Required backend: Create/update PTW models, DTOs, services, repositories, validators, policies, jobs, and
+events.
+Required APIs:
+• GET /ptw
+• GET /ptw/:id
+• POST /ptw
+• PATCH /ptw/:id
+• DELETE /ptw/:id
+• POST /ptw/:id/submit
+• POST /ptw/:id/approve
+• POST /ptw/:id/issue
+• POST /ptw/:id/activate
+• POST /ptw/:id/suspend
+• POST /ptw/:id/extend
+• POST /ptw/:id/close
+• POST /ptw/:id/cancel
+• POST /ptw/:id/isolation
+• PATCH /ptw/:id/isolation/:isolationId/confirm
+• POST /ptw/:id/de-isolation
+• POST /ptw/:id/gas-tests
+• GET /ptw/:id/gas-tests
+• POST /ptw/:id/workforce
+• PATCH /ptw/:id/workforce/:workerId
+7
+
+--- PAGE 8 ---
+• POST /ptw/:id/handover
+• GET /ptw/:id/conflicts
+• POST /ptw/:id/conflicts/:conflictId/override
+• POST /ptw/:id/signatures
+• GET /ptw/:id/history
+• POST /ptw/:id/attachments
+• DELETE /ptw/:id/attachments/:attachmentId
+• GET /ptw/dashboard
+• GET /ptw/map
+• GET /ptw/expiring
+• GET /ptw/active
+• GET /ptw/equipment/:equipmentId
+• GET /ptw/:id/certificate
+• GET /ptw/:id/isolation-certificate
+Required frontend components:
+• PTWDashboard
+• PermitRegister
+• PermitDetail
+• PermitHeader
+• PermitLifecycleStepper
+• PermitForm
+• PermitDetailsTab
+• PermitIsolationTab
+• PermitGasTestTab
+• PermitWorkforceTab
+• PermitShiftHandoverTab
+• PermitConflictsTab
+• PermitSignaturesTab
+• PermitHistoryTab
+• PermitAttachmentsTab
+• PermitSummaryPanel
+• PermitMapPanel
+• PermitActionPanel
+• GasRetestDueCard
+• OfflineSyncStatus
+• QRScanner
+Permissions:
+• ptw.view
+• ptw.create
+• ptw.edit
+• ptw.submit
+• ptw.approve
+• ptw.issue
+• ptw.activate
+8
+
+--- PAGE 9 ---
+• ptw.suspend
+• ptw.extend
+• ptw.close
+• ptw.cancel
+• ptw.gas_test.add
+• ptw.isolation.confirm
+• ptw.conflict.override
+• ptw.handover
+• ptw.sign
+• ptw.export
+Integrations:
+• Equipment Registry linked records and timeline
+• Workflow Engine approvals
+• Action Engine for PTW corrective actions
+• Notification Center events
+• Document Control attachments/documents
+• Global Search indexing
+• Audit Log
+• Multi-site isolation
+Final output: 1. Features completed 2. Files created 3. Files modified 4. Database changes 5. API endpoints
+added 6. Frontend tabs completed 7. Mock/static items replaced with real API data 8. Bugs fixed 9.
+Remaining gaps, if any
+Acceptance criteria: PTW is complete only when every visible element in the attached mockup is functional,
+all tabs work, all mutations save to database, all lists/counters refresh instantly, and no static demo data
+remains.
+9

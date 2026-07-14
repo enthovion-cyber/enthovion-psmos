@@ -1,0 +1,22 @@
+export type IncidentReviewApprovalData = {
+  restricted?: boolean;
+  header: any;
+  summaryCards: any[];
+  readinessGate: any[];
+  sectionChecklist: any[];
+  workflow: any;
+  reviewers: any[];
+  decisions: any[];
+  eSignatures: any[];
+  blockers: any[];
+  changeRequests: any[];
+  closure: any;
+  reopen: any;
+  changeHistory: any[];
+  readiness: any;
+  context: any;
+  permissions: string[];
+  readOnly?: boolean;
+  lockedReason?: string | null;
+  updatedAt?: string;
+};

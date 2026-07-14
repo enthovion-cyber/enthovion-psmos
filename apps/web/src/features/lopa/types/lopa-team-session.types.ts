@@ -1,0 +1,20 @@
+export type LopaSessionInput = {
+  title: string;
+  sessionType: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  timezone?: string;
+  location?: string;
+  meetingLink?: string;
+  facilitatorMemberId?: string;
+  scribeMemberId?: string;
+  requiredAttendees?: string[];
+  optionalAttendees?: string[];
+  agendaTemplate?: string;
+  notes?: string;
+  sendCalendarInvite?: boolean;
+  sendNotification?: boolean;
+  status?: string;
+  reason?: string;
+};

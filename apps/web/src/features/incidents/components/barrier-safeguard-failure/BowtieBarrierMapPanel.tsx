@@ -1,0 +1,2 @@
+import { TabPanel, TimelineList } from '../shared/IncidentTabPrimitives';
+export function BowtieBarrierMapPanel({ data }: { data: any }) { return <TabPanel title="Bowtie Barrier Map"><div className="grid gap-3 lg:grid-cols-3"><TimelineList rows={data?.threats ?? []} empty="No threat/timeline data." /><TimelineList rows={data?.preventive ?? []} empty="No preventive barriers." /><TimelineList rows={data?.mitigative ?? []} empty="No mitigative barriers." /></div></TabPanel>; }

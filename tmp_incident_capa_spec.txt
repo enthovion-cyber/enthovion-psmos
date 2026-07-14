@@ -1,0 +1,1677 @@
+
+--- PAGE 1 ---
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Corrective / Preventive Actions tab.
+Route:
+/incidents/:id
+Tab:
+Corrective / Preventive Actions
+Read the attached PDF/specification carefully before coding. Build this tab exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, chart, infographic, dark/light theme issue, and responsive UI
+issue. Do not miss a single thing.
+Keep this implementation detailed but not unnecessarily oversized. Build only what belongs to this tab.
+================================================== SCOPE
+==================================================
+Work only on:
+Corrective / Preventive Actions
+Do not build yet:
+Linked Records
+Notifications / Regulatory Reporting
+Review & Approval
+Lessons Learned
+History
+Final Report / Export
+Use existing modules/data:
+Incident Dashboard/Register
+Incident Detail Shell
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+--- PAGE 2 ---
+Immediate Actions
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Universal Action Engine
+Notification Center
+Document Control
+Equipment Registry
+Chemical/SDS
+Mechanical Integrity
+PTW
+MOC
+PSSR
+HAZOP/PHA
+LOPA/SIL
+IAM/RBAC
+Global Search
+Audit Log
+Incident History
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+Important:
+Do not create a duplicate action system.
+CAPA lifecycle must use the existing Universal Action Engine.
+This tab should manage incident-specific CAPA context, source mapping, verification, evidence,
+approvals, and readiness.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one big tab file.
+Tab container must be clean only:
+features/incidents/components/detail/CorrectivePreventiveActionsTab.tsx
+Create separate folder:
+features/incidents/components/corrective-preventive-actions/
+Shared badges/components:
+features/incidents/components/shared/
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+--- PAGE 3 ---
+Also separate:
+hooks
+services
+schemas
+types
+SQL migrations
+No messy single-file implementation.
+================================================== CORE PURPOSE
+==================================================
+This tab must answer:
+What corrective and preventive actions are required?
+Which RCA root cause, causal factor , barrier failure, immediate action, evidence gap, or regulatory
+finding generated each action?
+Is each action corrective, preventive, interim, permanent, engineering, administrative, training,
+procedural, MI, MOC, PSSR, HAZOP/LOPA, or regulatory?
+Who owns each action?
+What is the due date, priority, status, and risk ranking?
+Has the action been implemented?
+Is implementation evidence attached?
+Has effectiveness been verified?
+Are overdue or high-risk actions escalated?
+Are all root causes covered by at least one CAPA or justified?
+Is CAPA ready for review and closure?
+================================================== REQUIRED SECTIONS
+==================================================
+Build these panels:
+CAPA Header
+CAPA Summary Cards
+CAPA Source / Readiness Panel
+Corrective / Preventive Actions Register
+Add/Edit CAPA Drawer
+Source Mapping Panel
+Action Classification & Priority Panel
+Owner / Due Date / Assignment Panel
+Implementation Plan Panel
+Evidence of Completion Panel
+Effectiveness Verification Panel
+Overdue / Escalation Panel
+CAPA Coverage Matrix Panel
+CAPA Review Panel
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+3
+
+--- PAGE 4 ---
+CAPA Change History Panel
+CAPA Readiness / Missing Data Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. CAPA HEADER
+==================================================
+Show:
+Incident number
+Incident title
+Incident status
+Investigation priority
+RCA status
+CAPA required Yes/No
+Total CAPA actions
+Open actions
+Overdue actions
+Completed actions
+Verified actions
+High-priority actions
+Root causes without CAPA
+Actions awaiting evidence
+Actions awaiting verification
+Review status
+Last updated
+Actions:
+Add CAPA
+Generate CAPA from RCA
+Generate CAPA from Barrier Failures
+Link Existing Action
+Request Review
+Export CAPA Register
+Save Changes
+Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents are read-only unless reopened.
+Restricted/confidential data must be redacted.
+================================================== 2. CAPA SUMMARY CARDS
+==================================================
+15. 
+16. 
+17. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+--- PAGE 5 ---
+Cards:
+CAPA required
+Total actions
+Corrective actions
+Preventive actions
+Interim actions
+Permanent actions
+Open actions
+Overdue actions
+Completed actions
+Verified effective
+Verification pending
+Root causes covered
+Root causes missing CAPA
+High-risk actions
+Review status
+Ready for closure
+Rules:
+No fake counts.
+Values come from backend.
+Cards update Overview and Dashboard/Register .
+================================================== 3. CAPA SOURCE / READINESS PANEL
+==================================================
+Backend-generated checklist:
+RCA complete enough for CAPA
+Root causes identified
+Barrier failures reviewed
+Immediate actions reviewed for conversion
+Required evidence available
+Root causes mapped to CAPA or justified
+High-risk findings have actions
+CAPA owners assigned
+Due dates assigned
+Effectiveness verification defined
+Review complete if required
+Missing items must link to source tab/section.
+================================================== 4. CORRECTIVE / PREVENTIVE ACTIONS
+REGISTER ==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+--- PAGE 6 ---
+Columns:
+CAPA number
+Action title
+Action type
+Action category
+Source
+Linked root cause / barrier / finding
+Priority
+Risk reduction intent
+Owner
+Due date
+Status
+Implementation status
+Evidence status
+Effectiveness verification status
+Overdue Yes/No
+Escalation status
+Universal Action ID
+Last updated
+Actions
+Action types:
+Corrective Action
+Preventive Action
+Interim Action
+Permanent Action
+Verification Action
+Management System Action
+Regulatory Action
+Training Action
+Procedure Action
+Engineering Action
+Maintenance / MI Action
+MOC Action
+PSSR Action
+HAZOP/PHA Review Action
+LOPA/SIL Review Action
+Other
+Statuses:
+Draft
+Assigned
+Accepted
+In Progress
+Completed
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+--- PAGE 7 ---
+Evidence Submitted
+Verification Pending
+Verified Effective
+Rework Required
+Overdue
+Escalated
+Cancelled
+Closed
+Actions:
+View details
+Edit
+Link source
+Link evidence
+Mark complete
+Submit evidence
+Verify effectiveness
+Request rework
+Escalate
+Open Universal Action
+Cancel/supersede with permission and reason
+================================================== 5. ADD / EDIT CAPA DRAWER
+==================================================
+Fields:
+Action title
+Description
+Action type
+Action category
+Source type
+Linked RCA root cause
+Linked causal factor
+Linked barrier failure
+Linked immediate action
+Linked evidence gap
+Linked regulatory finding
+Risk reduction objective
+Expected outcome
+Owner
+Supporting team
+Due date
+Priority
+Verification required Yes/No
+Verification method
+Verification due date
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+--- PAGE 8 ---
+Evidence required Yes/No
+Linked evidence
+Universal Action ID
+Notes
+Change reason
+Rules:
+Title, type, owner , due date, source, and priority are required unless policy says otherwise.
+If CAPA is created from RCA/root cause, source mapping is required.
+If verification required = Yes, verification method is required.
+Drawer must be responsive and full-screen on mobile.
+Save creates Universal Action record or links existing action, then creates incident audit/history.
+================================================== 6. SOURCE MAPPING PANEL
+==================================================
+Map CAPA to:
+RCA causal factor
+RCA root cause
+Systemic weakness
+Barrier/safeguard failure
+Immediate action conversion
+Timeline gap
+Evidence gap
+Equipment/MI finding
+Chemical/SDS finding
+PTW/MOC/PSSR gap
+HAZOP/LOPA/SIL review need
+Regulatory/reporting requirement
+Fields:
+Source item
+Source type
+CAPA linked
+Coverage status
+Justification if no CAPA
+Linked action
+Status
+Rules:
+Every confirmed root cause must have at least one CAPA or approved justification.
+Failed credited IPL/SIF/PSV/barrier must have follow-up CAPA or approved justification.
+Mapping/unmapping creates audit/history.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+--- PAGE 9 ---
+================================================== 7. ACTION CLASSIFICATION & PRIORITY PANEL
+==================================================
+Fields:
+Action type
+Action category
+Priority
+Risk ranking
+Risk reduction target
+Prevent recurrence Yes/No
+Permanent fix Yes/No
+Interim control Yes/No
+Management system impact
+Regulatory impact
+Business impact
+Priority basis
+Override reason if changed
+Rules:
+Backend recommends priority using potential severity, RCA, barrier failure, PSM/PSE tier , regulatory
+flags, and company/site rules.
+Frontend must not be source of truth for priority.
+Override requires permission and reason.
+================================================== 8. OWNER / DUE DATE / ASSIGNMENT PANEL
+==================================================
+Fields:
+Owner
+Department
+Site/unit/area
+Supporting users
+Assigned by
+Assigned at
+Due date
+Acceptance required
+Acceptance status
+Reminder schedule
+Escalation owner
+Notes
+Rules:
+Owner must be real user/contact.
+Due date rules must come from company/site configuration.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+--- PAGE 10 ---
+Assignment sends notification if configured.
+Owner change creates audit/history.
+================================================== 9. IMPLEMENTATION PLAN PANEL
+==================================================
+Fields:
+Implementation steps
+Resources required
+Work order required
+MOC required
+PSSR required
+PTW required
+Procedure update required
+Training required
+Equipment shutdown required
+Target completion date
+Dependencies
+Notes
+Rules:
+If MOC/PSSR/PTW/MI is required, create/link follow-up through existing modules.
+Do not duplicate those systems.
+Implementation plan changes create audit/history.
+================================================== 10. EVIDENCE OF COMPLETION PANEL
+==================================================
+Fields:
+Evidence required
+Evidence status
+Evidence type
+Linked evidence
+Completion statement
+Completed by
+Completed at
+Completion notes
+Evidence accepted/rejected
+Rejection reason
+Actions:
+Upload evidence
+Link existing evidence
+Submit completion
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+--- PAGE 11 ---
+Accept evidence
+Reject evidence
+Request more evidence
+Rules:
+Use Evidence / Attachments tab and storage service.
+Restricted evidence must be redacted.
+Evidence acceptance/rejection requires permission and comment.
+Completion cannot be accepted if required evidence is missing.
+================================================== 11. EFFECTIVENESS VERIFICATION PANEL
+==================================================
+Fields:
+Verification required
+Verification method
+Verification owner
+Verification due date
+Verification status
+Verification result
+Verification evidence
+Effective Yes/No/Not Determined
+Rework required
+Rework notes
+Verified by
+Verified at
+Verification methods:
+Field inspection
+Document review
+Interview
+Training record check
+Procedure review
+Work order/MI verification
+MOC/PSSR confirmation
+Trend/monitoring review
+Audit/checklist
+Repeat observation
+Other
+Rules:
+CAPA should not be closed until verification is complete if required.
+Ineffective actions require rework or new CAPA.
+Verification creates audit/history.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+--- PAGE 12 ---
+Verified actions may be locked unless reopened with permission.
+================================================== 12. OVERDUE / ESCALATION PANEL
+==================================================
+Fields:
+Overdue actions
+Days overdue
+Escalation level
+Escalation owner
+Escalation reason
+Escalated by
+Escalated at
+Reminder history
+Management review required
+Notes
+Rules:
+Backend generates overdue/escalation status.
+Escalation uses Notification Center .
+High-priority overdue CAPA creates Overview blocker .
+Escalation changes create audit/history.
+================================================== 13. CAPA COVERAGE MATRIX PANEL
+==================================================
+Show coverage for:
+RCA root causes
+Systemic weaknesses
+Barrier failures
+Failed credited IPLs
+High-potential findings
+Regulatory findings
+Immediate actions needing permanent fix
+Fields:
+Source item
+CAPA required
+CAPA linked
+Coverage status
+Gap reason
+Action
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+--- PAGE 13 ---
+Rules:
+Backend generates coverage matrix.
+Missing required coverage blocks CAPA review/closure unless approved exception.
+Exception requires permission and reason.
+================================================== 14. CAPA REVIEW PANEL
+==================================================
+Fields:
+CAPA review required
+Reviewer
+Due date
+Review status
+Review comments
+Approved by
+Approved at
+Rejection reason
+Rework required
+Actions:
+Request review
+Approve
+Reject
+Reopen
+Create action
+Rules:
+Approval requires readiness checks passed.
+Review decisions require permission and comment.
+Audit/history required.
+================================================== 15. CAPA CHANGE HISTORY PANEL
+==================================================
+Show read-only history:
+Changed field
+Previous value
+New value
+Changed by
+Changed at
+Reason
+Related CAPA
+Universal Action reference
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+
+--- PAGE 14 ---
+Audit reference
+Rules:
+Use incident history/audit data.
+Redact restricted values.
+No fake history.
+================================================== 16. CAPA READINESS / MISSING DATA PANEL
+==================================================
+Backend-generated checklist:
+CAPA required decision complete
+RCA/root causes covered
+Barrier failures covered
+Actions created or linked
+Owners assigned
+Due dates assigned
+Priorities assigned
+Implementation plans complete
+Evidence submitted where required
+Effectiveness verification defined
+Overdue actions escalated
+Required actions verified/closed
+Review complete if required
+Ready for incident review/closure
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+supabase/migrations/<timestamp>_incident_capa_tables.sql
+supabase/migrations/<timestamp>_incident_capa_rls_policies.sql
+supabase/migrations/<timestamp>_incident_capa_indexes.sql
+supabase/migrations/<timestamp>_incident_capa_constraints.sql
+Add/fix tables only as needed to extend Universal Action Engine:
+incident_capa
+id
+company_id
+site_id
+incident_id
+capa_required
+required_reason
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+
+--- PAGE 15 ---
+status
+review_status
+ready_for_review
+created_by
+updated_by
+created_at
+updated_at
+incident_capa_items
+id
+company_id
+site_id
+incident_id
+capa_number
+universal_action_id
+action_title_snapshot
+action_type
+action_category
+source_type
+priority
+risk_reduction_objective
+expected_outcome
+owner_id
+due_date
+implementation_status
+evidence_status
+verification_required
+verification_status
+effectiveness_status
+escalation_status
+notes
+created_by
+updated_by
+created_at
+updated_at
+deleted_at
+incident_capa_source_links
+id
+company_id
+site_id
+incident_id
+capa_item_id
+source_type
+source_id
+source_title_snapshot
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+
+--- PAGE 16 ---
+coverage_status
+justification_if_no_capa
+created_by
+created_at
+incident_capa_verifications
+id
+company_id
+site_id
+incident_id
+capa_item_id
+verification_method
+verification_owner_id
+verification_due_date
+verification_status
+verification_result
+effective
+rework_required
+rework_notes
+evidence_ids_json
+verified_by
+verified_at
+created_by
+updated_by
+created_at
+updated_at
+incident_capa_reviews
+id
+company_id
+site_id
+incident_id
+status
+reviewer_id
+due_date
+comments
+approved_by
+approved_at
+rejected_by
+rejected_at
+rejection_reason
+rework_required
+created_by
+updated_by
+created_at
+updated_at
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+
+--- PAGE 17 ---
+Also update/use:
+incident_history_events
+Universal Action Engine action tables
+SQL rules:
+Include indexes, foreign keys, constraints, RLS/company-site isolation.
+Include audit/history triggers if project pattern uses DB triggers.
+Include rollback/down migration if current project supports it.
+Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Add/fix:
+GET /incidents/:id/capa
+GET /incidents/:id/capa/summary
+GET /incidents/:id/capa/readiness
+GET /incidents/:id/capa/register
+POST /incidents/:id/capa
+GET /incidents/:id/capa/:capaId
+PATCH /incidents/:id/capa/:capaId
+DELETE /incidents/:id/capa/:capaId
+POST /incidents/:id/capa/generate-from-rca
+POST /incidents/:id/capa/generate-from-barriers
+POST /incidents/:id/capa/:capaId/link-source
+POST /incidents/:id/capa/:capaId/link-evidence
+POST /incidents/:id/capa/:capaId/submit-completion
+POST /incidents/:id/capa/:capaId/accept-evidence
+POST /incidents/:id/capa/:capaId/reject-evidence
+POST /incidents/:id/capa/:capaId/verify-effectiveness
+POST /incidents/:id/capa/:capaId/request-rework
+POST /incidents/:id/capa/:capaId/escalate
+POST /incidents/:id/capa/:capaId/link-existing-action
+GET /incidents/:id/capa/source-mapping
+GET /incidents/:id/capa/coverage-matrix
+GET /incidents/:id/capa/overdue-escalation
+GET /incidents/:id/capa/review
+POST /incidents/:id/capa/request-review
+POST /incidents/:id/capa/approve-review
+POST /incidents/:id/capa/reject-review
+GET /incidents/:id/capa/history
+GET /incidents/:id/capa/context
+GET /incidents/:id/capa/export
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+
+--- PAGE 18 ---
+Lookups:
+GET /incidents/:id/lookups/rca-root-causes
+GET /incidents/:id/lookups/rca-causal-factors
+GET /incidents/:id/lookups/barriers
+GET /incidents/:id/lookups/evidence
+GET /incidents/:id/lookups/universal-actions
+GET /incidents/:id/lookups/users
+GET /incidents/:id/lookups/moc
+GET /incidents/:id/lookups/pssr
+GET /incidents/:id/lookups/ptw
+GET /incidents/:id/lookups/mi
+API rules:
+Enforce company_id/site_id.
+Enforce permissions.
+Enforce restricted/confidential redaction.
+Backend generates summary, readiness, coverage matrix, overdue status, escalation status, and
+blockers.
+All mutations create audit log and incident history.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-capa.service.ts
+incident-capa-summary.service.ts
+incident-capa-register.service.ts
+incident-capa-generation.service.ts
+incident-capa-source-mapping.service.ts
+incident-capa-priority.service.ts
+incident-capa-assignment.service.ts
+incident-capa-implementation.service.ts
+incident-capa-evidence.service.ts
+incident-capa-verification.service.ts
+incident-capa-escalation.service.ts
+incident-capa-coverage.service.ts
+incident-capa-review.service.ts
+incident-capa-history.service.ts
+incident-capa-readiness.service.ts
+incident-universal-action-integration.service.ts
+incident-notification.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+
+--- PAGE 19 ---
+incident-audit-log-integration.service.ts
+incident-global-search.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tab:
+features/incidents/components/detail/CorrectivePreventiveActionsTab.tsx
+Components:
+features/incidents/components/corrective-preventive-actions/CapaHeader.tsx
+features/incidents/components/corrective-preventive-actions/
+CapaSummaryCards.tsx
+features/incidents/components/corrective-preventive-actions/
+CapaSourceReadinessPanel.tsx
+features/incidents/components/corrective-preventive-actions/CapaRegister.tsx
+features/incidents/components/corrective-preventive-actions/
+AddEditCapaDrawer.tsx
+features/incidents/components/corrective-preventive-actions/
+SourceMappingPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+ActionClassificationPriorityPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+OwnerDueDateAssignmentPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+ImplementationPlanPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+EvidenceOfCompletionPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+EffectivenessVerificationPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+OverdueEscalationPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+CapaCoverageMatrixPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+CapaReviewPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+CapaChangeHistoryPanel.tsx
+features/incidents/components/corrective-preventive-actions/
+CapaReadinessPanel.tsx
+Shared:
+features/incidents/components/shared/CapaStatusBadge.tsx
+features/incidents/components/shared/CapaTypeBadge.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+
+--- PAGE 20 ---
+features/incidents/components/shared/CapaPriorityBadge.tsx
+features/incidents/components/shared/ImplementationStatusBadge.tsx
+features/incidents/components/shared/VerificationStatusBadge.tsx
+features/incidents/components/shared/EffectivenessBadge.tsx
+features/incidents/components/shared/EscalationStatusBadge.tsx
+features/incidents/components/shared/ReviewStatusBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentCapa.ts
+features/incidents/hooks/useIncidentCapaSummary.ts
+features/incidents/hooks/useIncidentCapaRegister.ts
+features/incidents/hooks/useIncidentCapaSourceMapping.ts
+features/incidents/hooks/useIncidentCapaVerification.ts
+features/incidents/hooks/useIncidentCapaCoverage.ts
+features/incidents/hooks/useIncidentCapaReview.ts
+features/incidents/hooks/useIncidentCapaReadiness.ts
+Services:
+features/incidents/services/incident-capa.service.ts
+features/incidents/services/incident-capa-generation.service.ts
+features/incidents/services/incident-capa-source-mapping.service.ts
+features/incidents/services/incident-capa-verification.service.ts
+features/incidents/services/incident-capa-review.service.ts
+features/incidents/services/incident-capa-lookups.service.ts
+Schemas:
+features/incidents/schemas/incident-capa.schema.ts
+features/incidents/schemas/incident-capa-source-link.schema.ts
+features/incidents/schemas/incident-capa-verification.schema.ts
+features/incidents/schemas/incident-capa-review.schema.ts
+Types:
+features/incidents/types/incident-capa.types.ts
+features/incidents/types/incident-capa-source-link.types.ts
+features/incidents/types/incident-capa-verification.types.ts
+features/incidents/types/incident-capa-readiness.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.capa.view
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+
+--- PAGE 21 ---
+incidents.capa.create
+incidents.capa.edit
+incidents.capa.delete
+incidents.capa.generate
+incidents.capa.link_source
+incidents.capa.link_evidence
+incidents.capa.complete
+incidents.capa.verify
+incidents.capa.escalate
+incidents.capa.review.request
+incidents.capa.review.approve
+incidents.capa.review.reject
+incidents.capa.export
+incidents.actions.link
+incidents.actions.create
+incidents.history.view
+incidents.restricted.view
+incidents.confidential.view
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized controls.
+Disabled controls show exact reason.
+Overrides require permission and reason.
+================================================== REQUIRED STATES
+==================================================
+Implement:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Read-only closed
+Saving
+Save failed
+CAPA not required
+CAPA required but not started
+Root cause without CAPA
+Barrier failure without CAPA
+Owner missing
+Due date missing
+Evidence missing
+Verification pending
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+
+--- PAGE 22 ---
+Verification failed
+Rework required
+Overdue
+Escalated
+Review requested
+Review approved
+Review rejected
+Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+Nice, clean, professional enterprise UI.
+Use cards, badges, tables, drawers, warning banners, coverage matrix, evidence panels, verification
+panels, readiness checklist, and mini summaries.
+All UI must use real backend data only.
+No mock/static data.
+Dark/light theme must be polished.
+Desktop: clean multi-column layout.
+Tablet/mobile: stacked cards and full-screen drawers.
+Every disabled button must show exact reason.
+Every panel must be easy to edit/debug because it is separated into its own file.
+================================================== TESTING
+==================================================
+Add tests for:
+Fetch CAPA tab
+Summary cards
+Generate CAPA from RCA
+Generate CAPA from Barrier Failures
+Add/edit/delete CAPA
+Link source
+Link evidence
+Submit completion
+Verify effectiveness
+Request rework
+Escalate overdue action
+Coverage matrix
+Request/approve/reject review
+Enforce permissions
+Enforce company_id/site_id isolation
+Create audit log
+Create incident history event
+Update Overview/Register
+Dark/light UI
+Responsive layout
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+
+--- PAGE 23 ---
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Corrective / Preventive Actions tab exists
+✓ Uses real backend data only
+✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ CAPA register works
+✓ Add/Edit CAPA drawer works
+✓ CAPA generation from RCA works
+✓ CAPA generation from Barrier Failures works
+✓ Source mapping works
+✓ Priority/classification works
+✓ Owner/due date assignment works
+✓ Implementation plan works
+✓ Completion evidence works
+✓ Effectiveness verification works
+✓ Overdue/escalation works
+✓ CAPA coverage matrix works
+✓ Review/readiness works
+✓ Uses Universal Action Engine, no duplicate action system
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+23
+
+--- PAGE 24 ---
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. CAPA tab completed 11. Universal Action Engine integration
+connected 12. RCA/barrier source mapping connected 13. Evidence/verification connected 14. Overdue/
+escalation logic connected 15. Permissions connected 16. Audit/history connected 17. Overview/Register
+updates connected 18. Dark/light responsive UI completed 19. Tests added/fixed 20. Remaining gaps, if any
+24

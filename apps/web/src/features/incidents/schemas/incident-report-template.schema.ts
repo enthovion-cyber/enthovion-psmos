@@ -1,0 +1,1 @@
+export const incidentReportTemplateTypes = ['Full investigation report', 'Executive summary', 'PSM incident report', 'Near miss report', 'Regulatory support package', 'CAPA summary report', 'Lessons learned bulletin', 'Evidence index', 'Audit trail report', 'Custom company/site template'];

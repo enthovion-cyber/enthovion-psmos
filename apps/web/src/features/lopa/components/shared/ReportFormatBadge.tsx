@@ -1,0 +1,1 @@
+export function ReportFormatBadge({ format }: { format?: string }) { return <span className="rounded border border-blue-400/20 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold text-blue-700 dark:text-blue-200">{format ?? 'PDF'}</span>; }

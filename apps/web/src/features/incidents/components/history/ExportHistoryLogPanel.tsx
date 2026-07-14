@@ -1,0 +1,3 @@
+import { Badge } from '../shared/IncidentStatusBadge';
+import { buttonPrimary, TabPanel } from '../shared/IncidentTabPrimitives';
+export function ExportHistoryLogPanel({ data, exporting, onExport }: any) { return <TabPanel title="Export History Log"><div className="grid gap-2 text-xs"><div className="flex items-center justify-between"><span>Export permission</span><Badge value={data?.available ? 'Available' : 'Unavailable'} /></div><div className="flex flex-wrap gap-2">{(data?.options ?? []).map((option: string) => <Badge key={option} value={option} />)}</div><button className={buttonPrimary} disabled={exporting || !data?.available} title={data?.disabledReason} onClick={onExport}>Export Filtered History</button></div></TabPanel>; }

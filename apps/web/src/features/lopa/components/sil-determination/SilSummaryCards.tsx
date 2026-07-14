@@ -1,0 +1,4 @@
+export function SilSummaryCards({ summary }: { summary: Record<string, any> }) {
+  const cards = [['SIL Required', summary.silRequired ? 'Yes' : 'No'], ['Target SIL', summary.targetSil ?? 'Awaiting methodology'], ['Required RRF', summary.requiredRrf ?? 'Not calculated'], ['Required PFDavg', summary.requiredPfdavg ?? 'Not calculated'], ['SIF Specifications', `${summary.completeSifs ?? 0}/${summary.sifCount ?? 0}`], ['IEC Gaps', summary.openIecGaps ?? 0], ['Open Actions', summary.openActions ?? 0], ['Basis Locked', summary.locked ? 'Yes' : 'No']];
+  return <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">{cards.map(([label, value]) => <div key={String(label)} className="rounded-xl border border-cyan-300/10 bg-[#071525] p-3"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</div><div className="mt-2 truncate text-sm font-bold text-slate-100">{String(value)}</div></div>)}</div>;
+}

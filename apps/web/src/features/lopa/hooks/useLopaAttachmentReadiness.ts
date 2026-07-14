@@ -1,0 +1,1 @@
+import { useQuery } from '@tanstack/react-query'; import { lopaAttachmentsService } from '../services/lopa-attachments.service'; export function useLopaAttachmentReadiness(id:string){return useQuery({queryKey:['lopa','attachments-readiness',id],queryFn:()=>lopaAttachmentsService.get(id).then(data=>data.readiness),enabled:!!id});}

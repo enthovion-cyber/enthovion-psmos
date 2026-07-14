@@ -1,0 +1,2 @@
+import { LopaPanel, TonePill } from '../overview/LopaOverviewShared';
+export function EvidenceClosureVerificationPanel({ rows }: { rows: any[] }) { return <LopaPanel title="Evidence / Closure Verification">{rows.length ? rows.map((row) => <div key={row.id} className="mb-2 rounded-lg border border-cyan-300/10 bg-[#03101d] p-3 text-sm"><b className="text-white">{row.evidence_type}</b><span className="ml-2 text-slate-400">{row.source_module}</span><TonePill>{row.status}</TonePill></div>) : <div className="text-sm text-slate-400">No evidence links recorded.</div>}</LopaPanel>; }

@@ -1,0 +1,445 @@
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Shift Handover tab fully.
+Context: The PTW Create Permit wizard, Permit Detail Page, Isolation / LOTO tab, Gas Test tab, and
+Workforce tab exist or are in progress. Now make the Shift Handover tab real, database-driven, and fully
+functional.
+Route:
+• /ptw/:id
+• Tab: Shift Handover
+Do NOT create static demo UI. Do NOT use mock handover data. Do NOT redesign the PTW page. Keep the
+current dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Auth: existing IAM/RBAC
+• Audit: existing audit log
+• Notification: existing Notification Center
+• Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+The Shift Handover tab must manage permit continuity between shifts.
+It must support:
+• Current shift summary
+• Outgoing supervisor
+• Incoming supervisor
+• Active permit handover checklist
+• Permit risk review
+• Isolation validity review
+• Gas test validity review
+• Workforce/accountability review
+• Conflict review
+• Expiring permit warning
+• Handover acknowledgement
+• Electronic signature
+1
+
+---PAGE---
+
+• Suspend permit during handover
+• Handover history
+• Audit log and permit history events
+================================================== SHIFT HANDOVER TAB UI
+==================================================
+The tab must show:
+1. Current Shift Card
+2. Current shift name
+3. Shift start time
+4. Shift end time
+5. Outgoing supervisor
+6. Permit status
+7. Work progress
+8. Work description summary
+9. Permit expiry countdown
+10. Expiring within 2 hours warning
+11. Incoming Shift Card
+12. Incoming shift name
+13. Incoming shift start time
+14. Incoming supervisor
+15. Incoming supervisor contact
+16. Acceptance status
+17. Acknowledge handover button
+18. Signature status
+19. Handover Checklist Card Checklist items:
+20. Work scope reviewed
+21. Permit status reviewed
+22. Work progress reviewed
+23. Isolation verified and valid
+24. Gas test within valid period
+25. Workforce/accountability reviewed
+26. Open conflicts reviewed
+27. Area inspected
+28. Emergency contacts reviewed
+2
+
+---PAGE---
+
+29. Permit expiry reviewed
+30. Required attachments reviewed
+31. Control room notified if required
+32. Permit Risk Review Card Show:
+33. Risk level
+34. Permit type
+35. Active risks
+36. Required controls
+37. Missing controls
+38. Safety-critical flags
+39. SIMOPS/conflict status
+40. Validity Review Card Show:
+41. Isolation status
+42. De-isolation status
+43. Gas test status
+44. Next gas retest due
+45. Workforce briefing status
+46. Workers currently signed in
+47. Required signatures complete/incomplete
+48. Handover Notes Card Fields:
+49. Work progress notes
+50. Remaining work
+51. Hazards observed
+52. Special precautions for next shift
+53. Control room message
+54. Incoming supervisor comments
+55. Handover History Table Columns:
+56. Handover time
+57. Outgoing supervisor
+58. Incoming supervisor
+59. Shift
+60. Permit status
+3
+
+---PAGE---
+
+61. Acknowledged
+62. Signature
+63. Notes
+64. Actions
+65. Handover Actions Buttons:
+66. Create Handover
+67. Save Draft Handover
+68. Complete Handover
+69. Acknowledge Incoming Shift
+70. Suspend Permit During Handover
+71. View Handover History
+================================================== HANDOVER FIELDS
+==================================================
+Each handover record must include:
+• id
+• permit_id
+• company_id
+• site_id
+• current_shift_name
+• current_shift_start
+• current_shift_end
+• incoming_shift_name
+• incoming_shift_start
+• incoming_shift_end
+• outgoing_supervisor_id
+• outgoing_supervisor_name
+• incoming_supervisor_id
+• incoming_supervisor_name
+• permit_status_at_handover
+• work_progress_status
+• work_progress_notes
+• remaining_work
+• hazards_observed
+• special_precautions
+• control_room_message
+• permit_expiry_at
+• expires_within_two_hours
+• isolation_status
+• gas_test_status
+• workforce_status
+• conflict_status
+4
+
+---PAGE---
+
+• checklist
+• acknowledgement_status
+• acknowledged_by
+• acknowledged_at
+• acknowledgement_signature_id
+• acknowledgement_ip
+• suspended_during_handover
+• suspension_reason
+• status
+• created_by
+• created_at
+• updated_at
+Handover status:
+• Draft
+• Pending Incoming Acknowledgement
+• Acknowledged
+• Completed
+• Suspended
+• Cancelled
+Work progress status:
+• Not Started
+• In Progress
+• Partially Complete
+• Complete
+• Stopped
+• Suspended
+================================================== BACKEND DATABASE
+==================================================
+Create/update models:
+permit_shift_handovers permit_handover_checklist_items permit_handover_history
+permit_shift_handovers:
+• all handover fields listed above
+permit_handover_checklist_items:
+• id
+• handover_id
+• permit_id
+• company_id
+5
+
+---PAGE---
+
+• site_id
+• checklist_key
+• checklist_label
+• is_required
+• is_checked
+• checked_by
+• checked_at
+• notes
+permit_handover_history:
+• id
+• permit_id
+• handover_id
+• company_id
+• site_id
+• event_type
+• description
+• user_id
+• before_value
+• after_value
+• created_at
+================================================== BACKEND APIs
+==================================================
+Create/update:
+• GET /ptw/:id/handover
+• POST /ptw/:id/handover
+• PATCH /ptw/:id/handover/:handoverId
+• DELETE /ptw/:id/handover/:handoverId
+• POST /ptw/:id/handover/:handoverId/complete
+• POST /ptw/:id/handover/:handoverId/acknowledge
+• POST /ptw/:id/handover/:handoverId/suspend-permit
+• GET /ptw/:id/handover/current
+• GET /ptw/:id/handover/history
+• GET /ptw/:id/handover/readiness
+• PATCH /ptw/:id/handover/:handoverId/checklist/:checklistItemId
+6
+
+---PAGE---
+
+================================================== BACKEND RULES
+==================================================
+1. Handover creation rule: A handover can be created only if:
+2. Permit is Active, Issued, Suspended, or Extended
+3. Permit is not Closed or Cancelled
+4. User has ptw.handover.create permission
+5. Acknowledgement rule: Incoming supervisor must acknowledge active permit before shift handover
+is complete.
+Acknowledgement requires:
+• Incoming supervisor identity
+• Electronic signature
+• Timestamp
+• IP address
+• Checklist rule: Required checklist items must be completed before handover completion.
+• Expiry warning rule: If permit expires within 2 hours:
+• Show warning
+• Notify incoming supervisor
+• Notify permit issuer / area authority
+• Require acknowledgement of expiry risk
+• Gas test validity rule: If gas test is overdue or due within configured warning window:
+• Show warning
+• Notify incoming supervisor
+• Require acknowledgement
+• If site policy requires, suspend permit
+• Isolation validity rule: If isolation is incomplete or not verified:
+• Block handover completion or require high-risk acknowledgement based on site policy.
+• Workforce rule: If workers are still signed in:
+7
+
+---PAGE---
+
+• Show active workforce count
+• Require accountability review
+• Require incoming supervisor acknowledgement
+• Suspend during handover: If user clicks Suspend Permit During Handover:
+• Require reason
+• Change permit status to Suspended
+• Create permit history event
+• Notify relevant users
+• Audit/history rules: Every create/update/checklist/acknowledge/complete/suspend action must
+create:
+• audit log
+• permit history event
+• handover history event
+• Site isolation: Every query and mutation must enforce company_id and site_id.
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+• features/ptw/components/tabs/PermitShiftHandoverTab.tsx
+• features/ptw/components/handover/CurrentShiftCard.tsx
+• features/ptw/components/handover/IncomingShiftCard.tsx
+• features/ptw/components/handover/HandoverChecklistCard.tsx
+• features/ptw/components/handover/PermitRiskReviewCard.tsx
+• features/ptw/components/handover/HandoverValidityReviewCard.tsx
+• features/ptw/components/handover/HandoverNotesForm.tsx
+• features/ptw/components/handover/HandoverHistoryTable.tsx
+• features/ptw/components/handover/HandoverActionPanel.tsx
+• features/ptw/hooks/usePermitHandover.ts
+• features/ptw/hooks/usePermitHandoverMutations.ts
+• features/ptw/schemas/handover.schema.ts
+• features/ptw/services/ptw-handover.service.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+8
+
+---PAGE---
+
+Use React Query.
+Queries:
+• current handover
+• handover history
+• handover readiness
+• permit summary
+• gas test status
+• isolation status
+• workforce status
+• conflict status
+Mutations:
+• create handover
+• update handover
+• update checklist item
+• save draft
+• complete handover
+• acknowledge handover
+• suspend permit during handover
+• delete draft if permitted
+After every mutation: Invalidate/refetch:
+• permit detail
+• handover tab
+• handover history
+• permit summary
+• lifecycle blockers
+• right summary panel
+• permit history
+• notifications if emitted
+================================================== FORMS
+==================================================
+Create Handover Form fields:
+• Current shift name
+• Current shift start/end
+• Incoming shift name
+• Incoming shift start/end
+• Outgoing supervisor
+• Incoming supervisor
+• Work progress status
+• Work progress notes
+9
+
+---PAGE---
+
+• Remaining work
+• Hazards observed
+• Special precautions
+• Control room message
+Checklist:
+• Work scope reviewed
+• Permit status reviewed
+• Work progress reviewed
+• Isolation verified and valid
+• Gas test within valid period
+• Workforce/accountability reviewed
+• Open conflicts reviewed
+• Area inspected
+• Emergency contacts reviewed
+• Permit expiry reviewed
+• Required attachments reviewed
+• Control room notified if required
+Validation:
+• Current shift required
+• Incoming shift required
+• Outgoing supervisor required
+• Incoming supervisor required
+• Work progress status required
+• Required checklist items must be checked before completion
+• Acknowledgement requires authenticated incoming supervisor
+• Suspend permit requires reason
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• ptw.handover.view
+• ptw.handover.create
+• ptw.handover.edit
+• ptw.handover.acknowledge
+• ptw.handover.complete
+• ptw.handover.suspend
+• ptw.handover.delete
+Rules:
+• Outgoing supervisor can create handover.
+• Incoming supervisor can acknowledge handover.
+10
+
+---PAGE---
+
+• Area Authority / Permit Issuer can complete or suspend if allowed by site policy.
+• Backend must enforce permissions.
+• Frontend hides buttons if permission missing.
+================================================== INTEGRATIONS
+==================================================
+Permit lifecycle:
+• Handover does not close permit.
+• Handover may suspend permit if needed.
+• Active permit remains active only if handover is acknowledged and controls remain valid.
+Notification Center: Emit events:
+• ptw.handover.created
+• ptw.handover.pending_acknowledgement
+• ptw.handover.acknowledged
+• ptw.handover.completed
+• ptw.handover.permit_suspended
+• ptw.handover.expiry_warning
+• ptw.handover.gas_retest_warning
+Audit: Audit every handover mutation.
+Equipment Registry: Permit handover event appears in equipment timeline if linked equipment exists.
+Offline PWA: Prepare for later offline acknowledgement by keeping service methods isolated.
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+Loading: Show skeleton cards and history table.
+Empty: If no handover: “No shift handover recorded yet. Create handover when permit continues into next
+shift.”
+Error: Show retry button and clear error message.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Shift Handover tab is complete only when:
+✓ Current shift card loads real data
+✓ Incoming shift card loads real data
+11
+
+---PAGE---
+
+✓ Handover checklist works
+✓ Handover notes save
+✓ Create handover works
+✓ Save draft works
+✓ Complete handover works
+✓ Incoming supervisor acknowledgement works with signature
+✓ Suspend permit during handover works
+✓ Expiring within 2 hours warning works
+✓ Gas test validity warning works
+✓ Isolation validity warning works
+✓ Workforce accountability review works
+✓ Handover history works
+✓ Notifications are emitted
+✓ Audit logs are created
+✓ Permit history events are created
+✓ Handover history events are created
+✓ React Query refreshes all affected panels
+✓ No static/mock handover data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+12

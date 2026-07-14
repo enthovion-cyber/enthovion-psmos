@@ -1,0 +1,2 @@
+import { Search } from 'lucide-react';
+export function SilDeterminationFilters({ value, onChange }: { value: string; onChange: (value: string) => void }) { return <div className="relative max-w-md"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500"/><input value={value} onChange={event => onChange(event.target.value)} placeholder="Search SIFs, components, gaps, links, actions..." className="w-full rounded border border-slate-300 bg-white py-2 pl-9 pr-3 text-xs text-slate-900 dark:border-slate-700 dark:bg-[#071525] dark:text-slate-100"/></div>; }

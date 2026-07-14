@@ -1,0 +1,1 @@
+import { z } from 'zod'; export const lopaAttachmentSchema=z.object({attachmentType:z.string().min(1),evidenceCategory:z.string().optional(),relatedTab:z.string().optional(),description:z.string().optional(),requiredEvidence:z.boolean().optional(),classification:z.string().optional(),accessLevel:z.string().optional()});

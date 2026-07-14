@@ -1,0 +1,4 @@
+import { OverviewPanelShell, SnapshotGrid } from './OverviewPanelShell';
+export function PeopleInjuryExposureSnapshotPanel({ data }: { data?: Record<string, any> }) {
+  return <OverviewPanelShell title="People / Injury / Exposure Snapshot Panel" subtitle={data?.medicalDataRestricted ? 'Medical data hidden by permission.' : 'People, injury, illness, and exposure summary.'}><SnapshotGrid data={data} fields={[['peopleInvolved','People involved'],['injuredPersonCount','Injured person count'],['injuryOccurred','Injury occurred'],['illnessOccurred','Illness occurred'],['exposureOccurred','Exposure occurred'],['treatmentType','Treatment type'],['lostTimePotential','Lost time potential'],['medicalTreatmentRequired','Medical treatment required'],['hospitalization','Hospitalization'],['fatality','Fatality'],['ppeIssueSuspected','PPE issue suspected'],['chemicalExposure','Chemical exposure'],['medicalDataRestricted','Medical data hidden']]} /></OverviewPanelShell>;
+}

@@ -1,0 +1,6 @@
+import { EvidenceSupportBadge } from '../shared/EvidenceSupportBadge';
+import { RcaEmpty, RcaPanel } from './RcaPrimitives';
+
+export function FishboneAnalysisPanel({ data, onCreate }: any) {
+  return <RcaPanel title="Fishbone / Ishikawa Analysis Panel" subtitle="People, process, equipment, environment, management system and other cause branches."><button className="mb-3 rounded-lg bg-blue-600 px-3 py-2 text-xs font-black text-white" onClick={onCreate}>Add Fishbone Cause</button>{!data?.categories?.length ? <RcaEmpty text="No fishbone categories returned." /> : <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data.categories.map((category: any) => <div key={category.category} className="rounded-lg border border-slate-200 p-3 text-xs dark:border-cyan-300/10"><h4 className="font-black">{category.category} ({category.count})</h4>{!category.items?.length ? <p className="mt-2 text-slate-500">No causes in this branch.</p> : <ul className="mt-2 grid gap-1">{category.items.map((item: any) => <li key={item.id} className="rounded-md bg-slate-50 p-2 dark:bg-[#03111f]"><b>{item.cause_item}</b><div><EvidenceSupportBadge value={item.evidence_support_level} /></div></li>)}</ul>}</div>)}</div>}</RcaPanel>;
+}

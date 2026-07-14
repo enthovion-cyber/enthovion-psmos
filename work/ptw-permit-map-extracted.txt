@@ -1,0 +1,503 @@
+
+---PAGE 1---
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Permit Map fully.
+Context: The PTW Dashboard / Control Room exists or is in progress. Now build the Permit Map view for live
+visualization of active permits by plant, unit, area, equipment, conflict, gas status, and risk.
+Routes:
+• /ptw/map
+• Also embed compact Permit Map panel inside /ptw dashboard if layout supports it.
+Important: This is NOT the full permit detail page. Clicking a permit marker must open /ptw/:id.
+Do NOT create a static mock map. Do NOT use fake markers or hardcoded permit data. Do NOT redesign
+the existing dark industrial PTW UI. Keep the current dark industrial dashboard style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + Zustand
+• Realtime: Supabase Realtime/WebSocket where available
+• Auth: existing IAM/RBAC
+• Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+The PTW Permit Map must provide a control-room visual view of all active and relevant permits.
+It must support:
+• Active permits by site/unit/area
+• Permit markers
+• Equipment markers
+• Conflict markers
+• Expiring permit warnings
+• Gas retest due warnings
+• Isolation pending markers
+• Handover pending markers
+• Permit type colors
+• Risk-level colors
+• Filtering
+• Marker click preview
+1
+
+---PAGE 2---
+• Navigation to permit detail page
+• SVG plant layout support
+• Data-driven fallback map when SVG layout is not available
+• Realtime refresh
+================================================== MAP MODES
+==================================================
+Support two modes:
+1. SVG Plant Layout Mode Use uploaded/configured SVG layout for a site, unit, or area.
+2. Data-Driven Area Map Mode If no SVG exists, show structured map cards:
+3. Site
+4. Process units
+5. Areas
+6. Equipment
+7. Active permit count
+8. Highest risk
+9. Open conflicts
+10. Expiring soon
+11. Gas retest due
+12. Isolation pending
+Do not block development if SVG layout is missing. Build fallback mode first, then SVG support.
+================================================== PERMIT MAP UI
+==================================================
+Page layout:
+Top Header:
+• Permit Map title
+• Active site
+• Site / Unit / Area selector
+• Map mode selector
+• Refresh button
+• Realtime status
+• Back to PTW Dashboard button
+Filter Bar:
+• Permit status
+• Permit type
+2
+
+---PAGE 3---
+• Risk level
+• Unit
+• Area
+• Equipment
+• Conflict status
+• Gas retest status
+• Isolation status
+• Handover status
+• Expiring within
+• Contractor company
+• Permit holder
+Map Canvas:
+• SVG plant layout or data-driven map
+• Permit markers
+• Equipment markers
+• Conflict markers
+• Expiry markers
+• Gas retest markers
+• Isolation markers
+• Handover markers
+Right Panel:
+• Selected marker preview
+• Permit details summary
+• Area summary
+• Conflict summary
+• Quick actions
+Bottom/Side Legend:
+• Permit type colors
+• Risk colors
+• Status symbols
+• Conflict warning symbols
+• Gas warning symbols
+================================================== MARKER TYPES
+==================================================
+Support markers:
+Permit Marker:
+• Permit number
+• Permit type
+3
+
+---PAGE 4---
+• Status
+• Risk level
+• Equipment tag
+• Area
+• Holder
+• Expiry countdown
+Equipment Marker:
+• Equipment tag
+• Equipment name
+• Equipment type
+• Criticality
+• Active permit count
+Conflict Marker:
+• Conflict type
+• Severity
+• Related permits
+• Status
+• Override status
+Gas Warning Marker:
+• Retest due soon
+• Retest overdue
+• Failed gas test
+• Auto-suspended
+Isolation Marker:
+• Isolation pending
+• Isolation incomplete
+• De-isolation pending
+Handover Marker:
+• Handover pending
+• Incoming acknowledgement pending
+• Permit crossing shift
+================================================== COLOR / BADGE RULES
+==================================================
+Permit type colors:
+• Hot Work: red/orange
+• Cold Work: blue
+4
+
+---PAGE 5---
+• Confined Space: purple
+• Electrical Isolation / LOTO: yellow
+• Excavation: amber
+• Radiography: pink/red
+• Working at Height: cyan
+• Line Breaking / Equipment Opening: orange
+• SIMOPS: violet
+Risk colors:
+• Low: green
+• Medium: yellow
+• High: orange
+• Critical: red
+Status:
+• Active: green pulse
+• Pending: blue
+• Expiring: amber pulse
+• Suspended: gray/orange
+• Closed: muted gray
+• Conflict: red alert
+================================================== MAP DATA REQUIREMENTS
+==================================================
+Each map item must include:
+Permit map item:
+• permit_id
+• permit_number
+• permit_title
+• permit_type
+• status
+• risk_level
+• company_id
+• site_id
+• unit_id
+• area_id
+• equipment_id
+• equipment_tag
+• holder_name
+• contractor_company
+• planned_start
+• planned_end
+• expiry_at
+5
+
+---PAGE 6---
+• expires_in_minutes
+• has_conflict
+• highest_conflict_severity
+• gas_status
+• isolation_status
+• handover_status
+• signature_status
+• latitude
+• longitude
+• svg_x
+• svg_y
+• map_zone_id
+Area map item:
+• area_id
+• area_name
+• unit_id
+• unit_name
+• active_permit_count
+• high_risk_count
+• critical_risk_count
+• conflict_count
+• expiring_count
+• gas_retest_due_count
+• isolation_pending_count
+• handover_pending_count
+Equipment map item:
+• equipment_id
+• equipment_tag
+• equipment_name
+• equipment_type
+• criticality
+• area_id
+• active_permit_count
+• latitude
+• longitude
+• svg_x
+• svg_y
+================================================== BACKEND DATABASE
+==================================================
+Create/update:
+ptw_map_layouts ptw_map_zones ptw_map_markers optional if storing configured marker positions
+6
+
+---PAGE 7---
+ptw_map_layouts fields:
+• id
+• company_id
+• site_id
+• unit_id optional
+• area_id optional
+• layout_name
+• layout_type: SVG / IMAGE / DATA
+• svg_file_url
+• image_file_url
+• width
+• height
+• version
+• is_active
+• uploaded_by
+• uploaded_at
+• created_at
+• updated_at
+ptw_map_zones fields:
+• id
+• company_id
+• site_id
+• layout_id
+• unit_id optional
+• area_id optional
+• zone_name
+• zone_type: Site / Unit / Area / EquipmentZone / HazardZone
+• svg_element_id
+• polygon_points optional
+• x
+• y
+• width
+• height
+• color
+• metadata
+• created_at
+• updated_at
+ptw_map_markers fields:
+• id
+• company_id
+• site_id
+• layout_id
+• equipment_id optional
+7
+
+---PAGE 8---
+• area_id optional
+• marker_type
+• label
+• svg_x
+• svg_y
+• latitude
+• longitude
+• metadata
+• created_at
+• updated_at
+================================================== BACKEND APIs
+==================================================
+Create/update:
+Map data:
+• GET /ptw/map
+• GET /ptw/map/summary
+• GET /ptw/map/areas
+• GET /ptw/map/equipment
+• GET /ptw/map/conflicts
+• GET /ptw/map/alerts
+• GET /ptw/map/permit/:permitId/preview
+Layouts:
+• GET /ptw/map/layouts
+• POST /ptw/map/layouts
+• PATCH /ptw/map/layouts/:layoutId
+• DELETE /ptw/map/layouts/:layoutId
+• POST /ptw/map/layouts/:layoutId/upload-svg
+Zones:
+• GET /ptw/map/layouts/:layoutId/zones
+• POST /ptw/map/layouts/:layoutId/zones
+• PATCH /ptw/map/layouts/:layoutId/zones/:zoneId
+• DELETE /ptw/map/layouts/:layoutId/zones/:zoneId
+Markers:
+• GET /ptw/map/layouts/:layoutId/markers
+• POST /ptw/map/layouts/:layoutId/markers
+• PATCH /ptw/map/layouts/:layoutId/markers/:markerId
+• DELETE /ptw/map/layouts/:layoutId/markers/:markerId
+8
+
+---PAGE 9---
+Query params:
+• site_id
+• unit_id
+• area_id
+• permit_type
+• status
+• risk_level
+• has_conflict
+• gas_status
+• isolation_status
+• handover_status
+• expiring_within
+• contractor_company_id
+• holder_id
+================================================== BACKEND SERVICES
+==================================================
+Create/fix:
+• ptw-map.service.ts
+• ptw-map.repository.ts
+• ptw-map-layout.service.ts
+• ptw-map-marker.mapper.ts
+• ptw-map-summary.service.ts
+Service logic:
+• Load permits for active user site scope.
+• Aggregate area/unit counts.
+• Load map layout if available.
+• Generate fallback area map if no layout.
+• Attach permit status, gas status, isolation status, conflict status.
+• Attach equipment markers.
+• Enforce permissions and site isolation.
+• Support filters.
+• Support realtime update payloads.
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+• app/(app)/ptw/map/page.tsx
+• features/ptw/components/map/PTWPermitMapPage.tsx
+• features/ptw/components/map/PermitMapHeader.tsx
+• features/ptw/components/map/PermitMapFilters.tsx
+9
+
+---PAGE 10---
+• features/ptw/components/map/PermitMapCanvas.tsx
+• features/ptw/components/map/SVGPlantMap.tsx
+• features/ptw/components/map/FallbackAreaMap.tsx
+• features/ptw/components/map/PermitMarker.tsx
+• features/ptw/components/map/EquipmentMarker.tsx
+• features/ptw/components/map/ConflictMarker.tsx
+• features/ptw/components/map/MapLegend.tsx
+• features/ptw/components/map/MapRightPanel.tsx
+• features/ptw/components/map/SelectedPermitPreview.tsx
+• features/ptw/components/map/AreaSummaryCard.tsx
+• features/ptw/components/map/MapLayoutManager.tsx
+• features/ptw/hooks/usePTWMap.ts
+• features/ptw/hooks/usePTWMapLayout.ts
+• features/ptw/services/ptw-map.service.ts
+• features/ptw/stores/ptw-map.store.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+Use React Query.
+Queries:
+• map data
+• map summary
+• area overview
+• equipment markers
+• conflict markers
+• alerts
+• layouts
+• zones
+• markers
+Mutations:
+• upload SVG layout
+• create/update/delete layout
+• create/update/delete zone
+• create/update/delete marker
+Interactions:
+• Click permit marker → show preview in right panel
+• Click Open Detail → navigate to /ptw/:id
+• Click equipment marker → show equipment permit summary
+• Click area card → filter map to area
+• Click conflict marker → show conflict detail
+• Apply filters → refetch map
+10
+
+---PAGE 11---
+• Refresh → refetch all map data
+Realtime: If available:
+• Update marker status when permit status changes
+• Add marker when permit activates
+• Remove/mute marker when permit closes
+• Update conflict marker when conflict detected/resolved
+• Update gas warning marker when retest overdue
+================================================== MAP LAYOUT MANAGER
+==================================================
+For admins/HSE/Control Room:
+Allow:
+• Upload SVG plant layout
+• Name layout
+• Assign to site/unit/area
+• Add/edit zones
+• Map SVG zone to unit/area
+• Place equipment markers
+• Save marker positions
+Do not require full SVG editor now. Basic upload + zone/marker configuration is enough.
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• ptw.map.view
+• ptw.map.manage_layouts
+• ptw.map.manage_zones
+• ptw.map.manage_markers
+• ptw.view
+Rules:
+• User only sees permits from assigned company/site.
+• Contractors only see assigned permits.
+• Only permitted users can manage layouts/zones/markers.
+• Backend must enforce permissions.
+• Frontend hides layout tools if permission missing.
+================================================== INTEGRATIONS
+==================================================
+11
+
+---PAGE 12---
+PTW Dashboard:
+• Embed compact map panel using same APIs.
+Permit Detail:
+• Marker Open Detail navigates to /ptw/:id.
+Equipment Registry:
+• Use equipment coordinates/map positions if available.
+• Equipment detail should link to active PTWs.
+Conflicts / SIMOPS:
+• Conflict markers come from conflict engine.
+Gas Test:
+• Gas warning markers come from gas retest status.
+Isolation:
+• Isolation markers come from isolation status.
+Shift Handover:
+• Handover pending markers come from handover status.
+Notification Center:
+• Map alerts can link to related notifications.
+Audit:
+• Layout/zone/marker management must be audit-logged.
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+Loading: Show map skeleton and marker loading state.
+Empty: If no active permits: “No active permits for selected site/filter.”
+If no SVG layout: “No plant layout uploaded. Showing area-based map.”
+Error: Show retry button and clear error message.
+12
+
+---PAGE 13---
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Permit Map is complete only when:
+✓ /ptw/map loads real permit map data
+✓ Fallback area map works without SVG
+✓ SVG layout support exists
+✓ Permit markers are real
+✓ Equipment markers are real
+✓ Conflict markers are real
+✓ Gas warning markers work
+✓ Isolation markers work
+✓ Handover markers work
+✓ Filters work
+✓ Marker preview works
+✓ Open Detail navigates to /ptw/:id
+✓ Dashboard compact map uses same real data
+✓ Realtime refresh works if available
+✓ Layout upload works for permitted users
+✓ Site isolation works
+✓ Permissions work
+✓ No static/mock map data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+13

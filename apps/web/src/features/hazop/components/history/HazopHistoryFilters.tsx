@@ -1,0 +1,8 @@
+import type { HazopHistoryFilters as FilterState } from '../../types/hazop-history.types';
+
+export const historyCategories = ['All', 'Study', 'Node', 'Scenario', 'Risk', 'Safeguard/IPL', 'Recommendation/Action', 'Team/Session', 'Linked Record', 'Review/Sign-Off', 'Attachment', 'Workflow', 'Notification', 'Security', 'System'];
+
+export function HazopHistoryFilters({ filters, onChange }: { filters: FilterState; onChange: (filters: FilterState) => void }) {
+  const set = (key: keyof FilterState, value: any) => onChange({ ...filters, [key]: value });
+  return <div className="grid gap-3 rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3 lg:grid-cols-[1fr_180px_140px_150px_150px_auto]"><input className="input" value={filters.search ?? ''} onChange={(e) => set('search', e.target.value)} placeholder="Search event, actor, record, description..." /><select className="input" value={filters.category ?? 'All'} onChange={(e) => set('category', e.target.value)}>{historyCategories.map((item) => <option key={item}>{item}</option>)}</select><select className="input" value={filters.severity ?? 'All'} onChange={(e) => set('severity', e.target.value)}><option>All</option><option>Info</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select><input className="input" type="date" value={filters.dateFrom ?? ''} onChange={(e) => set('dateFrom', e.target.value)} /><input className="input" type="date" value={filters.dateTo ?? ''} onChange={(e) => set('dateTo', e.target.value)} /><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(filters.safetyCritical)} onChange={(e) => set('safetyCritical', e.target.checked)} /> Safety</label></div>;
+}

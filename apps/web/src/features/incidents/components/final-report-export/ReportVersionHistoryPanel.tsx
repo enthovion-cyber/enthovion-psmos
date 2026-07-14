@@ -1,0 +1,2 @@
+import { TabPanel, TimelineList } from '../shared/IncidentTabPrimitives';
+export function ReportVersionHistoryPanel({ rows }: { rows: any[] }) { return <TabPanel title="Report Version History Panel"><TimelineList rows={(rows ?? []).map((row) => ({ id: row.reportNumber, event_title: `Version ${row.version} - ${row.reportNumber}`, event_description: `${row.officialStatus}. ${row.changesSincePrevious ?? ''}`, created_at: row.generatedAt }))} empty="No report versions generated yet." columns /></TabPanel>; }

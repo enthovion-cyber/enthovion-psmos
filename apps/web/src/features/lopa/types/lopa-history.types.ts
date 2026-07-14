@@ -1,0 +1,1 @@
+export type LopaHistoryData = { header: Record<string, any>; summary: Record<string, any>; timeline: any[]; register: { rows: any[]; total: number; page: number; limit: number }; moduleBreakdown: any[]; workflowTimeline: any[] };

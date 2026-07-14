@@ -1,0 +1,13 @@
+create index if not exists idx_company_subscriptions_company_id on public.company_subscriptions(company_id);
+create index if not exists idx_company_subscriptions_status on public.company_subscriptions(status);
+create index if not exists idx_company_subscriptions_provider_subscription_id on public.company_subscriptions(provider_subscription_id);
+create index if not exists idx_company_billing_customers_provider_customer_id on public.company_billing_customers(provider_customer_id);
+create index if not exists idx_company_entitlements_company_key on public.company_entitlements(company_id, entitlement_key);
+create index if not exists idx_company_usage_counters_company_key on public.company_usage_counters(company_id, usage_key);
+create index if not exists idx_company_usage_events_company_key_created on public.company_usage_events(company_id, usage_key, created_at desc);
+create index if not exists idx_billing_invoices_company_id on public.billing_invoices(company_id);
+create index if not exists idx_billing_invoices_provider_invoice_id on public.billing_invoices(provider_invoice_id);
+create index if not exists idx_billing_payment_methods_company_id on public.billing_payment_methods(company_id);
+create index if not exists idx_billing_events_provider_event_id on public.billing_events(provider_event_id);
+create index if not exists idx_billing_events_event_type on public.billing_events(event_type);
+create index if not exists idx_billing_audit_events_company_created on public.billing_audit_events(company_id, created_at desc);

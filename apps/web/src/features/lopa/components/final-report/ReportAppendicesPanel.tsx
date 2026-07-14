@@ -1,0 +1,2 @@
+import { FinalReportPanel } from './FinalReportPanel';
+export function ReportAppendicesPanel({ appendices }: { appendices:any[] }) { return <FinalReportPanel title="Report Appendices" subtitle="Available appendices generated from real module data."><div className="grid gap-2 md:grid-cols-2">{appendices.map((a:any)=><div key={a.key} className="rounded border border-slate-200 p-2 text-xs dark:border-cyan-300/10"><b>{a.title}</b><div className="text-slate-500">{a.sourceModule} · {a.included?'Included':'Optional'} · {a.status}</div></div>)}</div></FinalReportPanel>; }

@@ -1,0 +1,13 @@
+import { Download, X } from 'lucide-react';
+import type { AttachmentPreview, PermitAttachment } from '../../services/ptw-attachment.service';
+
+export function AttachmentPreviewDrawer({ attachment, preview, downloadUrl, onClose }: { attachment: PermitAttachment | null; preview?: AttachmentPreview | undefined; downloadUrl: string; onClose: () => void }) {
+  if (!attachment) return null;
+  const mime = preview?.mime_type ?? attachment.mime_type;
+  const canInline = preview?.previewSupported ?? (mime?.startsWith('image/') || mime === 'application/pdf');
+  return <div className="fixed inset-0 z-50 flex justify-end bg-black/55 backdrop-blur-sm"><aside className="h-full w-full max-w-3xl overflow-auto border-l border-[var(--psm-line)] bg-[var(--psm-surface)] shadow-2xl"><div className="sticky top-0 z-10 flex items-start justify-between border-b border-[var(--psm-line)] bg-[var(--psm-surface)] p-5"><div><h3 className="text-lg font-semibold">{attachment.title}</h3><p className="mt-1 text-sm text-[var(--psm-muted)]">{attachment.file_name} · {mime}</p></div><button onClick={onClose} className="rounded-lg p-2 text-[var(--psm-muted)] hover:bg-[var(--psm-surface-2)]"><X size={18} /></button></div><div className="space-y-4 p-5">{canInline && mime?.startsWith('image/') ? <img src={downloadUrl} alt={attachment.title} className="max-h-[70vh] w-full rounded-xl object-contain" /> : null}{canInline && mime === 'application/pdf' ? <iframe src={downloadUrl} className="h-[70vh] w-full rounded-xl border border-[var(--psm-line)]" title={attachment.title} /> : null}{!canInline ? <div className="rounded-xl border border-dashed border-[var(--psm-line)] p-8 text-center text-sm text-[var(--psm-muted)]">Preview is not available for this file type. Use download to open it locally.</div> : null}<div className="grid gap-3 md:grid-cols-2"><Info label="Attachment Type" value={attachment.attachment_type ?? 'Other'} /><Info label="Related Section" value={attachment.related_section ?? '-'} /><Info label="Visibility" value={attachment.visibility ?? 'Internal'} /><Info label="Uploaded" value={attachment.uploaded_at || attachment.created_at ? new Date(attachment.uploaded_at ?? attachment.created_at!).toLocaleString() : '-'} /></div><a href={downloadUrl} target="_blank" className="psm-button psm-button-primary"><Download size={15} /> Download File</a></div></aside></div>;
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-sm"><div className="text-xs uppercase text-[var(--psm-muted)]">{label}</div><div className="mt-1 font-semibold">{value}</div></div>;
+}

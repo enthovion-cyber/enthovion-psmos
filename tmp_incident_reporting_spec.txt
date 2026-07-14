@@ -1,0 +1,1851 @@
+
+
+===== PAGE 1 =====
+
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Notifications / Regulatory Reporting tab.
+Route:
+/incidents/:id
+Tab:
+Notifications / Regulatory Reporting
+Read the attached PDF/specification carefully before coding. Build this tab exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive UI issue. Do not miss a
+single thing.
+Keep this implementation detailed but not unnecessarily oversized. Build only what belongs to this tab.
+================================================== SCOPE
+==================================================
+Work only on:
+Notifications / Regulatory Reporting
+Do not build yet:
+Review & Approval
+Lessons Learned
+History
+Final Report / Export
+Use existing modules/data:
+Incident Dashboard/Register
+Incident Detail Shell
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+Investigation Team
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+
+===== PAGE 2 =====
+
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+Linked Records
+Notification Center
+Document Control
+Evidence / Attachments
+Universal Action Engine
+IAM/RBAC
+Audit Log
+Incident History
+Global Search
+Company/site regulatory configuration
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+Important:
+Do not hardcode legal/regulatory rules.
+Reporting rules, deadlines, jurisdictions, forms, recipients, and thresholds must come from
+company/site configuration.
+If configuration is missing, show Not Determined and require review.
+This tab supports internal notifications and external regulatory reporting readiness, not legal advice.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one large tab file.
+Tab container must be clean only:
+features/incidents/components/detail/NotificationsRegulatoryReportingTab.tsx
+Create separate folder:
+features/incidents/components/notifications-regulatory/
+Shared badges/components:
+features/incidents/components/shared/
+Also separate:
+hooks
+services
+schemas
+types
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+
+===== PAGE 3 =====
+
+SQL migrations
+No messy single-file implementation.
+================================================== CORE PURPOSE
+==================================================
+This tab must answer:
+Who must be notified internally?
+Who has already been notified?
+Which notifications failed, are pending, overdue, or acknowledged?
+Is regulatory reporting required?
+Which jurisdiction, agency, rule, form, deadline, and submission method apply?
+What incident facts triggered possible reporting?
+Are required data, evidence, approval, and attachments complete?
+Has the report been drafted, reviewed, approved, submitted, acknowledged, or rejected?
+Are external notifications, community notifications, contractor notifications, insurance/legal
+notifications, or management escalations required?
+Are reporting deadlines tracked and escalated?
+Is reporting readiness complete for incident review/closure?
+================================================== REQUIRED SECTIONS
+==================================================
+Build these panels:
+Notifications / Regulatory Header
+Summary Cards
+Reporting Determination Panel
+Internal Notifications Register
+Send Notification Drawer
+Regulatory Reporting Register
+Add/Edit Regulatory Report Drawer
+Reportability Criteria / Trigger Panel
+Deadline & Escalation Panel
+Report Package / Required Data Checklist Panel
+Submission & Acknowledgement Panel
+External Stakeholder Notification Panel
+Management / Legal / Insurance Notification Panel
+Notification & Reporting Review Panel
+Change History Panel
+Readiness / Missing Data Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. HEADER
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+3
+
+
+===== PAGE 4 =====
+
+Show:
+Incident number
+Incident title
+Incident status
+Actual severity
+Potential severity
+PSM/PSE/API tier
+Reporting required Yes/No/Not Determined
+Internal notifications status
+Regulatory reporting status
+Open reports
+Overdue reports
+Pending approvals
+Submitted reports
+Acknowledged reports
+Failed notifications
+Next reporting deadline
+Review status
+Last updated
+Actions:
+Send Notification
+Add Regulatory Report
+Run Reporting Determination
+Generate Report Package
+Request Review
+Create Follow-up Action
+Refresh Status
+Export Notification Log
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents are read-only unless reopened.
+Restricted/confidential/medical data must be redacted.
+================================================== 2. SUMMARY CARDS
+==================================================
+Cards:
+Reporting required
+Reporting not determined
+Internal notifications sent
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+
+===== PAGE 5 =====
+
+Internal notifications pending
+Failed notifications
+Regulatory reports required
+Draft reports
+Reports awaiting approval
+Reports submitted
+Reports acknowledged
+Reports overdue
+Next deadline
+Missing required data
+Restricted data in report
+Review status
+Ready for review/closure
+Rules:
+No fake counts.
+Values come from backend.
+Cards update Overview and Dashboard/Register .
+================================================== 3. REPORTING DETERMINATION PANEL
+==================================================
+Backend-generated determination based on incident data and company/site configuration.
+Inputs:
+Actual severity
+Potential severity
+Fatality
+Hospitalization
+Injury/exposure
+Chemical exposure
+LOPC/release
+Released material and quantity
+Fire/explosion
+Environmental impact
+Community impact
+PSM/PSE/API tier
+Contractor/public involvement
+Emergency services called
+External agency involved
+Site/jurisdiction/company rules
+Fields:
+Reporting determination
+Determination status
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+
+===== PAGE 6 =====
+
+Applicable jurisdiction
+Applicable rule/config
+Trigger reason
+Evidence/source fields
+Confidence
+Reviewer
+Review status
+Notes
+Rules:
+Backend is source of truth.
+Do not hardcode thresholds or legal rules.
+If threshold/config is missing, show Not Determined.
+Manual override requires permission and reason.
+Determination changes create audit/history.
+================================================== 4. INTERNAL NOTIFICATIONS REGISTER
+==================================================
+Columns:
+Notification number
+Notification type
+Recipient
+Recipient role/group
+Channel
+Trigger reason
+Status
+Sent by
+Sent at
+Acknowledged by
+Acknowledged at
+Failed reason
+Related report/action
+Actions
+Notification types:
+Management escalation
+HSE notification
+Process safety notification
+Operations notification
+Maintenance/MI notification
+Environmental notification
+Medical/HR notification
+Contractor management notification
+Legal notification
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+
+===== PAGE 7 =====
+
+Insurance notification
+Emergency response notification
+Review request
+Reminder
+Overdue escalation
+Other
+Statuses:
+Draft
+Queued
+Sent
+Delivered
+Acknowledged
+Failed
+Cancelled
+Overdue acknowledgement
+Rules:
+Use Notification Center .
+Do not create duplicate notification system.
+Medical/confidential content must be redacted without permission.
+Failed notifications show retry option if allowed.
+All notification actions create audit/history if project policy requires.
+================================================== 5. SEND NOTIFICATION DRAWER
+==================================================
+Fields:
+Notification type
+Recipient users/groups
+Channel
+Subject/title
+Message
+Include incident summary Yes/No
+Include restricted data Yes/No
+Include attachments/evidence Yes/No
+Related report/action
+Priority
+Acknowledgement required Yes/No
+Due date for acknowledgement
+Notes
+Rules:
+Recipient lookup must use real users/roles/groups.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+
+===== PAGE 8 =====
+
+Restricted/medical data inclusion requires permission.
+Message preview must show redacted view if needed.
+Drawer must be responsive and full-screen on mobile.
+Sending creates notification record and audit/history.
+================================================== 6. REGULATORY REPORTING REGISTER
+==================================================
+Columns:
+Report number
+Report type
+Jurisdiction
+Agency/authority
+Trigger reason
+Deadline
+Status
+Owner
+Reviewer/approver
+Submission method
+Submitted by
+Submitted at
+Acknowledgement/reference number
+Evidence/package status
+Actions
+Report types:
+Initial notification
+Follow-up report
+Final report
+Environmental release report
+Injury/fatality report
+Process safety event report
+Community notification
+Contractor/client notification
+Insurance/legal report
+Company-defined report
+Other
+Statuses:
+Not Determined
+Required
+Not Required
+Draft
+Data Missing
+Ready for Review
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+
+===== PAGE 9 =====
+
+Pending Approval
+Approved
+Submitted
+Acknowledged
+Rejected
+Overdue
+Cancelled
+Actions:
+View details
+Edit
+Generate package
+Link evidence
+Request approval
+Mark submitted
+Add acknowledgement
+Create follow-up action
+Cancel with reason
+================================================== 7. ADD / EDIT REGULATORY REPORT DRAWER
+==================================================
+Fields:
+Report type
+Jurisdiction
+Agency/authority
+Applicable rule/config
+Trigger reason
+Required Yes/No/Not Determined
+Deadline
+Owner
+Reviewer/approver
+Submission method
+Required data checklist
+Required evidence
+Attachments/documents
+Submission notes
+Acknowledgement/reference number
+Status
+Change reason
+Rules:
+Required reports must have owner and deadline.
+Deadline rules come from configuration.
+Status changes create audit/history.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+
+===== PAGE 10 =====
+
+Drawer must be responsive and full-screen on mobile.
+================================================== 8. REPORTABILITY CRITERIA / TRIGGER PANEL
+==================================================
+Show criteria checked by backend.
+Fields:
+Criterion
+Source data
+Threshold/config
+Result
+Triggered Yes/No/Not Determined
+Missing data
+Source tab
+Action
+Examples:
+Fatality/hospitalization
+Chemical release
+LOPC
+Fire/explosion
+Toxic exposure
+Environmental/community impact
+PSM/PSE/API tier
+Emergency services/external agency
+Contractor/public involvement
+Site-specific reportability rule
+Rules:
+No hardcoded thresholds.
+Missing source data must link to source tab.
+Trigger changes create audit/history.
+================================================== 9. DEADLINE & ESCALATION PANEL
+==================================================
+Fields:
+Report
+Deadline
+Time remaining
+Overdue Yes/No
+Escalation level
+Escalation owner
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+
+===== PAGE 11 =====
+
+Reminder schedule
+Last reminder sent
+Next reminder
+Escalation status
+Notes
+Rules:
+Backend calculates deadline status.
+Overdue required report creates Overview blocker .
+Escalation uses Notification Center .
+Escalation changes create audit/history.
+================================================== 10. REPORT PACKAGE / REQUIRED DATA
+CHECKLIST PANEL ==================================================
+Backend-generated checklist:
+Incident details complete
+Classification complete
+Severity/risk complete
+People/injury data complete if required
+Chemical/release data complete if required
+Evidence attached
+Timeline complete enough
+Immediate actions captured
+RCA/CAPA status included if required
+Restricted/medical data redacted
+Approval required
+Document package generated
+Fields:
+Requirement
+Status
+Source tab
+Missing field
+Required evidence/document
+Blocking Yes/No
+Action
+Rules:
+Missing required data blocks report submission.
+Report package must respect permissions/redaction.
+Use Document Control/storage for generated package if available.
+================================================== 11. SUBMISSION & ACKNOWLEDGEMENT
+PANEL ==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+
+===== PAGE 12 =====
+
+Fields:
+Report
+Submission method
+Submitted by
+Submitted at
+Submitted to
+Submission reference
+Acknowledgement received Yes/No
+Acknowledgement number
+Acknowledgement date
+Rejected Yes/No
+Rejection reason
+Follow-up required
+Evidence/receipt attachment
+Notes
+Rules:
+Mark submitted requires permission.
+Acknowledgement/rejection requires evidence or note if policy requires.
+Submitted reports may be locked unless reopened by permission.
+All changes create audit/history.
+================================================== 12. EXTERNAL STAKEHOLDER NOTIFICATION
+PANEL ==================================================
+Stakeholder types:
+Regulator/agency
+Local authority
+Emergency services
+Community/public
+Contractor company
+Client/customer
+Insurance
+Legal counsel
+Corporate management
+Other
+Fields:
+Stakeholder
+Notification required
+Reason
+Contact
+Channel
+Deadline
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+
+===== PAGE 13 =====
+
+Status
+Message/package
+Acknowledgement
+Notes
+Rules:
+Use configured contacts where available.
+Do not expose sensitive data without permission.
+External notifications create audit/history.
+================================================== 13. MANAGEMENT / LEGAL / INSURANCE
+NOTIFICATION PANEL ==================================================
+Fields:
+Senior management notification required
+Legal notification required
+Insurance notification required
+HR/medical notification required
+Corporate process safety notification required
+Notified parties
+Notification status
+Owner
+Notes
+Rules:
+High potential, fatality, Tier 1/Tier 2, regulatory reporting, public impact, or serious injury can trigger
+recommendations from backend config.
+Do not hardcode rules.
+Use Notification Center .
+================================================== 14. NOTIFICATION & REPORTING REVIEW
+PANEL ==================================================
+Fields:
+Review required
+Reviewer
+Due date
+Review status
+Review comments
+Approved by
+Approved at
+Rejection reason
+Rework required
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+
+
+===== PAGE 14 =====
+
+Actions:
+Request review
+Approve
+Reject
+Reopen
+Create action
+Rules:
+Approval requires readiness checks passed.
+Review decisions require permission and comment.
+Audit/history required.
+================================================== 15. CHANGE HISTORY PANEL
+==================================================
+Show read-only history:
+Changed field
+Previous value
+New value
+Changed by
+Changed at
+Reason
+Related notification/report
+Audit reference
+Rules:
+Use incident history/audit data.
+Redact restricted/medical values.
+No fake history.
+================================================== 16. READINESS / MISSING DATA PANEL
+==================================================
+Backend-generated checklist:
+Reporting determination complete
+Required notifications sent
+Failed notifications resolved
+Required reports created
+Report owners assigned
+Deadlines tracked
+Required report data complete
+Required evidence/package attached
+Approval complete if required
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+
+
+===== PAGE 15 =====
+
+Submission/acknowledgement recorded
+Overdue reports escalated
+Review complete if required
+Ready for incident review/closure
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+supabase/migrations/<timestamp>_incident_notifications_regulatory_tables.sql
+supabase/migrations/
+<timestamp>_incident_notifications_regulatory_rls_policies.sql
+supabase/migrations/<timestamp>_incident_notifications_regulatory_indexes.sql
+supabase/migrations/
+<timestamp>_incident_notifications_regulatory_constraints.sql
+Add/fix tables:
+incident_reporting_determinations
+id
+company_id
+site_id
+incident_id
+determination_status
+reporting_required
+jurisdiction
+applicable_rule_key
+trigger_reasons_json
+confidence
+reviewer_id
+review_status
+notes
+created_by
+updated_by
+created_at
+updated_at
+incident_notifications
+id
+company_id
+site_id
+incident_id
+notification_number
+notification_type
+recipient_user_id
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+
+
+===== PAGE 16 =====
+
+recipient_group
+recipient_external_contact
+channel
+subject
+message_redacted_snapshot
+trigger_reason
+acknowledgement_required
+acknowledgement_due_at
+status
+sent_by
+sent_at
+acknowledged_by
+acknowledged_at
+failed_reason
+notification_center_id
+created_by
+updated_by
+created_at
+updated_at
+incident_regulatory_reports
+id
+company_id
+site_id
+incident_id
+report_number
+report_type
+jurisdiction
+agency
+applicable_rule_key
+trigger_reason
+required_status
+deadline_at
+owner_id
+reviewer_id
+submission_method
+status
+submitted_by
+submitted_at
+submitted_to
+submission_reference
+acknowledgement_received
+acknowledgement_number
+acknowledgement_at
+rejected
+rejection_reason
+package_document_id
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+
+
+===== PAGE 17 =====
+
+notes
+created_by
+updated_by
+created_at
+updated_at
+incident_reporting_requirements
+id
+company_id
+site_id
+incident_id
+report_id
+requirement_key
+requirement_label
+status
+source_tab
+missing_field
+blocking
+created_by
+updated_by
+created_at
+updated_at
+incident_external_stakeholder_notifications
+id
+company_id
+site_id
+incident_id
+stakeholder_type
+stakeholder_name
+contact
+notification_required
+reason
+channel
+deadline_at
+status
+acknowledgement_status
+notes
+created_by
+updated_by
+created_at
+updated_at
+incident_reporting_reviews
+id
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+
+
+===== PAGE 18 =====
+
+company_id
+site_id
+incident_id
+status
+reviewer_id
+due_date
+comments
+approved_by
+approved_at
+rejected_by
+rejected_at
+rejection_reason
+rework_required
+created_by
+updated_by
+created_at
+updated_at
+Also update/use:
+incident_history_events
+SQL rules:
+Include indexes, foreign keys, constraints, RLS/company-site isolation.
+Include audit/history triggers if project pattern uses DB triggers.
+Include rollback/down migration if current project supports it.
+Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Add/fix:
+GET /incidents/:id/notifications-reporting
+GET /incidents/:id/notifications-reporting/summary
+GET /incidents/:id/notifications-reporting/readiness
+GET /incidents/:id/notifications-reporting/determination
+POST /incidents/:id/notifications-reporting/run-determination
+PATCH /incidents/:id/notifications-reporting/determination
+GET /incidents/:id/notifications-reporting/notifications
+POST /incidents/:id/notifications-reporting/notifications
+POST /incidents/:id/notifications-reporting/notifications/:notificationId/
+resend
+POST /incidents/:id/notifications-reporting/notifications/:notificationId/
+acknowledge
+GET /incidents/:id/notifications-reporting/reports
+POST /incidents/:id/notifications-reporting/reports
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+
+
+===== PAGE 19 =====
+
+GET /incidents/:id/notifications-reporting/reports/:reportId
+PATCH /incidents/:id/notifications-reporting/reports/:reportId
+POST /incidents/:id/notifications-reporting/reports/:reportId/generate-package
+POST /incidents/:id/notifications-reporting/reports/:reportId/request-approval
+POST /incidents/:id/notifications-reporting/reports/:reportId/mark-submitted
+POST /incidents/:id/notifications-reporting/reports/:reportId/add-
+acknowledgement
+POST /incidents/:id/notifications-reporting/reports/:reportId/mark-rejected
+GET /incidents/:id/notifications-reporting/reportability-criteria
+GET /incidents/:id/notifications-reporting/deadlines
+GET /incidents/:id/notifications-reporting/package-checklist
+GET /incidents/:id/notifications-reporting/stakeholders
+POST /incidents/:id/notifications-reporting/stakeholders
+GET /incidents/:id/notifications-reporting/management-legal-insurance
+GET /incidents/:id/notifications-reporting/review
+POST /incidents/:id/notifications-reporting/request-review
+POST /incidents/:id/notifications-reporting/approve-review
+POST /incidents/:id/notifications-reporting/reject-review
+GET /incidents/:id/notifications-reporting/history
+GET /incidents/:id/notifications-reporting/context
+GET /incidents/:id/notifications-reporting/export-log
+Lookups:
+GET /incidents/:id/lookups/notification-recipients
+GET /incidents/:id/lookups/regulatory-config
+GET /incidents/:id/lookups/jurisdictions
+GET /incidents/:id/lookups/agencies
+GET /incidents/:id/lookups/report-templates
+GET /incidents/:id/lookups/evidence
+GET /incidents/:id/lookups/documents
+GET /incidents/:id/lookups/actions
+API rules:
+Enforce company_id/site_id.
+Enforce permissions.
+Enforce restricted/confidential/medical redaction.
+Backend generates summary, determination, criteria checks, deadlines, package checklist, readiness,
+and blockers.
+All mutations create audit log and incident history.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+
+
+===== PAGE 20 =====
+
+Create/update:
+incident-notifications-reporting.service.ts
+incident-reporting-summary.service.ts
+incident-reporting-determination.service.ts
+incident-internal-notification.service.ts
+incident-regulatory-report.service.ts
+incident-reportability-criteria.service.ts
+incident-reporting-deadline.service.ts
+incident-report-package.service.ts
+incident-submission-acknowledgement.service.ts
+incident-external-stakeholder.service.ts
+incident-management-legal-insurance.service.ts
+incident-reporting-review.service.ts
+incident-reporting-history.service.ts
+incident-reporting-readiness.service.ts
+incident-notification-center-integration.service.ts
+incident-document-control-integration.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-global-search.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tab:
+features/incidents/components/detail/NotificationsRegulatoryReportingTab.tsx
+Components:
+features/incidents/components/notifications-regulatory/
+NotificationsRegulatoryHeader.tsx
+features/incidents/components/notifications-regulatory/
+NotificationsRegulatorySummaryCards.tsx
+features/incidents/components/notifications-regulatory/
+ReportingDeterminationPanel.tsx
+features/incidents/components/notifications-regulatory/
+InternalNotificationsRegister.tsx
+features/incidents/components/notifications-regulatory/
+SendNotificationDrawer.tsx
+features/incidents/components/notifications-regulatory/
+RegulatoryReportingRegister.tsx
+features/incidents/components/notifications-regulatory/
+AddEditRegulatoryReportDrawer.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+
+
+===== PAGE 21 =====
+
+features/incidents/components/notifications-regulatory/
+ReportabilityCriteriaPanel.tsx
+features/incidents/components/notifications-regulatory/
+DeadlineEscalationPanel.tsx
+features/incidents/components/notifications-regulatory/
+ReportPackageChecklistPanel.tsx
+features/incidents/components/notifications-regulatory/
+SubmissionAcknowledgementPanel.tsx
+features/incidents/components/notifications-regulatory/
+ExternalStakeholderNotificationPanel.tsx
+features/incidents/components/notifications-regulatory/
+ManagementLegalInsurancePanel.tsx
+features/incidents/components/notifications-regulatory/
+NotificationReportingReviewPanel.tsx
+features/incidents/components/notifications-regulatory/
+NotificationReportingChangeHistoryPanel.tsx
+features/incidents/components/notifications-regulatory/
+NotificationReportingReadinessPanel.tsx
+Shared:
+features/incidents/components/shared/ReportingStatusBadge.tsx
+features/incidents/components/shared/ReportRequiredBadge.tsx
+features/incidents/components/shared/NotificationStatusBadge.tsx
+features/incidents/components/shared/DeadlineStatusBadge.tsx
+features/incidents/components/shared/SubmissionStatusBadge.tsx
+features/incidents/components/shared/ReviewStatusBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentNotificationsReporting.ts
+features/incidents/hooks/useIncidentReportingSummary.ts
+features/incidents/hooks/useIncidentReportingDetermination.ts
+features/incidents/hooks/useIncidentNotifications.ts
+features/incidents/hooks/useIncidentRegulatoryReports.ts
+features/incidents/hooks/useIncidentReportingDeadlines.ts
+features/incidents/hooks/useIncidentReportingReview.ts
+features/incidents/hooks/useIncidentReportingReadiness.ts
+Services:
+features/incidents/services/incident-notifications-reporting.service.ts
+features/incidents/services/incident-reporting-determination.service.ts
+features/incidents/services/incident-notifications.service.ts
+features/incidents/services/incident-regulatory-reports.service.ts
+features/incidents/services/incident-reporting-review.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+
+
+===== PAGE 22 =====
+
+features/incidents/services/incident-reporting-lookups.service.ts
+Schemas:
+features/incidents/schemas/incident-reporting-determination.schema.ts
+features/incidents/schemas/incident-notification.schema.ts
+features/incidents/schemas/incident-regulatory-report.schema.ts
+features/incidents/schemas/incident-reporting-review.schema.ts
+Types:
+features/incidents/types/incident-notifications-reporting.types.ts
+features/incidents/types/incident-reporting-determination.types.ts
+features/incidents/types/incident-notification.types.ts
+features/incidents/types/incident-regulatory-report.types.ts
+features/incidents/types/incident-reporting-readiness.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.notifications_reporting.view
+incidents.notifications.send
+incidents.notifications.resend
+incidents.notifications.acknowledge
+incidents.reporting.view
+incidents.reporting.determine
+incidents.reporting.edit
+incidents.reporting.generate_package
+incidents.reporting.submit
+incidents.reporting.acknowledge
+incidents.reporting.override
+incidents.reporting.review.request
+incidents.reporting.review.approve
+incidents.reporting.review.reject
+incidents.reporting.export
+incidents.history.view
+incidents.medical_fields.view
+incidents.restricted.view
+incidents.confidential.view
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized controls.
+Disabled controls show exact reason.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+
+
+===== PAGE 23 =====
+
+Overrides/submissions require permission and reason.
+================================================== REQUIRED STATES
+==================================================
+Implement:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Medical data hidden
+Read-only closed
+Reporting not determined
+Reporting not required
+Reporting required
+Missing reporting configuration
+Required data missing
+Deadline approaching
+Deadline overdue
+Notification failed
+Notification pending acknowledgement
+Report pending approval
+Report submitted
+Report acknowledged
+Report rejected
+Package generation failed
+Review requested
+Review approved
+Review rejected
+Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+Nice, clean, professional enterprise UI.
+Use cards, badges, tables, drawers, readiness checklist, deadline banners, criteria matrix, package
+checklist, warning banners, and mini summaries.
+All UI must use real backend data only.
+No mock/static data.
+Dark/light theme must be polished.
+Desktop: clean multi-column layout.
+Tablet/mobile: stacked cards and full-screen drawers.
+Every disabled button must show exact reason.
+Every panel must be easy to edit/debug because it is separated into its own file.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+23
+
+
+===== PAGE 24 =====
+
+================================================== TESTING
+==================================================
+Add tests for:
+Fetch Notifications / Regulatory Reporting tab
+Summary cards
+Run reporting determination
+Handle missing configuration
+Send internal notification
+Resend/acknowledge notification
+Add/edit regulatory report
+Generate report package checklist
+Mark submitted
+Add acknowledgement
+Mark rejected
+Deadline/overdue escalation
+Review request/approve/reject
+Enforce permissions
+Enforce company_id/site_id isolation
+Redact restricted/confidential/medical data
+Create audit log
+Create incident history event
+Update Overview/Register
+Dark/light UI
+Responsive layout
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Notifications / Regulatory Reporting tab exists
+✓ Uses real backend data only
+✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ Reporting determination works
+✓ Missing config shows Not Determined
+✓ Internal notification register works
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+24
+
+
+===== PAGE 25 =====
+
+✓ Send notification drawer works
+✓ Regulatory reporting register works
+✓ Add/Edit regulatory report drawer works
+✓ Reportability criteria panel works
+✓ Deadline/escalation panel works
+✓ Report package checklist works
+✓ Submission/acknowledgement works
+✓ External stakeholder notifications work
+✓ Management/legal/insurance notifications work
+✓ Review/readiness works
+✓ Notification Center integration works
+✓ Document Control/report package integration works
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. Notifications / Regulatory Reporting tab completed 11. Reporting
+determination completed 12. Notification Center integration completed 13. Regulatory report package
+completed 14. Deadline/escalation logic completed 15. Permissions connected 16. Audit/history connected
+17. Overview/Register updates connected 18. Dark/light responsive UI completed 19. Tests added/fixed 20.
+Remaining gaps, if any
+25

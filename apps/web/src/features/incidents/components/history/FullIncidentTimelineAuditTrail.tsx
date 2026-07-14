@@ -1,0 +1,5 @@
+import { HistoryEventTypeBadge } from '../shared/HistoryEventTypeBadge';
+import { formatDate, TabPanel } from '../shared/IncidentTabPrimitives';
+export function FullIncidentTimelineAuditTrail({ rows, onSelect }: any) {
+  return <TabPanel title="Full Incident Timeline / Audit Trail"><div className="grid gap-2">{(rows ?? []).map((row: any) => <button key={row.id} onClick={() => onSelect(row)} className="rounded-lg border border-slate-200 p-3 text-left text-xs hover:border-blue-400 dark:border-cyan-300/10"><div className="flex flex-wrap items-start justify-between gap-2"><div><b>{row.event_title ?? row.event_type}</b><div className="text-slate-500">{row.related_tab ?? row.event_category ?? '-'} · {row.actor_user_id ?? '-'}</div></div><HistoryEventTypeBadge value={row.event_type} /></div><p className="mt-1 text-slate-500">{row.event_description ?? row.reason}</p><div className="mt-1 text-slate-400">{formatDate(row.created_at)} · Ref {row.audit_log_id ?? row.id}</div></button>)}{!(rows ?? []).length ? <p className="text-xs text-slate-500">No history found for the selected filters.</p> : null}</div></TabPanel>;
+}

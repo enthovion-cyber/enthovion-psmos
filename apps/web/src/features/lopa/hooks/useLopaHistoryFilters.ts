@@ -1,0 +1,1 @@
+import { useState } from 'react'; import type { LopaAttachmentFilters } from '../types/lopa-attachment.types'; export function useLopaHistoryFilters(){return useState<LopaAttachmentFilters>({page:'1',limit:'50'});}

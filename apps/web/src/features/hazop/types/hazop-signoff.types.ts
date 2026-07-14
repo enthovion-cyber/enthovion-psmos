@@ -1,0 +1,23 @@
+export type HazopSignoff = {
+  id: string;
+  role?: string;
+  signoff_role?: string;
+  signature_role?: string;
+  discipline?: string;
+  required?: boolean;
+  status?: string;
+  assigned_user_id?: string;
+  signer_user_id?: string;
+  requested_at?: string;
+  requested_by?: string;
+  signed_by?: string;
+  signed_at?: string;
+  rejected_at?: string;
+  rejection_reason?: string;
+  superseded_at?: string;
+  comment?: string;
+  e_signature_id?: string;
+  sequence_order?: number;
+  assignedUser?: { displayName?: string; email?: string; title?: string; department?: string };
+  signedByUser?: { displayName?: string; email?: string; title?: string; department?: string };
+};

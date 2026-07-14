@@ -1,0 +1,1407 @@
+--- PAGE 1 ---
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the LOPA / SIL study-level Final Report / Export module in full detail.
+Route:
+• /lopa/:id
+Tab / Section:
+• Final Report / Export
+Important: This is a study-level final reporting and export section inside one specific LOPA study.
+Work only on:
+• Final Report / Export
+Do not rebuild:
+• Dashboard / Register
+• Create Wizard
+• Overview
+• Scenario & Consequence
+• Initiating Event
+• IPL Registry
+• IPLs / Safeguards
+• Risk Calculation
+• SIL Determination / SIF Specification
+• Recommendations / Actions
+• Team & Sessions
+• Linked Records
+• Review & Sign-Off
+• Attachments
+• History
+Use real backend, real database, real APIs, real permissions, audit logs, LOPA history events, Document
+Control, storage service, export service, PDF generation service, spreadsheet export service if available,
+Review & Sign-Off approval snapshot, e-signature records, Attachments, History, Linked Records,
+Recommendations / Actions, Team & Sessions, Risk Calculation, SIL Determination / SIF Specification, IPLs /
+Safeguards, Scenario & Consequence, Initiating Event, Overview data, IAM/RBAC, Global Search, and
+Notification Center where available.
+Do not use mock/static data.
+UI must be modern, clean, professional, responsive, and must work correctly in dark theme and light
+theme.
+1
+
+--- PAGE 2 ---
+Follow existing frontend/backend architecture and file structure.
+Backend must enforce:
+• company_id
+• site_id
+• permissions
+• study status
+• report generation rules
+• approval/read-only rules
+• export access rules
+• document classification rules
+• final approved snapshot rules
+• redaction rules
+• audit/history rules
+Frontend must hide or disable unauthorized actions.
+Every generate, preview, export, download, regenerate, approve report package, publish to Document
+Control, archive report, restore report, share, email, mark official, mark superseded, and bulk export action
+must create audit log and LOPA history event.
+Closed/approved LOPA studies should export from the approved snapshot where required, not from
+editable draft data.
+Final approved reports must be immutable unless a controlled revision/reopen workflow is used.
+================================================== CORE PURPOSE
+==================================================
+The Final Report / Export module creates an audit-ready LOPA/SIL report package from the completed LOPA
+study.
+It must compile:
+• Study metadata
+• Scenario & consequence
+• Initiating event
+• Conditional modifiers
+• Safeguards/IPLs
+• Risk calculation
+• SIL determination / SIF specification
+• Recommendations/actions
+• Team/session participation
+• Linked records
+• Review/sign-off
+• Attachments index
+2
+
+--- PAGE 3 ---
+• History/audit trail
+• Approval and e-signature evidence
+• Appendices
+This module must support:
+• Final report preview
+• PDF export
+• Excel/CSV export where useful
+• Appendix generation
+• Official approved report package
+• Document Control publishing
+• Report versioning
+• Redaction / permission-safe export
+• Audit trail of generated reports
+================================================== CORE CONCEPTS
+==================================================
+Final Report: A compiled LOPA/SIL study report containing all technical analysis, assumptions, results,
+recommendations, approvals, and evidence index.
+Report Package: A bundled export that may include PDF report, calculation appendix, IPL validation
+appendix, attachments index, approval snapshot, history export, and selected supporting files.
+Official Report: A report version marked as official/approved and optionally published to Document Control.
+Draft Report: A generated preview/report before final approval or before marking official.
+Report Snapshot: Immutable snapshot of the data used to generate the report, including study status,
+calculation version, SIL version, review approval snapshot, attachment index, and history event references.
+Redacted Report: A permission-safe export that hides restricted data, restricted attachments, sensitive
+comments, restricted history metadata, or confidential linked records.
+================================================== GOAL
+==================================================
+Users must be able to:
+1. Open Final Report / Export tab.
+2. See final report readiness.
+3. See missing report blockers.
+4. Choose report template.
+5. Configure report sections.
+6. Preview report before export.
+7. Generate final LOPA/SIL PDF report.
+3
+
+--- PAGE 4 ---
+8. Export calculation tables to Excel/CSV if supported.
+9. Export IPL validation appendix.
+10. Export SIL/SIF appendix.
+11. Export recommendations/actions register.
+12. Export team attendance/minutes summary.
+13. Export linked records index.
+14. Export attachment index.
+15. Export history/audit trail.
+16. Generate complete report package.
+17. Mark report as official.
+18. Publish final report to Document Control if available.
+19. Preserve report version history.
+20. Download previous report versions.
+21. Redact restricted content according to permissions.
+22. Create audit log and LOPA history event for all report actions.
+================================================== REQUIRED UI SECTIONS
+==================================================
+The Final Report / Export module must include:
+1. Final Report Header
+2. Report Summary Cards
+3. Report Readiness / Blockers Panel
+4. Report Template Selection Panel
+5. Report Section Builder / Checklist
+6. Report Preview Panel
+7. Export Options Panel
+8. Report Package Builder
+9. Generated Reports Register
+10. Report Detail Drawer
+11. Report Version History Panel
+12. Official Report / Publish to Document Control Panel
+13. Report Appendices Panel
+14. Redaction / Permission Preview Panel
+15. Report Distribution / Sharing Panel if supported
+16. Export History Panel
+17. Filters / Search
+18. Loading / Empty / Error / Permission / Read-only States
+================================================== 1. FINAL REPORT HEADER
+==================================================
+Header must show:
+• Title: Final Report / Export
+• Subtitle: Generate audit-ready LOPA/SIL reports, appendices, and approved report packages
+• LOPA study number
+4
+
+--- PAGE 5 ---
+• Study title
+• Study status
+• Report readiness status
+• Review/sign-off status
+• Approval status
+• Signature status
+• Official report status
+• Latest report version
+• Latest generated at
+• Latest generated by
+• Button: Preview Report
+• Button: Generate PDF Report
+• Button: Generate Report Package
+• Button: Export Excel/CSV
+• Button: Publish to Document Control
+• Button: Refresh
+• Last updated timestamp
+Header rules:
+• Use real backend values.
+• Hide buttons without permissions.
+• Disable actions with exact reason.
+• Generate final/official report disabled if report readiness has blocking issues.
+• Publish disabled if Document Control is unavailable or user lacks permission.
+• Approved/closed studies should generate from approved snapshot if available.
+• Header must be responsive.
+• Header must work in dark and light themes.
+================================================== 2. REPORT SUMMARY CARDS
+==================================================
+Use real backend values only.
+Cards:
+• Report readiness status
+• Review/sign-off status
+• Approval status
+• Signature status
+• Final report generated Yes/No
+• Official report published Yes/No
+• Latest report version
+• Draft reports
+• Official reports
+• Superseded reports
+• Failed exports
+• Missing required sections
+5
+
+--- PAGE 6 ---
+• Missing required evidence
+• Open blockers
+• Open actions
+• Calculation snapshot status
+• SIL snapshot status
+• Attachment index status
+• History trail status
+• Linked records status
+• Team/session readiness
+• Report package complete Yes/No
+Each card must show:
+• Count/status/value
+• Label
+• Icon
+• Risk/status color
+• Tooltip/help text
+• Click-to-filter behavior where useful
+• Real API data only
+Rules:
+• No fake/static counters.
+• Counts must respect company_id/site_id and permissions.
+• Cards update after report generation, export, publish, approval, attachment, or readiness changes.
+================================================== 3. REPORT READINESS / BLOCKERS PANEL
+==================================================
+Backend-generated readiness only.
+Readiness checklist:
+• Study metadata complete
+• Scenario & Consequence complete
+• Initiating Event complete
+• Conditional Modifiers complete if required
+• IPLs / Safeguards validation complete
+• Risk Calculation complete
+• Calculation status not Needs Recalculation
+• SIL Determination / SIF Specification complete if required
+• Recommendations / Actions readiness complete
+• Blocking actions resolved or accepted
+• Team & Sessions readiness complete
+• Linked Records readiness complete
+• Review & Sign-Off complete if final/official report
+• Required e-signatures complete if final/official report
+6
+
+--- PAGE 7 ---
+• Required attachments/evidence complete
+• Attachment index ready
+• History/audit trail ready
+• Approval snapshot available if approved report
+• Required report template available
+• Export service available
+• User has permission to generate/export
+• No restricted inaccessible required content for report scope
+Status values:
+• Complete
+• Incomplete
+• Warning
+• Blocked
+• Not Applicable
+Blocker types:
+• Missing study metadata
+• Missing scenario/consequence
+• Missing initiating event
+• Missing IPL validation
+• Calculation incomplete
+• Calculation needs recalculation
+• SIL incomplete
+• Open blocking action
+• Missing required evidence
+• Team readiness blocked
+• Linked records blocked
+• Review/sign-off incomplete
+• E-signature incomplete
+• Approval snapshot missing
+• Report template missing
+• Export service unavailable
+• Permission missing
+• Restricted content conflict
+• Study locked/reopened conflict
+Rules:
+• Backend generates readiness.
+• Frontend displays only.
+• Blocking items prevent official final report generation.
+• Draft preview may be allowed with warnings if policy allows.
+• Blockers link to relevant tab/section.
+• Readiness feeds Overview and Review & Sign-Off where relevant.
+7
+
+--- PAGE 8 ---
+================================================== 4. REPORT TEMPLATE SELECTION PANEL
+==================================================
+Users can choose report template.
+Template types:
+• Standard LOPA Report
+• LOPA + SIL Report
+• LOPA Executive Summary
+• LOPA Technical Appendix
+• IPL Validation Appendix
+• Risk Calculation Appendix
+• SIL / SIF Specification Appendix
+• Recommendations / Actions Register
+• Review & Sign-Off Package
+• Full Audit Package
+• Custom Company Template if configured
+Fields:
+• Template name
+• Template type
+• Template version
+• Company/site template
+• Required sections
+• Output format
+• Last updated
+• Active Yes/No
+• Default Yes/No
+• Action
+Actions:
+• Select template
+• Preview template
+• Use default template
+• Refresh templates
+Rules:
+• Templates come from backend/configuration.
+• Do not hardcode final template content only in frontend.
+• Missing template blocks official report generation.
+• Company/site-specific template overrides global template if configured.
+• Template selection creates audit/history event if saved.
+8
+
+--- PAGE 9 ---
+================================================== 5. REPORT SECTION BUILDER / CHECKLIST
+==================================================
+Users can include/exclude allowed sections.
+Required sections:
+• Cover Page
+• Document Control / Revision Info
+• Executive Summary
+• Study Metadata
+• Study Scope
+• Source / Linked HAZOP Scenario
+• Scenario & Consequence
+• Initiating Event
+• Conditional Modifiers
+• Safeguards / IPLs
+• Credited IPL Summary
+• Rejected / Non-Credited Safeguards
+• Risk Calculation
+• Risk Gap / Required RRF
+• SIL Determination
+• SIF Specification if required
+• Recommendations / Actions
+• Team & Sessions
+• Linked Records
+• Review & Sign-Off
+• E-Signature Summary
+• Attachments Index
+• History / Audit Trail Summary
+• Assumptions and Limitations
+• Appendices
+Optional appendices:
+• Full IPL validation checklist
+• Calculation input/output tables
+• Sensitivity/uncertainty appendix
+• SIF component appendix
+• IEC 61511 gap checklist
+• Recommendations/action details
+• Team attendance/minutes summary
+• Linked records register
+• Attachment index
+• Full history export
+• Approval snapshot
+• Signature certificates/references if available
+9
+
+--- PAGE 10 ---
+Fields:
+• Section name
+• Required Yes/No
+• Include Yes/No
+• Status
+• Source module
+• Last updated
+• Missing data count
+• Restricted data warning
+• Action
+Rules:
+• Required sections cannot be removed unless policy/permission allows.
+• Excluding a required section requires permission and reason.
+• Restricted sections show redaction warning.
+• Section list generated by backend based on template and study status.
+• Section configuration saved with report snapshot.
+================================================== 6. REPORT PREVIEW PANEL
+==================================================
+Preview generated report before export.
+Features:
+• Preview cover page
+• Preview table of contents
+• Preview selected sections
+• Preview redactions
+• Preview missing data warnings
+• Preview page/section structure
+• Preview report metadata
+• Preview export timestamp/watermark for drafts
+Actions:
+• Generate preview
+• Refresh preview
+• Open full preview
+• Download draft if permission allows
+• Print preview if supported
+Rules:
+• Preview uses real backend generated content.
+• Draft preview must show Draft watermark if not official.
+10
+
+--- PAGE 11 ---
+• Preview must respect permissions/redaction.
+• Preview should not expose restricted content.
+• Preview generation creates audit/history if policy tracks.
+• Preview can be cached but must invalidate when source data changes.
+================================================== 7. EXPORT OPTIONS PANEL
+==================================================
+Output formats:
+• PDF
+• Excel / XLSX if supported
+• CSV if supported
+• ZIP report package
+• JSON export if internal/admin supported
+• DOCX if supported by export service
+Export options:
+• Draft report
+• Final report
+• Official approved report
+• Redacted report
+• Full report package
+• Technical appendices only
+• Executive summary only
+• Attachment index only
+• History/audit trail only
+• Calculation tables only
+• Recommendations/actions register only
+Fields:
+• Output format
+• Report type
+• Include appendices Yes/No
+• Include attachments index Yes/No
+• Include full history Yes/No
+• Include signatures Yes/No
+• Include approval snapshot Yes/No
+• Include restricted data Yes/No if permission allows
+• Redaction mode
+• Watermark
+• File name
+• Classification
+• Notes
+11
+
+--- PAGE 12 ---
+Rules:
+• Export requires permission.
+• Restricted data inclusion requires elevated permission.
+• Official export must use approved snapshot if available.
+• Draft export must show Draft watermark.
+• Redacted export must hide restricted fields.
+• Export creates audit/history event.
+• Export failure must be logged and user-readable.
+================================================== 8. REPORT PACKAGE BUILDER
+==================================================
+Report package may include:
+• Final PDF report
+• Executive summary PDF
+• Calculation appendix XLSX/PDF
+• IPL validation appendix
+• SIL/SIF appendix
+• Recommendations/actions export
+• Team attendance/minutes export
+• Linked records index
+• Attachment index
+• History/audit trail export
+• Approval snapshot
+• E-signature summary/certificates if available
+• Selected supporting attachments if permission allows
+Fields:
+• Package name
+• Package version
+• Included files
+• Included appendices
+• Package status
+• Generated by
+• Generated at
+• File size
+• Classification
+• Action
+Actions:
+• Build package
+• Preview package contents
+• Download package
+• Regenerate package
+12
+
+--- PAGE 13 ---
+• Archive package
+• Publish package if supported
+Rules:
+• Package generation uses backend export service.
+• Include supporting attachments only if allowed.
+• Restricted files must be excluded/redacted unless permission allows.
+• Package manifest must be stored.
+• Package generation creates audit/history event.
+================================================== 9. GENERATED REPORTS REGISTER
+==================================================
+Show all generated reports/packages.
+Columns:
+• Report number
+• Report title
+• Report type
+• Template
+• Version
+• Status
+• Output format
+• File size
+• Classification
+• Generated by
+• Generated at
+• Official Yes/No
+• Published Yes/No
+• Document Control number if published
+• Superseded Yes/No
+• Actions
+Report statuses:
+• Draft
+• Generated
+• Failed
+• Official
+• Published
+• Superseded
+• Archived
+• Deleted
+13
+
+--- PAGE 14 ---
+Actions:
+• Preview
+• Download
+• View details
+• Mark official
+• Publish to Document Control
+• Supersede
+• Archive
+• Restore
+• View history
+Rules:
+• Server-side pagination/sorting/filtering.
+• No fake generated report records.
+• Download requires permission.
+• Official reports are immutable.
+• Superseded reports remain traceable.
+================================================== 10. REPORT DETAIL DRAWER
+==================================================
+Drawer sections: 1. Report Overview 2. Template / Sections 3. Source Snapshot 4. Export Options 5. File /
+Package Details 6. Document Control Publishing 7. Download / Preview 8. History
+Fields:
+• Report ID
+• Report number
+• Report title
+• Report type
+• Template name/version
+• Report version
+• Status
+• Output format
+• File name
+• File size
+• Storage reference
+• Classification
+• Generated by/at
+• Source snapshot ID
+• Official Yes/No
+• Published Yes/No
+• Document Control link
+• Superseded by
+• Notes
+14
+
+--- PAGE 15 ---
+Rules:
+• Drawer loads real backend data.
+• Drawer respects permissions.
+• Drawer is read-only for official reports.
+• Drawer becomes full-screen sheet on mobile.
+================================================== 11. REPORT VERSION HISTORY PANEL
+==================================================
+Fields:
+• Version
+• Report type
+• Status
+• Generated by
+• Generated at
+• Source snapshot
+• Change reason
+• Superseded by
+• Official Yes/No
+• Published Yes/No
+• Action
+Rules:
+• Regeneration creates new version.
+• Official version cannot be overwritten.
+• Superseded versions preserved.
+• Version history supports audit trail.
+================================================== 12. OFFICIAL REPORT / PUBLISH TO
+DOCUMENT CONTROL PANEL ==================================================
+Purpose: Mark report as official and optionally publish to Document Control.
+Fields:
+• Official report selected
+• Official version
+• Approval snapshot used
+• Review/sign-off status
+• E-signature status
+• Document classification
+• Document title
+• Document number if generated
+• Document type
+• Document revision
+15
+
+--- PAGE 16 ---
+• Document Control status
+• Published by
+• Published at
+• Notes
+Actions:
+• Mark as official
+• Publish to Document Control
+• Create document revision
+• Open published document
+• Supersede official report
+Rules:
+• Mark official requires permission.
+• Mark official requires report readiness complete.
+• Mark official should use approved Review & Sign-Off snapshot where required.
+• Publish uses Document Control system only.
+• Do not duplicate Document Control.
+• Official report becomes immutable.
+• Superseding official report requires reason and audit/history.
+• Publishing creates audit/history event.
+================================================== 13. REPORT APPENDICES PANEL
+==================================================
+Appendices:
+• Calculation Appendix
+• IPL Validation Appendix
+• SIL/SIF Appendix
+• IEC 61511 Gap Appendix
+• Recommendations/Actions Appendix
+• Team/Sessions Appendix
+• Linked Records Appendix
+• Attachments Index
+• History/Audit Trail
+• Approval/E-Signature Appendix
+Fields:
+• Appendix name
+• Source module
+• Included Yes/No
+• Status
+• Record count
+• Restricted data warning
+16
+
+--- PAGE 17 ---
+• Last updated
+• Action
+Actions:
+• Preview appendix
+• Export appendix
+• Include/exclude appendix
+• Refresh appendix
+Rules:
+• Required appendices cannot be excluded if template requires.
+• Appendices use backend source data.
+• Restricted data handled by redaction rules.
+================================================== 14. REDACTION / PERMISSION PREVIEW
+PANEL ==================================================
+Purpose: Show what will be hidden because of permissions or classification.
+Fields:
+• Restricted item
+• Source module
+• Reason restricted
+• Export visibility
+• Redaction method
+• Required for report Yes/No
+• Blocker Yes/No
+• Action
+Redaction modes:
+• No redaction
+• Redact restricted fields
+• Redact restricted attachments
+• Redact sensitive audit metadata
+• Redact personal data where required
+• Summary-only mode
+Rules:
+• Backend determines redaction.
+• Frontend displays only.
+• User cannot export restricted data without permission.
+• If required report content is restricted/inaccessible, show blocker or require elevated permission.
+• Redaction creates export metadata.
+17
+
+--- PAGE 18 ---
+================================================== 15. REPORT DISTRIBUTION / SHARING PANEL
+IF SUPPORTED ==================================================
+Fields:
+• Recipient
+• Email
+• Role
+• Distribution method
+• Shared by
+• Shared at
+• Access expiry
+• Status
+• Notes
+Actions:
+• Email report link
+• Share secure link
+• Revoke access
+• Resend
+Rules:
+• Use existing Notification Center/email system if available.
+• Do not expose public links unless system supports secure sharing.
+• Sharing requires permission.
+• Sharing creates audit/history event.
+• Respect classification and restricted access.
+================================================== 16. EXPORT HISTORY PANEL
+==================================================
+Show export/generation events.
+Fields:
+• Export ID
+• Report type
+• Format
+• Status
+• Generated by
+• Generated at
+• Duration
+• File size
+• Error message if failed
+• Download count if tracked
+• Action
+18
+
+--- PAGE 19 ---
+Actions:
+• View event
+• Retry failed export
+• Download if available
+Rules:
+• Export history comes from backend.
+• Failed export errors must be user-readable.
+• Do not expose sensitive stack traces.
+• Retry requires permission.
+================================================== 17. FILTERS / SEARCH
+==================================================
+Filters:
+• Report type
+• Report status
+• Output format
+• Template
+• Official Yes/No
+• Published Yes/No
+• Generated by
+• Date range
+• Classification
+• Failed exports
+• Superseded
+• Archived
+• Document Control published
+• Report package
+Search:
+• Report number
+• Report title
+• File name
+• Template name
+• Generated by
+• Document Control number
+• Notes
+================================================== 18. REQUIRED UI STATES
+==================================================
+19
+
+--- PAGE 20 ---
+Required states:
+• Loading
+• Empty
+• Error
+• Permission denied
+• Restricted / redacted
+• Read-only approved/closed
+• Not ready
+• Ready
+• Generating preview
+• Generating report
+• Generating package
+• Exporting
+• Export failed
+• Export complete
+• Publishing
+• Publish failed
+• Published
+• Marking official
+• Official
+• Superseded
+• Archived
+• Download blocked
+• Missing template
+• Missing required section
+• Missing required evidence
+• Open blockers
+• Unsaved changes
+Rules:
+• Every disabled action must show reason.
+• Errors must be user-readable.
+• Sensitive backend errors must not be exposed.
+• UI must remain polished in dark and light theme.
+• Mobile layout must use stacked cards and full-screen drawers/sheets.
+================================================== DATABASE REQUIREMENTS
+==================================================
+Create/update models if missing.
+lopa_report_templates:
+• id
+• company_id
+• site_id nullable
+20
+
+--- PAGE 21 ---
+• template_name
+• template_type
+• template_version
+• description
+• sections_json
+• required_sections_json
+• output_formats_json
+• active
+• default_template
+• created_by
+• updated_by
+• created_at
+• updated_at
+lopa_report_generations:
+• id
+• company_id
+• site_id
+• lopa_study_id
+• report_number
+• report_title
+• report_type
+• template_id nullable
+• template_name_snapshot
+• template_version_snapshot
+• report_version
+• status
+• output_format
+• file_name
+• file_size
+• storage_provider
+• storage_key
+• file_hash nullable
+• classification
+• official
+• published
+• document_id nullable
+• document_number_snapshot nullable
+• source_snapshot_id nullable
+• generation_options_json
+• redaction_summary_json nullable
+• error_message nullable
+• generated_by
+• generated_at
+• superseded_by_report_id nullable
+• archived_by nullable
+• archived_at nullable
+21
+
+--- PAGE 22 ---
+• archive_reason nullable
+• created_at
+• updated_at
+lopa_report_source_snapshots:
+• id
+• company_id
+• site_id
+• lopa_study_id
+• snapshot_version
+• snapshot_status
+• study_status_snapshot
+• approval_snapshot_id nullable
+• calculation_version_id nullable
+• sil_snapshot_id nullable
+• review_workflow_id nullable
+• data_snapshot_json
+• snapshot_hash nullable
+• created_by
+• created_at
+lopa_report_sections:
+• id
+• company_id
+• site_id
+• lopa_study_id
+• report_generation_id nullable
+• section_key
+• section_title
+• source_module
+• required
+• included
+• status
+• missing_data_count
+• restricted_data_count
+• sort_order
+• config_json nullable
+• created_by
+• updated_by
+• created_at
+• updated_at
+lopa_report_packages:
+• id
+• company_id
+22
+
+--- PAGE 23 ---
+• site_id
+• lopa_study_id
+• package_number
+• package_name
+• package_version
+• status
+• storage_provider
+• storage_key
+• file_size
+• file_hash nullable
+• classification
+• manifest_json
+• generated_by
+• generated_at
+• archived_by nullable
+• archived_at nullable
+• archive_reason nullable
+• created_at
+• updated_at
+lopa_report_package_items:
+• id
+• company_id
+• site_id
+• lopa_study_id
+• package_id
+• item_type
+• item_title
+• report_generation_id nullable
+• attachment_id nullable
+• document_id nullable
+• storage_key nullable
+• included
+• redacted
+• sort_order
+• created_at
+lopa_report_exports:
+• id
+• company_id
+• site_id
+• lopa_study_id
+• report_generation_id nullable
+• package_id nullable
+• export_type
+• output_format
+23
+
+--- PAGE 24 ---
+• status
+• requested_by
+• requested_at
+• completed_at nullable
+• duration_ms nullable
+• file_size nullable
+• storage_key nullable
+• error_message nullable
+• metadata_json nullable
+lopa_report_distribution:
+• id
+• company_id
+• site_id
+• lopa_study_id
+• report_generation_id nullable
+• package_id nullable
+• recipient_user_id nullable
+• recipient_email
+• recipient_role nullable
+• distribution_method
+• access_expires_at nullable
+• status
+• shared_by
+• shared_at
+• revoked_by nullable
+• revoked_at nullable
+• notes nullable
+Update existing:
+• lopa_studies.final_report_status
+• lopa_studies.official_report_id
+• lopa_studies.report_readiness_status
+• lopa_history_events
+Database rules:
+• All records require company_id and site_id.
+• No cross-company/site leakage.
+• Official reports are immutable.
+• Superseded reports remain traceable.
+• Report source snapshots are immutable once generated.
+• File content stored in storage service.
+• Published report uses Document Control.
+• Deletions should be soft delete or fully audited.
+• Every report/export/publish action creates audit/history.
+24
+
+--- PAGE 25 ---
+================================================== BACKEND API REQUIREMENTS
+==================================================
+Main:
+• GET /lopa/:id/final-report
+• GET /lopa/:id/final-report/summary
+• GET /lopa/:id/final-report/readiness
+• GET /lopa/:id/final-report/templates
+• GET /lopa/:id/final-report/sections
+• PATCH /lopa/:id/final-report/sections
+• POST /lopa/:id/final-report/preview
+• POST /lopa/:id/final-report/generate
+• POST /lopa/:id/final-report/generate-package
+• GET /lopa/:id/final-report/reports
+• GET /lopa/:id/final-report/reports/:reportId
+• GET /lopa/:id/final-report/reports/:reportId/preview
+• GET /lopa/:id/final-report/reports/:reportId/download
+• POST /lopa/:id/final-report/reports/:reportId/mark-official
+• POST /lopa/:id/final-report/reports/:reportId/publish-document-control
+• POST /lopa/:id/final-report/reports/:reportId/supersede
+• POST /lopa/:id/final-report/reports/:reportId/archive
+• POST /lopa/:id/final-report/reports/:reportId/restore
+Snapshots:
+• GET /lopa/:id/final-report/source-snapshot
+• POST /lopa/:id/final-report/source-snapshot
+• GET /lopa/:id/final-report/source-snapshot/:snapshotId
+Appendices:
+• GET /lopa/:id/final-report/appendices
+• POST /lopa/:id/final-report/appendices/:appendixKey/preview
+• POST /lopa/:id/final-report/appendices/:appendixKey/export
+Package:
+• GET /lopa/:id/final-report/packages
+• GET /lopa/:id/final-report/packages/:packageId
+• GET /lopa/:id/final-report/packages/:packageId/download
+• POST /lopa/:id/final-report/packages/:packageId/archive
+• POST /lopa/:id/final-report/packages/:packageId/restore
+Redaction:
+• GET /lopa/:id/final-report/redaction-preview
+25
+
+--- PAGE 26 ---
+• POST /lopa/:id/final-report/redaction-preview
+Export:
+• GET /lopa/:id/final-report/export-history
+• POST /lopa/:id/final-report/export-excel
+• POST /lopa/:id/final-report/export-csv
+• POST /lopa/:id/final-report/export-audit-package
+Distribution if supported:
+• GET /lopa/:id/final-report/distribution
+• POST /lopa/:id/final-report/distribution/share
+• POST /lopa/:id/final-report/distribution/:distributionId/revoke
+• POST /lopa/:id/final-report/distribution/:distributionId/resend
+Context:
+• GET /lopa/:id/final-report/context
+API rules:
+• All APIs enforce company_id/site_id isolation.
+• All APIs enforce permissions.
+• All mutations create audit log and LOPA history event.
+• Generate/preview/export use backend service only.
+• Download uses secure storage access.
+• Official report generation must use approved snapshot if policy requires.
+• Publishing uses Document Control.
+• Redaction enforced on backend.
+• Report generation failure must be logged.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+• lopa-final-report.service.ts
+• lopa-report-summary.service.ts
+• lopa-report-readiness.service.ts
+• lopa-report-template.service.ts
+• lopa-report-section.service.ts
+• lopa-report-preview.service.ts
+• lopa-report-generation.service.ts
+• lopa-report-render.service.ts
+• lopa-report-pdf-export.service.ts
+• lopa-report-excel-export.service.ts
+• lopa-report-csv-export.service.ts
+26
+
+--- PAGE 27 ---
+• lopa-report-package.service.ts
+• lopa-report-appendix.service.ts
+• lopa-report-source-snapshot.service.ts
+• lopa-report-redaction.service.ts
+• lopa-report-document-control.service.ts
+• lopa-report-storage.service.ts
+• lopa-report-distribution.service.ts
+• lopa-report-permission.service.ts
+• lopa-report-export-history.service.ts
+• lopa-report-global-search.service.ts
+• lopa-notification.service.ts
+• lopa-history.service.ts
+• lopa-audit-log-integration.service.ts
+Backend rules:
+• Backend enforces permissions.
+• Backend enforces company_id/site_id isolation.
+• Backend generates report readiness.
+• Backend builds report content from real module data.
+• Backend uses approved snapshots for official reports where required.
+• Backend creates source snapshot for generated reports.
+• Backend prevents official report overwrite.
+• Backend preserves report versions.
+• Backend handles redaction.
+• Backend stores generated files through storage service.
+• Backend publishes to Document Control where available.
+• Backend updates Overview/report readiness.
+• Backend creates audit logs and LOPA history events for every mutation.
+• Backend indexes safe report metadata to Global Search where configured.
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Create/update:
+Detail tab:
+• features/lopa/components/detail/LopaFinalReportTab.tsx
+Final report components:
+• features/lopa/components/final-report/FinalReportHeader.tsx
+• features/lopa/components/final-report/ReportSummaryCards.tsx
+• features/lopa/components/final-report/ReportReadinessBlockersPanel.tsx
+• features/lopa/components/final-report/ReportTemplateSelectionPanel.tsx
+• features/lopa/components/final-report/ReportSectionBuilder.tsx
+27
+
+--- PAGE 28 ---
+• features/lopa/components/final-report/ReportPreviewPanel.tsx
+• features/lopa/components/final-report/ExportOptionsPanel.tsx
+• features/lopa/components/final-report/ReportPackageBuilder.tsx
+• features/lopa/components/final-report/GeneratedReportsRegister.tsx
+• features/lopa/components/final-report/ReportDetailDrawer.tsx
+• features/lopa/components/final-report/ReportVersionHistoryPanel.tsx
+• features/lopa/components/final-report/OfficialReportPublishPanel.tsx
+• features/lopa/components/final-report/ReportAppendicesPanel.tsx
+• features/lopa/components/final-report/RedactionPermissionPreviewPanel.tsx
+• features/lopa/components/final-report/ReportDistributionPanel.tsx
+• features/lopa/components/final-report/ExportHistoryPanel.tsx
+• features/lopa/components/final-report/FinalReportFilters.tsx
+Dialogs/drawers:
+• features/lopa/components/final-report/GenerateReportDialog.tsx
+• features/lopa/components/final-report/GeneratePackageDialog.tsx
+• features/lopa/components/final-report/MarkOfficialReportDialog.tsx
+• features/lopa/components/final-report/PublishToDocumentControlDialog.tsx
+• features/lopa/components/final-report/SupersedeReportDialog.tsx
+• features/lopa/components/final-report/ShareReportDialog.tsx
+Hooks:
+• features/lopa/hooks/useLopaFinalReport.ts
+• features/lopa/hooks/useLopaReportSummary.ts
+• features/lopa/hooks/useLopaReportReadiness.ts
+• features/lopa/hooks/useLopaReportTemplates.ts
+• features/lopa/hooks/useLopaReportSections.ts
+• features/lopa/hooks/useLopaReportPreview.ts
+• features/lopa/hooks/useLopaReportGeneration.ts
+• features/lopa/hooks/useLopaReportPackages.ts
+• features/lopa/hooks/useLopaReportAppendices.ts
+• features/lopa/hooks/useLopaReportRedaction.ts
+• features/lopa/hooks/useLopaReportExports.ts
+• features/lopa/hooks/useLopaReportMutations.ts
+Services:
+• features/lopa/services/lopa-final-report.service.ts
+• features/lopa/services/lopa-report-generation.service.ts
+• features/lopa/services/lopa-report-package.service.ts
+• features/lopa/services/lopa-report-export.service.ts
+• features/lopa/services/lopa-report-template.service.ts
+• features/lopa/services/lopa-report-redaction.service.ts
+28
+
+--- PAGE 29 ---
+Schemas:
+• features/lopa/schemas/lopa-final-report.schema.ts
+• features/lopa/schemas/lopa-report-generation.schema.ts
+• features/lopa/schemas/lopa-report-section.schema.ts
+• features/lopa/schemas/lopa-report-export.schema.ts
+• features/lopa/schemas/lopa-report-distribution.schema.ts
+Types:
+• features/lopa/types/lopa-final-report.types.ts
+• features/lopa/types/lopa-report-template.types.ts
+• features/lopa/types/lopa-report-generation.types.ts
+• features/lopa/types/lopa-report-package.types.ts
+• features/lopa/types/lopa-report-redaction.types.ts
+Shared:
+• features/lopa/components/shared/ReportStatusBadge.tsx
+• features/lopa/components/shared/ReportReadinessBadge.tsx
+• features/lopa/components/shared/ReportFormatBadge.tsx
+• features/lopa/components/shared/OfficialReportBadge.tsx
+• features/lopa/components/shared/ExportStatusBadge.tsx
+================================================== FRONTEND BEHAVIOR
+==================================================
+Tab load:
+• Fetch report summary.
+• Fetch report readiness.
+• Fetch templates.
+• Fetch section checklist.
+• Fetch generated report register.
+• Fetch export history.
+• Show loading state.
+• Show permission denied if no access.
+• Show not-ready blockers if required data missing.
+Preview:
+• User selects template and sections.
+• User clicks Preview Report.
+• Backend generates preview.
+• UI shows preview with warnings/redactions.
+29
+
+--- PAGE 30 ---
+Generate report:
+• User chooses export options.
+• Frontend calls backend.
+• Backend generates file.
+• UI updates report register.
+• Audit/history created.
+Generate package:
+• User chooses included appendices/files.
+• Backend creates package.
+• UI updates package/register.
+• Audit/history created.
+Mark official:
+• User selects generated report.
+• Backend validates readiness/approval rules.
+• Backend marks official.
+• Old official report superseded if needed.
+• Audit/history created.
+Publish:
+• User publishes official report to Document Control.
+• Backend creates/updates controlled document.
+• UI shows document number/link.
+• Audit/history created.
+Read-only:
+• Generated official reports are immutable.
+• Approved/closed study can generate report from approved snapshot but cannot edit source data.
+• Disabled actions show exact reason.
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• lopa.final_report.view
+• lopa.final_report.preview
+• lopa.final_report.generate
+• lopa.final_report.generate_draft
+• lopa.final_report.generate_official
+• lopa.final_report.download
+• lopa.final_report.export_pdf
+30
+
+--- PAGE 31 ---
+• lopa.final_report.export_excel
+• lopa.final_report.export_csv
+• lopa.final_report.generate_package
+• lopa.final_report.mark_official
+• lopa.final_report.publish_document_control
+• lopa.final_report.supersede
+• lopa.final_report.archive
+• lopa.final_report.restore
+• lopa.final_report.share
+• lopa.final_report.redacted_export
+• lopa.final_report.restricted_export
+• lopa.final_report.templates.view
+• lopa.final_report.sections.manage
+• lopa.final_report.history.view
+Rules:
+• Backend enforces all permissions.
+• Frontend hides unauthorized actions.
+• Restricted export requires special permission.
+• Mark official requires permission.
+• Publish to Document Control requires permission.
+• Download requires permission.
+• Export creates audit/history.
+================================================== INTEGRATIONS
+==================================================
+Required integrations:
+• Overview
+• Scenario & Consequence
+• Initiating Event
+• IPLs / Safeguards
+• Risk Calculation
+• SIL Determination / SIF Specification
+• Recommendations / Actions
+• Team & Sessions
+• Linked Records
+• Review & Sign-Off
+• Attachments
+• History
+• Universal E-Signature
+• Workflow Engine
+• Document Control
+• Storage service
+• Audit Log
+31
+
+--- PAGE 32 ---
+• LOPA History Events
+• Global Search
+• Notification Center
+• IAM/RBAC
+Rules:
+• Use existing integrations.
+• Do not duplicate Document Control.
+• Do not duplicate e-signature.
+• Do not duplicate history.
+• Do not duplicate action system.
+• Report content comes from real module data and approved snapshots where required.
+================================================== TESTING
+==================================================
+Backend tests:
+• Fetch report summary.
+• Fetch readiness.
+• Block official report generation if blockers exist.
+• Generate draft preview.
+• Generate PDF report.
+• Generate Excel/CSV export if supported.
+• Generate report package.
+• Create source snapshot.
+• Mark report official.
+• Supersede official report.
+• Publish to Document Control.
+• Archive/restore report.
+• Download with permission.
+• Block download without permission.
+• Redaction rules work.
+• Export history created.
+• Audit log created.
+• LOPA history event created.
+• company_id/site_id isolation works.
+Frontend tests:
+• Final Report tab renders.
+• Summary cards render.
+• Readiness blockers render.
+• Template selection works.
+• Section builder works.
+• Preview panel works.
+• Export options work.
+32
+
+--- PAGE 33 ---
+• Package builder works.
+• Generated reports register works.
+• Detail drawer works.
+• Version history works.
+• Publish panel works.
+• Appendices panel works.
+• Redaction preview works.
+• Export history works.
+• Permission states work.
+• Read-only states work.
+• Dark/light themes work.
+• Responsive layout works.
+E2E: 1. Open /lopa/:id . 2. Open Final Report / Export tab. 3. Select standard LOPA/SIL template. 4.
+Generate preview. 5. Generate PDF report. 6. Generate report package. 7. Mark report official. 8. Publish to
+Document Control. 9. Download official report. 10. Confirm report generation event appears in History. 11.
+Confirm audit log and LOPA history event exist.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This phase is complete only when:
+✓ Final Report / Export tab exists under /lopa/:id
+✓ Real backend data only
+✓ Report summary cards work
+✓ Report readiness/blockers work
+✓ Template selection works
+✓ Section builder works
+✓ Preview works
+✓ PDF export works where service is available
+✓ Excel/CSV export works where service is available
+✓ Report package generation works
+✓ Generated reports register works
+✓ Report detail drawer works
+33
+
+--- PAGE 34 ---
+✓ Version history works
+✓ Official report workflow works
+✓ Document Control publishing works where available
+✓ Appendices work
+✓ Redaction/permission preview works
+✓ Export history works
+✓ Official reports are immutable
+✓ Source snapshots are preserved
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit logs and LOPA history events work
+✓ History tab receives report/export events
+✓ Overview/report readiness updates
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. Existing LOPA implementation reviewed 3. Files reviewed 4. Files
+modified 5. Files created 6. Database changes 7. APIs added/fixed 8. Backend services added/fixed 9. Final
+Report tab completed 10. Report readiness completed 11. Template/section builder completed 12. Preview
+completed 13. PDF/Excel/CSV export completed where supported 14. Report package completed 15.
+Generated reports register completed 16. Official report workflow completed 17. Document Control
+publishing completed 18. Appendices completed 19. Redaction/permission preview completed 20. Export
+history completed 21. Permissions connected 22. Audit/history connected 23. Dark/light responsive UI
+completed 24. Tests added 25. Bugs fixed 26. Remaining gaps, if any
+34

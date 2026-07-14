@@ -1,0 +1,5 @@
+import { LopaPanel, TonePill } from '../overview/LopaOverviewShared';
+
+export function LopaSourceFindingsPanel({ rows, onCreate }: { rows: any[]; onCreate: (row: any) => void }) {
+  return <LopaPanel title="LOPA Findings / Auto-Suggested Sources"><div className="grid gap-2">{rows.length ? rows.map((row) => <div key={row.id} className="rounded-lg border border-cyan-300/10 bg-[#03101d] p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="font-semibold text-white">{row.findingType}</div><div className="text-sm text-slate-400">{row.description}</div><div className="mt-1 text-xs text-slate-500">{row.sourceTab} · {row.suggestedNextStep}</div></div><div className="flex items-center gap-2"><TonePill tone={row.blocking ? 'danger' : 'warning'}>{row.severity}</TonePill><button className="rounded border border-blue-400/20 px-2 py-1 text-xs font-bold text-blue-100" onClick={() => onCreate(row)}>Create rec</button></div></div></div>) : <div className="text-sm text-slate-400">No rule-based findings need recommendations.</div>}</div></LopaPanel>;
+}

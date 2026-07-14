@@ -1,0 +1,2403 @@
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Event Details & Classification + Potential
+Severity / Risk Matrix tabs in full detail.
+Route:
+/incidents/:id
+Tabs: 1. Event Details & Classification 2. Potential Severity / Risk Matrix
+Read the attached PDF/specification carefully before coding. Build both tabs exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, permission, validation rule, workflow
+rule, state, audit/history hook, chart, infographic, dark/light theme issue, and responsive UI issue. Do not
+miss a single thing.
+================================================== SCOPE
+==================================================
+Work only on these two incident detail tabs:
+Event Details & Classification
+Potential Severity / Risk Matrix
+Do not build yet:
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions detail
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+Linked Records
+Notifications / Regulatory Reporting
+Review & Approval
+Lessons Learned
+History
+Final Report / Export
+Use existing:
+Incident Dashboard / Register
+Create Incident Wizard data
+• 
+1. 
+2. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+Incident Detail Shell
+Overview tab
+Incident history events
+Audit logs
+IAM/RBAC
+Company/site configuration
+Equipment Registry where needed
+Chemical/SDS data where needed
+PTW, MOC, PSSR references where available
+Universal Action Engine for follow-up actions
+Notification Center where available
+Global Search
+Do not use mock/static data.
+UI must be clean, premium, responsive, and must work perfectly in dark and light themes.
+================================================== CORE PURPOSE
+==================================================
+These two tabs define the factual foundation of the incident.
+They must answer:
+What exactly happened?
+Where and when did it happen?
+What operation was happening?
+What type of event is it?
+Is it occupational safety, process safety, environmental, asset/reliability, security, or quality?
+Is it a PSM incident?
+Is it a Process Safety Event?
+Is it API RP 754 Tier 1, Tier 2, Tier 3, Tier 4, Not Applicable, or Not Determined?
+What actually happened?
+What could reasonably have happened?
+What is the actual severity?
+What is the potential severity?
+What is the potential risk score?
+What investigation priority is required?
+What investigation level is required?
+Does this require RCA, formal investigation team, PSM review, MOC, PSSR, HAZOP , LOPA, MI, or
+regulatory review?
+================================================== TAB 1 — EVENT DETAILS & CLASSIFICATION
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+Tab route/state:
+/incidents/:id
+Active tab: Event Details & Classification
+Required sections:
+Event Details Header
+Event Summary Cards
+Core Event Information Panel
+Location / Time / Operation Panel
+Event Description Panel
+Event Type & Classification Panel
+PSM / Process Safety / API RP 754 Classification Panel
+PTW / MOC / PSSR Context Panel
+Environmental / Community Impact Panel
+Reporter / Witness Snapshot Panel
+Classification Review Panel
+Classification Change History Panel
+Event Details Readiness / Missing Data Panel
+Save / Submit / Review Actions
+Loading / Empty / Error / Permission / Read-only States
+================================================== 1. EVENT DETAILS HEADER
+==================================================
+Header must show:
+Incident number
+Incident title
+Event type
+Classification
+Status
+Site / unit / area
+Event date/time
+Reported date/time
+Actual severity
+Potential severity
+PSM Incident badge
+Process Safety Event badge
+API RP 754 tier badge
+Investigation priority badge
+Last updated
+Button: Save Changes
+Button: Request Classification Review
+Button: Create Action
+Button: Refresh
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+3
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents must be read-only unless reopened.
+Restricted/confidential incidents must be redacted based on permission.
+================================================== 2. EVENT SUMMARY CARDS
+==================================================
+Cards:
+Event type
+Classification
+Current status
+Site / unit / area
+Event date/time
+Reported by
+PSM Incident status
+Process Safety Event status
+API RP 754 tier
+Loss of Primary Containment status
+Regulatory reporting required
+Classification review status
+Required follow-ups
+Missing required event fields
+Each card:
+Real backend value only
+Badge/status color
+Tooltip/help text
+Click-to-focus relevant section where useful
+================================================== 3. CORE EVENT INFORMATION PANEL
+==================================================
+Fields:
+Incident title
+Short description
+Detailed description
+Event type
+Classification
+Status
+Reporter
+Reporter role
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+Reporter department
+Reported date/time
+Anonymous report Yes/No if supported
+Contractor involved Yes/No
+Confidential Yes/No
+Restricted Yes/No
+Tags
+Event type options:
+Incident
+Near Miss
+Unsafe Condition
+Process Upset
+Loss of Containment
+Spill
+Release
+Fire
+Explosion
+Injury
+Illness
+Exposure
+Equipment Damage
+Environmental Event
+Security Event
+Quality Event
+Other
+Classification options:
+Occupational Safety
+Process Safety
+Environmental
+Asset / Reliability
+Security
+Quality
+Other
+Not Determined
+Rules:
+Title required.
+Short description required.
+Detailed description required for submitted investigations.
+Event type required.
+Classification required or must be marked Not Determined.
+Classification changes require reason and audit/history.
+Restricted/confidential fields require permission.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+================================================== 4. LOCATION / TIME / OPERATION PANEL
+==================================================
+Fields:
+Company
+Site
+Unit
+Area
+Exact location
+GPS/location if supported
+Event date
+Event time
+Shift
+Workgroup / crew
+Weather condition if outdoor and supported
+Operating mode
+Operation/activity at time of event
+Startup/shutdown/normal/maintenance/turnaround/emergency operation
+Permit active Yes/No
+PTW reference if applicable
+MOC active Yes/No
+MOC reference if applicable
+PSSR active Yes/No
+PSSR reference if applicable
+Operating mode options:
+Normal operation
+Startup
+Shutdown
+Maintenance
+Turnaround
+Emergency operation
+Commissioning
+Decommissioning
+Other
+Rules:
+Site required.
+Event date/time required.
+Event date/time cannot be in future unless override permission exists.
+Unit/area must come from real site hierarchy.
+PTW/MOC/PSSR lookups must use real modules where available.
+User can only select sites/units/areas they have access to.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+================================================== 5. EVENT DESCRIPTION PANEL
+==================================================
+Fields:
+What happened?
+What was being done at the time?
+What abnormal condition was observed?
+What was the immediate consequence?
+What could have happened?
+Initial suspected cause
+Initial suspected failed control/barrier
+Emergency response activated Yes/No
+Operation stopped Yes/No
+Equipment isolated Yes/No
+Area barricaded Yes/No
+Release/fire/explosion occurred Yes/No
+Environmental impact suspected Yes/No
+Community impact suspected Yes/No
+Immediate notes
+Rules:
+Use factual helper text: “Describe facts, not blame.”
+Required fields must match PDF.
+If emergency response activated, flag notification/regulatory review.
+If release/fire/explosion occurred, require PSM/PSE review.
+If operation stopped/equipment isolated, show follow-up warning.
+================================================== 6. EVENT TYPE & CLASSIFICATION PANEL
+==================================================
+Purpose: Classify the event properly for investigation workflow.
+Fields:
+Primary event type
+Secondary event types
+Main classification
+Secondary classification
+Occupational Safety Yes/No
+Process Safety Yes/No
+Environmental Yes/No
+Asset/Reliability Yes/No
+Security Yes/No
+Quality Yes/No
+Classification confidence
+Classification basis
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+Classification reviewer
+Review status
+Rules:
+One primary classification required.
+Multiple secondary classifications allowed if PDF supports it.
+Process Safety classification must trigger PSM/PSE panel.
+Environmental classification must trigger regulatory/environmental review.
+Asset/reliability classification can trigger Mechanical Integrity follow-up.
+Classification changes require reason.
+All changes create audit/history.
+================================================== 7. PSM / PROCESS SAFETY / API RP 754
+CLASSIFICATION PANEL ==================================================
+Fields:
+Is PSM Incident Yes/No/Not Determined
+Is Process Safety Event Yes/No/Not Determined
+API RP 754 PSE Tier
+PSE classification status
+Loss of Primary Containment Yes/No/Not Determined
+Released material
+Released quantity
+Release unit
+Release duration
+Threshold quantity
+Threshold exceeded Yes/No/Not Determined
+Acute release Yes/No/Not Determined
+Fire/explosion occurred Yes/No
+Toxic exposure occurred Yes/No
+Injury/fatality occurred Yes/No
+Community impact Yes/No
+Environmental impact Yes/No
+Indoor/outdoor release
+PSE classification basis
+PSE reviewer required Yes/No
+Reviewed by
+Reviewed at
+API RP 754 tier options:
+Tier 1
+Tier 2
+Tier 3
+Tier 4
+Not Applicable
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+Not Determined
+Rules:
+Do not hardcode threshold quantities.
+Use company/site chemical threshold configuration where available.
+If threshold config missing, mark tier as Not Determined and require review.
+Tier 1/Tier 2 must show high attention.
+Classification changes require permission, reason, audit log, and incident history event.
+Add helper text distinguishing:
+Occupational: slip/trip/fall, manual handling, ergonomics, office injury, PPE issue
+Process safety: chemical release, LOPC, fire, explosion, toxic exposure, process upset, safeguard/IPL/
+SIS/PSV failure, operating envelope exceedance
+================================================== 8. PTW / MOC / PSSR CONTEXT PANEL
+==================================================
+Fields:
+PTW involved Yes/No
+PTW number
+Permit type
+Permit status at event time
+Permit issuer
+Permit receiver
+MOC involved Yes/No
+MOC number
+MOC status
+PSSR involved Yes/No
+PSSR number
+PSSR status
+Work order/reference if available
+Context notes
+Actions:
+Link PTW
+Link MOC
+Link PSSR
+Open linked record
+Create follow-up action
+Rules:
+Use real PTW/MOC/PSSR integrations.
+Respect permissions.
+If incident happened under active permit, show PTW review flag.
+If restart is blocked or change is required, show MOC/PSSR follow-up.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+================================================== 9. ENVIRONMENTAL / COMMUNITY IMPACT
+PANEL ==================================================
+Fields:
+Environmental impact Yes/No/Not Determined
+Community impact Yes/No/Not Determined
+Release to air/water/soil
+Odor/noise/community complaint
+Wastewater/stormwater impact
+Offsite impact suspected
+Environmental agency reporting required
+Environmental notes
+Rules:
+Do not hardcode legal reporting rules.
+Use company/site/jurisdiction configuration where available.
+Missing jurisdiction config shows review required.
+Environmental impact flags feed regulatory/notification tab later .
+================================================== 10. REPORTER / WITNESS SNAPSHOT PANEL
+==================================================
+Fields:
+Reported by
+Reporter department
+Reporter role
+Reporter contact
+Anonymous report Yes/No
+Witnesses known Yes/No
+Witness count
+Witness names if allowed
+Witness statement status
+Notes
+Rules:
+Protect anonymous reporter if enabled.
+Witness personal info must respect privacy/permission rules.
+Full witness management comes later; this is classification snapshot only.
+================================================== 11. CLASSIFICATION REVIEW PANEL
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+Fields:
+Review required Yes/No
+Review type
+Reviewer
+Review due date
+Review status
+Review basis
+Review comments
+Approved classification
+Rejected classification reason
+Last reviewed by
+Last reviewed at
+Review types:
+Severity review
+PSM/PSE review
+API RP 754 tier review
+Environmental review
+Regulatory review
+Investigation priority review
+Actions:
+Request review
+Approve classification
+Reject classification
+Reopen review
+Create action
+Rules:
+Review actions require permission.
+Approval/rejection requires comment.
+Review decisions create audit/history.
+Review status feeds Overview readiness and blockers.
+================================================== 12. CLASSIFICATION CHANGE HISTORY PANEL
+==================================================
+Show classification-related changes.
+Fields:
+Changed field
+Previous value
+New value
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+Changed by
+Changed at
+Reason
+Review reference
+Audit log reference
+Rules:
+Use incident history/audit data.
+Read-only.
+Restricted values redacted.
+No fake history.
+================================================== 13. EVENT DETAILS READINESS / MISSING
+DATA PANEL ==================================================
+Backend-generated readiness.
+Checklist:
+Title complete
+Description complete
+Site/location complete
+Event date/time complete
+Event type complete
+Classification complete
+PSM/PSE reviewed if required
+API RP 754 tier complete or Not Determined with review
+PTW/MOC/PSSR context checked
+Environmental/community impact checked
+Reporter/witness snapshot complete
+Required classification review complete
+Rules:
+Backend generates readiness.
+Missing items link to fields/sections.
+Readiness feeds Overview and Review later .
+================================================== TAB 2 — POTENTIAL SEVERITY / RISK MATRIX
+==================================================
+Tab route/state:
+/incidents/:id
+Active tab: Potential Severity / Risk Matrix
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+Required sections:
+Potential Severity Header
+Severity Summary Cards
+Actual vs Potential Severity Comparison Panel
+Actual Consequence Panel
+Potential Consequence Panel
+Likelihood / Probability Panel
+Risk Matrix Panel
+Investigation Priority Decision Panel
+Investigation Level Rules Panel
+High-Potential Near Miss Panel
+Severity Review / Approval Panel
+Risk Matrix Configuration Snapshot Panel
+Severity Change History Panel
+Severity Readiness / Missing Data Panel
+Save / Recalculate / Review Actions
+Loading / Empty / Error / Permission / Read-only States
+================================================== 1. POTENTIAL SEVERITY HEADER
+==================================================
+Header must show:
+Incident number
+Actual severity
+Potential severity
+Likelihood
+Potential risk score
+Investigation priority
+Investigation level required
+High-potential near miss badge
+Fatality potential badge
+Major process safety potential badge
+Risk matrix version
+Last calculated at
+Last reviewed by
+Button: Recalculate Risk
+Button: Request Severity Review
+Button: Save Changes
+Button: Create Action
+Rules:
+Use real backend values.
+Backend calculates risk score and priority.
+Disable actions with exact reason.
+Closed incidents read-only unless reopened.
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+================================================== 2. SEVERITY SUMMARY CARDS
+==================================================
+Cards:
+Actual severity
+Potential severity
+Actual consequence
+Potential consequence
+Likelihood
+Potential risk score
+Investigation priority
+Investigation level required
+High-potential near miss
+Fatality potential
+Major process safety potential
+Severity review status
+Risk matrix config status
+Last recalculated
+Rules:
+No fake counts/values.
+Cards use real backend data.
+Cards visually distinguish actual vs potential severity.
+================================================== 3. ACTUAL VS POTENTIAL SEVERITY
+COMPARISON PANEL ==================================================
+Purpose: Show difference between what happened and what could have happened.
+Fields:
+Actual severity
+Potential severity
+Severity delta
+Actual consequence category
+Potential consequence category
+Explanation / basis
+High potential flag
+Example helper text
+Include example helper text:
+A dropped tool from height that hits nobody may have Actual Severity = Negligible but Potential
+Severity = Fatality.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+Rules:
+Potential severity must be independent from actual severity.
+Near misses can have actual severity low and potential severity high.
+High potential events trigger formal investigation if configured.
+Use nice infographic or comparison chart with real values.
+================================================== 4. ACTUAL CONSEQUENCE PANEL
+==================================================
+Fields:
+Actual severity
+Actual consequence category
+Actual injury severity
+Actual environmental impact
+Actual asset damage
+Actual production impact
+Actual financial impact if configured
+Actual consequence notes
+Rules:
+Actual severity required.
+Actual consequence must reflect real outcome.
+Changes require permission and reason.
+Changes create audit/history.
+================================================== 5. POTENTIAL CONSEQUENCE PANEL
+==================================================
+Fields:
+Potential severity
+Potential consequence category
+Potential injury severity
+Potential environmental impact
+Potential asset damage
+Potential process safety consequence
+Potential community impact
+Potential business interruption
+Potential severity basis
+Worst credible consequence
+Credible scenario description
+Rules:
+Potential severity required.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+Potential severity must represent credible potential outcome, not worst fantasy case.
+Potential basis required for high/major/fatality/catastrophic potential.
+Changes require permission and reason.
+Changes create audit/history.
+================================================== 6. LIKELIHOOD / PROBABILITY PANEL
+==================================================
+Fields:
+Likelihood
+Likelihood basis
+Exposure frequency
+Control reliability
+Repeat likelihood
+Similar events observed
+Uncertainty level
+Notes
+Likelihood values should be configurable, but support:
+Rare
+Unlikely
+Possible
+Likely
+Almost Certain
+Not Determined
+Rules:
+Use company/site risk matrix config.
+If config missing, show Not Determined.
+Likelihood may be required based on policy.
+Backend calculates risk score.
+================================================== 7. RISK MATRIX PANEL
+==================================================
+Purpose: Show visual risk matrix and selected cell.
+Must include:
+Actual severity marker
+Potential severity marker
+Likelihood axis
+Potential risk score
+Investigation priority
+Matrix legend
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+Matrix version/configuration
+Selected cell highlight
+Missing config warning
+Rules:
+Matrix values come from backend/company/site config.
+Do not hardcode risk matrix.
+Frontend displays matrix from backend.
+If matrix config missing, show missing configuration state.
+Risk matrix must be visually clean, responsive, and dark/light compatible.
+Matrix must support mobile layout.
+================================================== 8. INVESTIGATION PRIORITY DECISION PANEL
+==================================================
+Fields:
+Potential risk score
+Investigation priority
+Investigation level required
+Formal investigation team required
+RCA required
+Senior management review required
+PSM review required
+Regulatory review required
+Due date rule
+Decision basis
+Backend recommendation
+Manual override Yes/No
+Override reason
+Override by/at
+Investigation priority:
+Low
+Medium
+High
+Critical
+Investigation level:
+Simple log
+Supervisor review
+Standard investigation
+Formal investigation
+Full RCA investigation
+Senior management review
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+Rules:
+Backend determines priority and level.
+Frontend does not decide priority.
+Manual override requires permission and reason.
+High potential severity should increase investigation level.
+Fatality potential should require formal investigation or higher if configured.
+PSM/PSE Tier 1/Tier 2 should require senior/PSM review if configured.
+Decisions feed Overview, RCA requirement, Investigation Team, Review later .
+================================================== 9. INVESTIGATION LEVEL RULES PANEL
+==================================================
+Show applied rules.
+Fields:
+Rule name
+Trigger condition
+Result
+Applied Yes/No
+Source configuration
+Notes
+Example rules:
+Potential Severity = Fatality → Formal investigation required
+PSE Tier 1/Tier 2 → Senior review required
+Regulatory reporting required → Regulatory review required
+High potential near miss → RCA required
+Safeguard/IPL failed → Barrier analysis required
+Equipment failure → MI follow-up required
+Rules:
+Rules come from backend/company policy.
+No hardcoded hidden logic.
+Show “configuration missing” where applicable.
+================================================== 10. HIGH-POTENTIAL NEAR MISS PANEL
+==================================================
+Fields:
+Is near miss
+High-potential near miss Yes/No
+Actual severity
+Potential severity
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+Fatality potential
+Major process safety potential
+Investigation priority
+Required follow-up
+High-potential basis
+Management notification required
+Rules:
+Near miss can be high potential even with zero injury/damage.
+High-potential near misses must be visible in dashboard/register .
+If high potential is true, update incident dashboard/register and overview.
+Changes create audit/history.
+================================================== 11. SEVERITY REVIEW / APPROVAL PANEL
+==================================================
+Fields:
+Severity review required
+Reviewer
+Review due date
+Review status
+Review comments
+Approved actual severity
+Approved potential severity
+Approved investigation priority
+Approved by
+Approved at
+Rejection reason
+Actions:
+Request severity review
+Approve severity
+Reject severity
+Reopen review
+Create action
+Rules:
+Review actions require permission.
+Approval/rejection requires comment.
+Review decisions create audit/history.
+Approved severity may lock until reopened.
+Review status feeds readiness.
+================================================== 12. RISK MATRIX CONFIGURATION SNAPSHOT
+PANEL ==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+Fields:
+Matrix name
+Matrix version
+Company/site
+Severity scale
+Likelihood scale
+Risk score rules
+Investigation priority rules
+Effective date
+Approved by
+Config status
+Missing config warnings
+Rules:
+Use configured matrix.
+Do not hardcode.
+Snapshot configuration used for calculation.
+If matrix changes later , show recalculation/review required.
+================================================== 13. SEVERITY CHANGE HISTORY PANEL
+==================================================
+Fields:
+Changed field
+Previous value
+New value
+Changed by
+Changed at
+Reason
+Review reference
+Audit log reference
+Rules:
+Use incident history/audit data.
+Read-only.
+Restricted values redacted.
+No fake history.
+================================================== 14. SEVERITY READINESS / MISSING DATA
+PANEL ==================================================
+Backend-generated readiness.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+Checklist:
+Actual severity complete
+Actual consequence complete
+Potential severity complete
+Potential consequence complete
+Likelihood complete if required
+Potential severity basis complete
+Risk matrix config available
+Risk score calculated
+Investigation priority calculated
+Investigation level determined
+Severity review complete if required
+High-potential near miss evaluated
+Follow-up requirements generated
+Rules:
+Backend generates readiness.
+Missing items link to fields/sections.
+Readiness feeds Overview and Review later .
+================================================== BACKEND DATABASE REQUIREMENTS
+==================================================
+Use existing incident models where already created. Extend only if needed.
+Ensure incidents supports:
+event_type
+classification
+status
+title
+short_description
+detailed_description
+event_datetime
+reported_datetime
+reported_by
+site_id
+unit_id
+area_id
+location_text
+shift
+workgroup
+operating_mode
+ptw_involved
+ptw_id
+moc_involved
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+moc_id
+pssr_involved
+pssr_id
+emergency_response_activated
+operation_stopped
+equipment_isolated
+area_barricaded
+environmental_impact
+community_impact
+actual_severity
+actual_consequence_category
+actual_consequence_notes
+potential_severity
+potential_consequence_category
+potential_severity_basis
+likelihood
+likelihood_basis
+potential_risk_score
+risk_matrix_version
+high_potential_near_miss
+fatality_potential
+major_process_safety_potential
+investigation_priority
+investigation_level_required
+formal_team_required
+rca_required
+is_psm_incident
+is_process_safety_event
+pse_tier
+pse_classification_status
+lopc_status
+released_material_id
+released_quantity
+release_unit
+release_duration
+threshold_quantity
+threshold_exceeded
+acute_release
+fire_explosion_occurred
+toxic_exposure_occurred
+injury_occurred
+regulatory_reporting_required
+pse_classification_basis
+pse_reviewer_required
+classification_review_status
+severity_review_status
+restricted
+confidential
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+tags_json
+Add/fix tables if missing:
+incident_classification_reviews:
+id
+company_id
+site_id
+incident_id
+review_type
+status
+reviewer_id
+due_date
+previous_value_json
+new_value_json
+basis
+comments
+reviewed_by
+reviewed_at
+created_by
+created_at
+updated_at
+incident_severity_reviews:
+id
+company_id
+site_id
+incident_id
+status
+reviewer_id
+due_date
+actual_severity
+potential_severity
+likelihood
+potential_risk_score
+investigation_priority
+investigation_level_required
+comments
+approved_by
+approved_at
+rejected_by
+rejected_at
+rejection_reason
+created_by
+created_at
+updated_at
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+23
+incident_risk_matrix_snapshots:
+id
+company_id
+site_id
+incident_id
+matrix_id
+matrix_name
+matrix_version
+severity_scale_json
+likelihood_scale_json
+risk_rules_json
+investigation_priority_rules_json
+selected_actual_severity
+selected_potential_severity
+selected_likelihood
+calculated_risk_score
+calculated_priority
+calculated_level
+created_by
+created_at
+incident_followup_recommendations:
+id
+company_id
+site_id
+incident_id
+recommendation_type
+required
+reason
+source_rule
+status
+action_id nullable
+created_by
+created_at
+updated_at
+incident_history_events:
+must capture all changes with before/after values
+Rules:
+All records require company_id/site_id.
+No cross-company/site leakage.
+Review records are auditable.
+Risk matrix snapshots preserve calculation basis.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+24
+History events are immutable.
+Closed incidents read-only unless reopened.
+================================================== BACKEND API REQUIREMENTS
+==================================================
+Event Details & Classification:
+GET /incidents/:id/event-details
+PATCH /incidents/:id/event-details
+GET /incidents/:id/event-details/summary
+GET /incidents/:id/event-details/location-operation
+PATCH /incidents/:id/event-details/location-operation
+GET /incidents/:id/event-details/classification
+PATCH /incidents/:id/event-details/classification
+GET /incidents/:id/event-details/psm-pse
+PATCH /incidents/:id/event-details/psm-pse
+GET /incidents/:id/event-details/ptw-moc-pssr
+PATCH /incidents/:id/event-details/ptw-moc-pssr
+GET /incidents/:id/event-details/environmental-community
+PATCH /incidents/:id/event-details/environmental-community
+GET /incidents/:id/event-details/reporter-witness
+GET /incidents/:id/event-details/classification-review
+POST /incidents/:id/event-details/request-classification-review
+POST /incidents/:id/event-details/approve-classification
+POST /incidents/:id/event-details/reject-classification
+GET /incidents/:id/event-details/classification-history
+GET /incidents/:id/event-details/readiness
+Potential Severity / Risk Matrix:
+GET /incidents/:id/severity-risk
+PATCH /incidents/:id/severity-risk
+GET /incidents/:id/severity-risk/summary
+GET /incidents/:id/severity-risk/comparison
+GET /incidents/:id/severity-risk/actual-consequence
+PATCH /incidents/:id/severity-risk/actual-consequence
+GET /incidents/:id/severity-risk/potential-consequence
+PATCH /incidents/:id/severity-risk/potential-consequence
+GET /incidents/:id/severity-risk/likelihood
+PATCH /incidents/:id/severity-risk/likelihood
+GET /incidents/:id/severity-risk/matrix
+POST /incidents/:id/severity-risk/recalculate
+GET /incidents/:id/severity-risk/investigation-priority
+GET /incidents/:id/severity-risk/investigation-rules
+GET /incidents/:id/severity-risk/high-potential-near-miss
+GET /incidents/:id/severity-risk/review
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+25
+POST /incidents/:id/severity-risk/request-review
+POST /incidents/:id/severity-risk/approve
+POST /incidents/:id/severity-risk/reject
+GET /incidents/:id/severity-risk/matrix-snapshot
+GET /incidents/:id/severity-risk/history
+GET /incidents/:id/severity-risk/readiness
+Context/lookups:
+GET /incidents/:id/event-details/context
+GET /incidents/:id/severity-risk/context
+GET /incidents/:id/lookups/ptw
+GET /incidents/:id/lookups/moc
+GET /incidents/:id/lookups/pssr
+GET /incidents/:id/lookups/risk-matrix
+GET /incidents/:id/lookups/pse-thresholds
+API rules:
+Enforce company_id/site_id.
+Enforce permissions.
+Enforce restricted/confidential redaction.
+Enforce medical-field protection where relevant.
+Validate site/unit/area/PTW/MOC/PSSR access.
+Backend calculates risk score and priority.
+Backend classifies/recommends PSM/PSE only using configuration.
+All mutations create audit/history.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-event-details.service.ts
+incident-event-classification.service.ts
+incident-psm-pse.service.ts
+incident-ptw-moc-pssr-context.service.ts
+incident-environmental-community.service.ts
+incident-classification-review.service.ts
+incident-classification-history.service.ts
+incident-event-readiness.service.ts
+incident-severity-risk.service.ts
+incident-actual-consequence.service.ts
+incident-potential-consequence.service.ts
+incident-likelihood.service.ts
+incident-risk-matrix.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+26
+incident-risk-calculation.service.ts
+incident-investigation-priority.service.ts
+incident-investigation-level-rule.service.ts
+incident-high-potential-near-miss.service.ts
+incident-severity-review.service.ts
+incident-risk-matrix-snapshot.service.ts
+incident-severity-history.service.ts
+incident-severity-readiness.service.ts
+incident-followup-recommendation.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-global-search.service.ts
+incident-notification.service.ts
+Backend rules:
+Backend is source of truth for classification status, potential risk score, investigation priority,
+investigation level, and readiness.
+Backend creates matrix snapshot when risk is recalculated or approved.
+Backend marks Overview readiness/blockers updated after changes.
+Backend updates Dashboard/Register fields after severity/classification changes.
+Backend triggers notifications if configured for high-potential, Tier 1/Tier 2, fatality potential, or
+regulatory reporting.
+Backend creates follow-up recommendations from company/site rules.
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Create/update:
+Tabs:
+features/incidents/components/detail/EventDetailsClassificationTab.tsx
+features/incidents/components/detail/PotentialSeverityRiskMatrixTab.tsx
+Event Details components:
+features/incidents/components/event-details/EventDetailsHeader.tsx
+features/incidents/components/event-details/EventSummaryCards.tsx
+features/incidents/components/event-details/CoreEventInformationPanel.tsx
+features/incidents/components/event-details/LocationTimeOperationPanel.tsx
+features/incidents/components/event-details/EventDescriptionPanel.tsx
+features/incidents/components/event-details/EventTypeClassificationPanel.tsx
+features/incidents/components/event-details/PsmPseClassificationPanel.tsx
+features/incidents/components/event-details/PtwMocPssrContextPanel.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+27
+features/incidents/components/event-details/
+EnvironmentalCommunityImpactPanel.tsx
+features/incidents/components/event-details/ReporterWitnessSnapshotPanel.tsx
+features/incidents/components/event-details/ClassificationReviewPanel.tsx
+features/incidents/components/event-details/
+ClassificationChangeHistoryPanel.tsx
+features/incidents/components/event-details/EventDetailsReadinessPanel.tsx
+Severity/Risk components:
+features/incidents/components/severity-risk/PotentialSeverityHeader.tsx
+features/incidents/components/severity-risk/SeveritySummaryCards.tsx
+features/incidents/components/severity-risk/
+ActualVsPotentialComparisonPanel.tsx
+features/incidents/components/severity-risk/ActualConsequencePanel.tsx
+features/incidents/components/severity-risk/PotentialConsequencePanel.tsx
+features/incidents/components/severity-risk/LikelihoodProbabilityPanel.tsx
+features/incidents/components/severity-risk/RiskMatrixPanel.tsx
+features/incidents/components/severity-risk/
+InvestigationPriorityDecisionPanel.tsx
+features/incidents/components/severity-risk/InvestigationLevelRulesPanel.tsx
+features/incidents/components/severity-risk/HighPotentialNearMissPanel.tsx
+features/incidents/components/severity-risk/SeverityReviewApprovalPanel.tsx
+features/incidents/components/severity-risk/
+RiskMatrixConfigurationSnapshotPanel.tsx
+features/incidents/components/severity-risk/SeverityChangeHistoryPanel.tsx
+features/incidents/components/severity-risk/SeverityReadinessPanel.tsx
+Dialogs/drawers:
+features/incidents/components/event-details/
+RequestClassificationReviewDialog.tsx
+features/incidents/components/event-details/ApproveClassificationDialog.tsx
+features/incidents/components/event-details/RejectClassificationDialog.tsx
+features/incidents/components/severity-risk/RequestSeverityReviewDialog.tsx
+features/incidents/components/severity-risk/ApproveSeverityDialog.tsx
+features/incidents/components/severity-risk/RejectSeverityDialog.tsx
+features/incidents/components/severity-risk/RecalculateRiskDialog.tsx
+Shared:
+features/incidents/components/shared/ActualSeverityBadge.tsx
+features/incidents/components/shared/PotentialSeverityBadge.tsx
+features/incidents/components/shared/PotentialRiskScoreBadge.tsx
+features/incidents/components/shared/InvestigationPriorityBadge.tsx
+features/incidents/components/shared/InvestigationLevelBadge.tsx
+features/incidents/components/shared/PsmIncidentBadge.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+28
+features/incidents/components/shared/PseTierBadge.tsx
+features/incidents/components/shared/ReviewStatusBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentEventDetails.ts
+features/incidents/hooks/useIncidentClassification.ts
+features/incidents/hooks/useIncidentPsmPse.ts
+features/incidents/hooks/useIncidentClassificationReview.ts
+features/incidents/hooks/useIncidentEventReadiness.ts
+features/incidents/hooks/useIncidentSeverityRisk.ts
+features/incidents/hooks/useIncidentRiskMatrix.ts
+features/incidents/hooks/useIncidentRiskRecalculate.ts
+features/incidents/hooks/useIncidentSeverityReview.ts
+features/incidents/hooks/useIncidentSeverityReadiness.ts
+Services:
+features/incidents/services/incident-event-details.service.ts
+features/incidents/services/incident-classification.service.ts
+features/incidents/services/incident-psm-pse.service.ts
+features/incidents/services/incident-severity-risk.service.ts
+features/incidents/services/incident-risk-matrix.service.ts
+features/incidents/services/incident-review.service.ts
+Schemas:
+features/incidents/schemas/incident-event-details.schema.ts
+features/incidents/schemas/incident-classification.schema.ts
+features/incidents/schemas/incident-psm-pse.schema.ts
+features/incidents/schemas/incident-severity-risk.schema.ts
+features/incidents/schemas/incident-review.schema.ts
+Types:
+features/incidents/types/incident-event-details.types.ts
+features/incidents/types/incident-classification.types.ts
+features/incidents/types/incident-severity-risk.types.ts
+features/incidents/types/incident-risk-matrix.types.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+On tab load:
+Fetch tab data from backend.
+Fetch permissions.
+Fetch readiness.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+29
+Fetch context/configuration status.
+Show loading state.
+Show permission denied if no access.
+Show redacted state for restricted data.
+Show read-only state if incident is closed.
+Save behavior:
+Validate fields.
+Save via backend API.
+Show success/error .
+Refresh Overview summary, Dashboard/Register fields, and detail header .
+Create audit/history through backend.
+Risk recalculation:
+User changes actual/potential/likelihood.
+Backend recalculates risk score, priority, level, and recommendations.
+UI updates risk matrix and decision panels.
+Snapshot matrix/config used.
+Audit/history created.
+Review behavior:
+Request review.
+Approve/reject review.
+Require comment/reason.
+Update readiness and Overview.
+Audit/history created.
+UI:
+Use clean cards, badges, status indicators, mini timelines, comparison visuals, and risk matrix
+infographic.
+Charts/infographics must use real backend data only.
+No fake chart data.
+Dark/light theme must be polished.
+Desktop: multi-column layout.
+Tablet/mobile: stacked cards and responsive forms.
+Every disabled button must show exact reason.
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.event_details.view
+incidents.event_details.edit
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+30
+incidents.classification.view
+incidents.classification.edit
+incidents.classification.review.request
+incidents.classification.review.approve
+incidents.classification.review.reject
+incidents.psm.view
+incidents.psm.classify
+incidents.psm.review
+incidents.severity.view
+incidents.severity.edit
+incidents.severity.recalculate
+incidents.severity.review.request
+incidents.severity.review.approve
+incidents.severity.review.reject
+incidents.risk_matrix.view
+incidents.followup.override
+incidents.history.view
+incidents.restricted.view
+incidents.confidential.view
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized actions.
+Restricted/confidential data requires permission.
+Review/approval requires permission.
+Override requires permission and reason.
+================================================== REQUIRED STATES
+==================================================
+States:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Read-only closed
+Missing required fields
+Missing risk matrix configuration
+Missing PSE threshold configuration
+Not Determined
+Saving
+Save failed
+Recalculating risk
+Risk recalculation failed
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+31
+Review requested
+Review approved
+Review rejected
+Unsaved changes
+Classification pending review
+Severity pending review
+High-potential warning
+Tier 1/Tier 2 warning
+Regulatory review required
+Mobile layout
+================================================== TESTING
+==================================================
+Backend tests:
+Fetch event details.
+Update event details.
+Update classification.
+Update PSM/PSE classification.
+Request classification review.
+Approve/reject classification.
+Fetch classification history.
+Fetch event readiness.
+Fetch severity/risk data.
+Update actual consequence.
+Update potential consequence.
+Update likelihood.
+Recalculate risk.
+Create risk matrix snapshot.
+Determine investigation priority.
+Request severity review.
+Approve/reject severity.
+Fetch severity history.
+Fetch severity readiness.
+Enforce permissions.
+Enforce company_id/site_id.
+Redact restricted/confidential fields.
+Create audit log.
+Create incident history event.
+Update overview/register fields.
+Frontend tests:
+Event Details tab renders.
+All event detail panels render .
+Classification panel works.
+PSM/PSE panel works.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+32
+Classification review works.
+Potential Severity tab renders.
+Actual vs Potential panel works.
+Risk matrix panel works.
+Recalculate risk works.
+Investigation priority panel works.
+Severity review works.
+History panels render .
+Readiness panels render .
+Permission states work.
+Read-only state works.
+Dark/light themes work.
+Responsive layout works.
+E2E: 1. Open /incidents/:id. 2. Open Event Details & Classification tab. 3. Edit event details. 4. Update
+classification. 5. Request PSM/PSE classification review. 6. Open Potential Severity / Risk Matrix tab. 7.
+Update actual severity. 8. Update potential severity. 9. Set likelihood. 10. Recalculate risk. 11. Confirm
+investigation priority updates. 12. Request severity review. 13. Confirm Overview and Register update. 14.
+Confirm audit/history events exist.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This phase is complete only when:
+✓ Event Details & Classification tab exists
+✓ Potential Severity / Risk Matrix tab exists
+✓ Both tabs use real backend data only
+✓ Event details fields work
+✓ Location/time/operation panel works
+✓ Event description panel works
+✓ Event type/classification panel works
+✓ PSM/PSE/API RP 754 panel works
+✓ PTW/MOC/PSSR context works
+✓ Environmental/community impact panel works
+✓ Reporter/witness snapshot works
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+33
+✓ Classification review works
+✓ Classification history works
+✓ Event readiness works
+✓ Actual and potential severity remain separate
+✓ Potential severity drives investigation priority
+✓ Risk matrix uses backend/company/site configuration
+✓ No hardcoded matrix/threshold values
+✓ Risk recalculation works
+✓ Risk matrix snapshot works
+✓ Investigation priority decision works
+✓ Investigation level rules work
+✓ High-potential near miss logic works
+✓ Severity review works
+✓ Severity history works
+✓ Severity readiness works
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+✓ Restricted/confidential redaction works
+✓ company_id/site_id isolation works
+✓ Audit logs and incident history events work
+✓ Nice charts/infographics use real data
+✓ Dark/light theme works
+34
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. Current implementation reviewed 3. Files reviewed 4. Files modified/
+created 5. Database changes 6. APIs added/fixed 7. Backend services added/fixed 8. Event Details &
+Classification tab completed 9. Potential Severity / Risk Matrix tab completed 10. Event classification
+completed 11. PSM/PSE/API RP 754 completed 12. Actual/Potential severity completed 13. Risk matrix
+completed 14. Investigation priority logic completed 15. Review workflows completed 16. Readiness/history
+completed 17. Charts/infographics completed 18. Permissions connected 19. Audit/history connected 20.
+Dark/light responsive UI completed 21. Tests added 22. Bugs fixed 23. Remaining gaps, if any
+35

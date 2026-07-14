@@ -1,0 +1,797 @@
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Gas Test tab fully.
+Context: The PTW Create Permit wizard, Permit Detail Page, and Isolation / LOTO tab exist or are in
+progress. Now make the Gas Test tab real, database-driven, and fully functional.
+Route:
+/ptw/:id
+Tab: Gas Test
+Do NOT create static demo UI. Do NOT use mock gas readings. Do NOT redesign the PTW page. Keep the
+current dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+Backend: NestJS + Prisma/Supabase + PostgreSQL + Redis/BullMQ
+Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+Storage/PDF: existing PDF engine if needed
+Auth: existing IAM/RBAC
+Audit: existing audit log
+Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+The Gas Test tab must manage all atmospheric testing requirements for PTW.
+It must support:
+Initial gas test
+Periodic re-test
+Gas threshold validation
+Site-configurable gas limits
+Tester identity
+Instrument calibration tracking
+Gas reading history
+Gas trend chart
+Permit activation blocking if gas test missing/failed
+Automatic permit suspension if active permit gas test fails
+Automatic permit suspension if re-test is overdue
+Audit log and permit history events
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+================================================== GAS TEST TAB UI
+==================================================
+The tab must show:
+Gas Test Summary Card
+Gas test required: Yes/No
+Latest test status: Pass / Fail / Overdue / Not Recorded
+Last test date/time
+Next re-test due
+Re-test countdown
+Tester
+Instrument ID
+Instrument calibration status
+Permit gas status:
+Not Required
+Required
+Passed
+Failed
+Re-Test Due Soon
+Re-Test Overdue
+Activation Blocker Banner Show if permit cannot activate because:
+Gas test is required but no gas test exists
+Latest gas test failed
+Required gas fields are missing
+Instrument calibration is expired
+Gas test is older than allowed validity period
+Latest Readings Panel Show latest readings as cards:
+O2
+LEL
+H2S
+CO
+SO2
+Cl2
+NH3
+HF
+Custom gases
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
+23. 
+24. 
+25. 
+26. 
+27. 
+28. 
+29. 
+30. 
+31. 
+32. 
+2
+
+Each gas card must show:
+Reading value
+Unit
+Allowed threshold
+Pass/Fail badge
+Trend indicator if history exists
+Add Gas Test Form Fields:
+Test type
+Initial
+Periodic Re-test
+After Break
+Before Hot Work
+Before Confined Space Entry
+After Alarm
+Manual
+Test location
+Test date/time
+Tester user
+Tester name
+Instrument ID
+Instrument serial number
+Instrument calibration date
+Instrument calibration expiry date
+Ventilation status
+Weather / wind condition optional
+Remarks
+Gas readings:
+O2 %
+LEL %
+H2S ppm
+CO ppm
+SO2 ppm
+Cl2 ppm
+NH3 ppm
+HF ppm
+Custom gas name
+Custom gas value
+Custom gas unit
+Custom gas threshold
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+3
+
+Gas Test History Table Columns:
+Test date/time
+Test type
+Tester
+Instrument ID
+O2
+LEL
+H2S
+CO
+Result
+Next re-test due
+Actions
+Gas Trend Chart Show trend for:
+O2
+LEL
+H2S
+CO
+If chart library already exists, use it. If not, create simple lightweight chart or sparkline. Do not add heavy
+dependency unless already approved.
+Site Gas Threshold Panel Visible to users with permission:
+View site gas thresholds
+Configure thresholds
+Configure re-test intervals
+================================================== GAS FIELDS AND DEFAULT LIMITS
+==================================================
+Default gas rules:
+O2:
+Valid range: 19.5% to 23.5%
+LEL:
+Confined Space default: <10%
+Hot Work default: 0% preferred
+Hot Work site override: may allow up to <5% only if company/site policy allows
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+• 
+• 
+• 
+• 
+4
+
+Near confined space hot work: configurable, default <5% if override policy exists
+H2S:
+Default alert: 1 ppm
+IDLH reference: 50 ppm
+Site configurable
+CO:
+Default alert: 25 ppm
+IDLH reference: 1200 ppm
+Site configurable
+Custom gases:
+SO2
+Cl2
+NH3
+HF
+Other gases must be configurable by site, permit type, equipment service, or fluid service.
+Important: Do not hardcode final gas limits in frontend. Backend must load applicable gas thresholds from
+site configuration. Frontend only displays thresholds returned by API.
+================================================== PERMIT TYPE REQUIREMENTS
+==================================================
+Gas test is mandatory for:
+Hot Work
+Confined Space Entry
+Line Breaking / Equipment Opening if hazardous service
+Excavation if hazardous area or potential vapor release
+SIMOPS if one participating permit requires gas testing
+Cold Work:
+Gas test optional unless site policy or area classification requires it.
+Electrical Isolation / LOTO:
+Gas test optional unless work area requires atmospheric monitoring.
+Radiography:
+Gas test optional unless site policy requires.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+
+Working at Height:
+Gas test optional unless area classification requires.
+================================================== GAS TEST RESULT LOGIC
+==================================================
+Backend must calculate result.
+Result statuses:
+Pass
+Fail
+Incomplete
+Overdue
+Calibration Expired
+Rules:
+If any required gas reading is missing → Incomplete
+If any gas exceeds configured threshold → Fail
+If O2 outside 19.5–23.5 → Fail
+If instrument calibration expired → Fail / Calibration Expired
+If latest test is older than validity period → Overdue
+If latest test failed and permit is Active → auto-suspend permit
+If re-test is overdue and permit is Active → auto-suspend permit
+================================================== RE-TEST INTERVALS
+==================================================
+Support configurable re-test interval by:
+Site
+Permit type
+Area classification
+Risk level
+Gas result risk
+Examples:
+Hot Work: every 2 hours
+Confined Space: every 1 hour
+Line Breaking: every 1 hour
+Low-risk Cold Work: no periodic retest unless configured
+Store:
+retest_interval_minutes
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+next_retest_due_at
+retest_status
+If re-test overdue:
+Show warning
+Emit notification event
+Suspend permit if configured by site policy
+Create permit history event
+Create audit log
+================================================== BACKEND DATABASE
+==================================================
+Create/update models:
+permit_gas_tests permit_gas_readings site_gas_thresholds permit_gas_test_history
+permit_gas_tests fields:
+id
+permit_id
+company_id
+site_id
+test_type
+test_location
+tested_at
+tester_user_id
+tester_name
+instrument_id
+instrument_serial_number
+calibration_date
+calibration_expiry_date
+ventilation_status
+weather_condition
+result_status
+next_retest_due_at
+remarks
+created_by
+created_at
+updated_at
+permit_gas_readings fields:
+id
+gas_test_id
+permit_id
+company_id
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+
+site_id
+gas_code
+gas_name
+value
+unit
+min_limit
+max_limit
+pass_fail
+threshold_source
+created_at
+site_gas_thresholds fields:
+id
+company_id
+site_id
+permit_type
+area_classification
+gas_code
+gas_name
+unit
+min_limit
+max_limit
+alert_limit
+action_limit
+retest_interval_minutes
+auto_suspend_on_fail
+auto_suspend_on_overdue
+is_active
+created_by
+created_at
+updated_at
+permit_gas_test_history fields:
+id
+permit_id
+gas_test_id
+company_id
+site_id
+event_type
+description
+user_id
+before_value
+after_value
+created_at
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+================================================== BACKEND APIs
+==================================================
+Create/update:
+GET /ptw/:id/gas-tests
+POST /ptw/:id/gas-tests
+PATCH /ptw/:id/gas-tests/:gasTestId
+DELETE /ptw/:id/gas-tests/:gasTestId
+GET /ptw/:id/gas-tests/latest
+GET /ptw/:id/gas-tests/summary
+GET /ptw/:id/gas-tests/history
+GET /ptw/:id/gas-tests/trends
+GET /ptw/:id/gas-thresholds
+GET /ptw/gas-thresholds
+POST /ptw/gas-thresholds
+PATCH /ptw/gas-thresholds/:thresholdId
+DELETE /ptw/gas-thresholds/:thresholdId
+POST /ptw/:id/gas-tests/:gasTestId/validate
+POST /ptw/:id/gas-tests/check-overdue
+================================================== BACKEND SERVICES
+==================================================
+Create/fix:
+ptw-gas-test.service.ts
+gas-threshold.service.ts
+gas-test-validator .ts
+gas-retest.scheduler .ts
+gas-test-policy.ts
+Required service logic:
+Load applicable thresholds by site, permit type, area classification, equipment fluid service.
+Validate gas readings server-side.
+Calculate result status server-side.
+Calculate next re-test due time.
+Block permit activation when gas test is invalid.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+Auto-suspend permit when failed gas test occurs during active permit.
+Auto-suspend permit when re-test is overdue if site policy says so.
+Emit notification events.
+Write audit logs.
+Write permit history.
+Write gas test history.
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+features/ptw/components/tabs/PermitGasTestTab.tsx
+features/ptw/components/gas-test/GasTestSummaryCard.tsx
+features/ptw/components/gas-test/GasTestBlockerBanner .tsx
+features/ptw/components/gas-test/LatestGasReadings.tsx
+features/ptw/components/gas-test/GasReadingCard.tsx
+features/ptw/components/gas-test/AddGasTestForm.tsx
+features/ptw/components/gas-test/GasTestHistoryTable.tsx
+features/ptw/components/gas-test/GasTrendChart.tsx
+features/ptw/components/gas-test/SiteGasThresholdPanel.tsx
+features/ptw/hooks/usePermitGasTests.ts
+features/ptw/hooks/useGasTestMutations.ts
+features/ptw/schemas/gas-test.schema.ts
+features/ptw/services/ptw-gas-test.service.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+Use React Query.
+Queries:
+gas test summary
+latest gas test
+gas test history
+gas test trends
+gas thresholds
+Mutations:
+add gas test
+edit gas test
+delete gas test if permitted
+validate gas test
+update thresholds if permitted
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+
+After every mutation: Invalidate/refetch:
+permit detail
+permit summary
+gas test tab
+right gas retest panel
+lifecycle blockers
+permit history
+dashboard counters if permit status changed
+================================================== FORM VALIDATION
+==================================================
+Use React Hook Form + Zod.
+Required fields:
+Test type
+Test location
+Tested at
+Tester
+Instrument ID
+Instrument calibration date
+Instrument calibration expiry date
+Required gas readings based on permit type/site policy
+Validation:
+Calibration expiry date must be after test date.
+O2 must be numeric.
+LEL must be numeric.
+H2S/CO/custom gases must be numeric if required.
+Required gases cannot be empty.
+Gas value cannot be negative.
+Custom gas requires name, unit, value, threshold.
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+ptw.gas_test.view
+ptw.gas_test.add
+ptw.gas_test.edit
+ptw.gas_test.delete
+ptw.gas_test.validate
+ptw.gas_thresholds.manage
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+Rules:
+Only authorized gas testers can add gas tests.
+Only permitted users can edit/delete gas tests.
+Threshold configuration is admin/site HSE only.
+Backend must enforce permissions.
+Frontend hides buttons if permission missing.
+================================================== INTEGRATIONS
+==================================================
+Permit lifecycle:
+Activation blocked if gas test required but invalid.
+Active permit auto-suspends on failed gas test or overdue re-test if configured.
+Notification Center: Emit events:
+ptw.gas_test.added
+ptw.gas_test.failed
+ptw.gas_test.retest_due
+ptw.gas_test.retest_overdue
+ptw.permit.auto_suspended_gas
+Action Engine: If gas test fails, optionally create action:
+Source module: PTW
+Source record: Permit number
+Title: Failed gas test for permit
+Priority: High or Safety-Critical depending on site policy
+Equipment Registry: Show gas test events in equipment timeline if permit is linked to equipment.
+Audit: Audit every gas test add/edit/delete/threshold change.
+Global Search: Permit search should reflect gas status if indexed summary exists.
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+Loading: Show skeleton summary cards and table.
+Empty: If gas test not required: “No gas test required for this permit.”
+If gas test required but no test: “Gas test is required before permit activation.”
+Error: Show clear error message and retry button.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Gas Test tab is complete only when:
+✓ Gas test summary loads from API
+✓ Latest readings are real
+✓ Add gas test works
+✓ Gas thresholds are loaded from backend
+✓ Backend calculates pass/fail
+✓ Failed gas test blocks activation
+✓ Failed gas test suspends active permit if configured
+✓ Re-test due countdown works
+✓ Re-test overdue suspends permit if configured
+✓ Gas test history works
+✓ Gas trend chart works
+✓ Site gas thresholds can be managed by permitted users
+✓ Audit logs are created
+✓ Permit history events are created
+✓ Gas test history events are created
+✓ Notifications are emitted
+✓ React Query refreshes all affected panels
+✓ No static/mock gas test data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+13

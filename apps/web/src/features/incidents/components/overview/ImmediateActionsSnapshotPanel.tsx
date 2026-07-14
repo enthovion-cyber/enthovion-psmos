@@ -1,0 +1,4 @@
+import { OverviewPanelShell, SnapshotGrid, MiniBars } from './OverviewPanelShell';
+export function ImmediateActionsSnapshotPanel({ data }: { data?: Record<string, any> }) {
+  return <OverviewPanelShell title="Immediate Actions Snapshot Panel" subtitle="Initial controls and temporary safeguards captured during reporting."><SnapshotGrid data={data} fields={[['areaSafeNow','Area safe now'],['restartBlocked','Restart blocked'],['temporaryControlExpiration','Temporary control expiration'],['immediateActionNotes','Immediate action notes'],['completedActions','Completed actions'],['openTemporaryControls','Open temporary controls'],['expiredTemporaryControls','Expired temporary controls']]} /><div className="mt-3"><MiniBars items={(data?.actions ?? []).map((a:any)=>({label:a.action_label ?? a.action_key, count:a.completed ? 1 : 0}))} emptyMessage="No immediate actions captured."/></div></OverviewPanelShell>;
+}

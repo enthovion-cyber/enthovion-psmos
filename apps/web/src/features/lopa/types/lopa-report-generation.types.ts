@@ -1,0 +1,20 @@
+export type LopaGeneratedReport = {
+  id: string;
+  report_number: string;
+  report_title: string;
+  report_type: string;
+  template_name_snapshot?: string;
+  template_version_snapshot?: string;
+  report_version: number;
+  status: string;
+  output_format: string;
+  file_name?: string;
+  file_size?: number;
+  classification?: string;
+  official?: boolean;
+  published?: boolean;
+  document_number_snapshot?: string;
+  generated_by?: string;
+  generated_at?: string;
+  superseded_by_report_id?: string;
+};

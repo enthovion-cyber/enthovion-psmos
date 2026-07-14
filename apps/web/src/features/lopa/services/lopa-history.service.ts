@@ -1,0 +1,5 @@
+import { api } from '@/services/api';
+import type { LopaAttachmentFilters } from '../types/lopa-attachment.types';
+import type { LopaHistoryData } from '../types/lopa-history.types';
+const unwrap = <T,>(r: { data: { data: T } }) => r.data.data;
+export const lopaHistoryService = { get: (id: string, filters: LopaAttachmentFilters = {}) => api.get(`/lopa/${id}/history`, { params: filters }).then(unwrap<LopaHistoryData>), context: (id:string) => api.get(`/lopa/${id}/history/context`).then(unwrap<any>), timeline: (id:string,filters:LopaAttachmentFilters={}) => api.get(`/lopa/${id}/history/timeline`,{params:filters}).then(unwrap<any[]>), detail: (id:string,eventId:string) => api.get(`/lopa/${id}/history/${eventId}`).then(unwrap<any>), diff: (id:string,eventId:string) => api.get(`/lopa/${id}/history/${eventId}/diff`).then(unwrap<any>), auditMetadata: (id:string,eventId:string) => api.get(`/lopa/${id}/history/${eventId}/audit-metadata`).then(unwrap<any>), export: (id:string,filters:LopaAttachmentFilters={}) => api.get(`/lopa/${id}/history/export`,{params:filters}).then(unwrap<any>) };

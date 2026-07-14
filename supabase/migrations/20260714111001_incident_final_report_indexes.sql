@@ -1,0 +1,10 @@
+create index if not exists idx_incident_report_templates_tenant_company_site on public.incident_report_templates (tenant_id, company_id, site_id, active);
+create index if not exists idx_incident_report_snapshots_incident on public.incident_report_snapshots (tenant_id, incident_id, created_at desc);
+create index if not exists idx_incident_reports_incident on public.incident_reports (tenant_id, incident_id, created_at desc);
+create index if not exists idx_incident_reports_status on public.incident_reports (tenant_id, site_id, status, official, published);
+create index if not exists idx_incident_report_sections_incident on public.incident_report_sections (tenant_id, incident_id, report_id, display_order);
+create index if not exists idx_incident_report_exports_incident on public.incident_report_exports (tenant_id, incident_id, requested_at desc);
+create index if not exists idx_incident_report_reviews_incident on public.incident_report_reviews (tenant_id, incident_id, created_at desc);
+create index if not exists idx_incident_report_packages_incident on public.incident_report_packages (tenant_id, incident_id, created_at desc);
+create index if not exists idx_incident_report_package_items_package on public.incident_report_package_items (tenant_id, package_id);
+create index if not exists idx_incident_report_distributions_incident on public.incident_report_distributions (tenant_id, incident_id, created_at desc);

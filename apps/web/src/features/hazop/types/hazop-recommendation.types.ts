@@ -1,0 +1,48 @@
+export type HazopRecommendation = {
+  id: string;
+  recommendation_number: string;
+  source_type: string;
+  title?: string;
+  recommendation_text?: string;
+  description?: string;
+  rationale?: string;
+  priority: string;
+  status: string;
+  owner_id?: string;
+  due_date?: string;
+  verification_required: boolean;
+  evidence_required: boolean;
+  closure_blocker: boolean;
+  linked_action_id?: string;
+  action_status_snapshot?: string;
+  lopa_related?: boolean;
+  evidence_status?: string;
+  verification_status?: string;
+  overdue?: boolean;
+  closureBlockerActive?: boolean;
+  node?: Record<string, any>;
+  scenario?: Record<string, any>;
+  safeguard?: Record<string, any>;
+  action?: Record<string, any>;
+  owner?: Record<string, any>;
+  evidence?: Array<Record<string, any>>;
+  updated_at?: string;
+};
+
+export type HazopRecommendationFilters = {
+  search?: string;
+  sourceType?: string;
+  nodeId?: string;
+  scenarioId?: string;
+  riskLevel?: string;
+  priority?: string;
+  ownerId?: string;
+  status?: string;
+  overdue?: string;
+  verificationRequired?: string;
+  actionLinked?: string;
+  closureBlocker?: string;
+  lopaRelated?: string;
+  page?: number;
+  limit?: number;
+};

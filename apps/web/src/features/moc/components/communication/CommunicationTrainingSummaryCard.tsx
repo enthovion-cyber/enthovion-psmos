@@ -1,0 +1,1 @@
+export { CommunicationTrainingSummaryCard } from './CommunicationComponents';

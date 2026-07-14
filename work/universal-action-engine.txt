@@ -1,0 +1,517 @@
+--- PAGE 1 ---
+You are the senior full-stack engineer for PSM OS.
+IAM/RBAC is complete.
+Now build the Universal Action Engine.
+This is the most important shared service in the platform because every module will use it:
+Equipment Registry
+PTW
+MOC
+HAZOP
+PSSR
+Incident Investigation
+Audit Management
+Hazard Reporting
+Training
+Future modules
+Do not start Workflow Engine until Universal Action Engine is fully complete.
+Tech Stack
+Backend:
+NestJS
+Supabase
+PostgreSQL
+Redis
+BullMQ
+Frontend:
+Next.js 14
+TypeScript
+Tailwind
+shadcn/ui
+React Query
+Zustand
+React Hook Form
+Zod
+Every module must be able to create actions.
+Example:
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+
+--- PAGE 2 ---
+HAZOP Recommendation
+→ Creates Action
+Audit Finding
+→ Creates Action
+Incident CAPA
+→ Creates Action
+MOC Required Task
+→ Creates Action
+Training Requirement
+→ Creates Action
+All actions must be managed from one engine.
+No module should create its own action system.
+Create/update:
+actions
+action_comments
+action_evidence
+action_verifications
+action_watchers
+action_history
+action_escalations
+Required Action Fields
+id
+action_number
+title
+description
+source_module
+source_record_id
+equipment_id
+site_id
+department_id
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+
+--- PAGE 3 ---
+Assignment
+owner_id
+assigned_by
+assigned_date
+Priority
+Safety-Critical
+High
+Medium
+Low
+Status
+Open
+In Progress
+Pending Verification
+Closed
+Cancelled
+Dates
+created_at
+updated_at
+due_date
+closed_at
+Verification
+evidence_required
+verification_required
+verified_by
+verified_at
+Escalation
+escalation_level
+last_escalation_date
+Generate automatically.
+Format:
+ACT-2025-000001
+ACT-2025-000002
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+3
+
+--- PAGE 4 ---
+ACT-2025-000003
+Must be globally unique.
+Actions can be created:
+Manually
+Via API
+Automatically from modules
+Supported Sources:
+Equipment
+Hazard Reporting
+HAZOP
+MOC
+PTW
+PSSR
+Incident
+Audit
+Training
+Store source record link.
+Example:
+Module:
+HAZOP
+Source:
+HZ-2025-001
+Action:
+ACT-2025-0008
+Create full action page.
+Header:
+Action Number
+Title
+Priority Badge
+Status Badge
+Due Date
+Owner
+1. 
+2. 
+3. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+
+--- PAGE 5 ---
+Sections:
+Overview
+Title
+Description
+Source Module
+Source Record
+Equipment
+Site
+Department
+Assignment
+Owner
+Assigned By
+Assigned Date
+Progress Updates
+Timeline of updates.
+Evidence
+Files
+Photos
+Reports
+Verification
+Verifier
+Verification Notes
+Verification Date
+Comments
+Threaded discussion
+History
+Full audit trail
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+1. 
+1. 
+1. 
+1. 
+5
+
+--- PAGE 6 ---
+Users can:
+Add comment
+Edit own comment
+Delete own comment
+Store:
+author
+timestamp
+edited timestamp
+Must appear instantly.
+Upload support:
+Images
+PDF
+DOCX
+XLSX
+Each evidence record:
+uploaded by
+uploaded date
+description
+Rules:
+If evidence_required = true
+Action cannot close without evidence.
+Independent verification.
+Rule:
+Owner CANNOT verify own action.
+Different user required.
+Verifier can:
+Approve evidence
+Reject evidence
+If rejected:
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+--- PAGE 7 ---
+Action returns to In Progress.
+Open
+↓
+In Progress
+↓
+Pending Verification
+↓
+Closed
+Rules:
+Cannot skip states.
+Closed requires:
+Evidence if required
+Verification if required
+Special logic.
+Priority:
+Safety-Critical
+Requirements:
+Mandatory due date
+Mandatory evidence
+Mandatory verification
+Escalation rules:
+Overdue 1 day
+→ Notify Owner
+Overdue 3 days
+→ Notify Supervisor
+• 
+• 
+• 
+• 
+• 
+7
+
+--- PAGE 8 ---
+Overdue 7 days
+→ Notify Department Manager
+Overdue 14 days
+→ Notify Plant Manager
+Allow users to subscribe.
+Watcher receives:
+Status updates
+New comments
+Evidence uploads
+Closure notifications
+Create:
+/actions
+Views:
+My Actions
+Assigned to me
+Team Actions
+Department actions
+All Actions
+Permission controlled
+Filter by:
+Status
+Priority
+Site
+Department
+Module
+Owner
+Date Range
+Buckets:
+0–30 Days
+31–60 Days
+• 
+• 
+• 
+• 
+1. 
+1. 
+1. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+
+--- PAGE 9 ---
+61–90 Days
+90+ Days
+Charts:
+By Priority
+By Module
+By Department
+Export:
+PDF
+Excel
+Every change creates history event.
+Examples:
+Action Created
+Owner Changed
+Priority Changed
+Evidence Uploaded
+Comment Added
+Verification Approved
+Closed
+Store:
+User
+Timestamp
+Before Value
+After Value
+Create notification events.
+Examples:
+Action Assigned
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+
+--- PAGE 10 ---
+Action Updated
+Action Overdue
+Action Verified
+Action Closed
+Use Notification Center .
+Create permissions:
+actions.view
+actions.create
+actions.edit
+actions.assign
+actions.verify
+actions.close
+actions.delete
+actions.export
+Apply:
+Backend guards
+Frontend guards
+GET /actions
+GET /actions/
+POST /actions
+PATCH /actions/
+DELETE /actions/
+POST /actions//comment
+10
+
+--- PAGE 11 ---
+PATCH /actions/comments/
+DELETE /actions/comments/
+POST /actions//evidence
+DELETE /actions/evidence/
+POST /actions//verify
+POST /actions//close
+POST /actions//reopen
+GET /actions/aging-summary
+GET /actions/dashboard
+Create/fix:
+ActionTable
+ActionCard
+ActionDetail
+ActionTimeline
+ActionComments
+ActionEvidence
+ActionVerification
+ActionFilters
+ActionDashboard
+MyActionsWidget
+OverdueActionsWidget
+Equipment Registry
+When viewing equipment:
+11
+
+--- PAGE 12 ---
+Actions tab must show linked actions.
+Action creation from equipment page must work.
+Linked records must work.
+Every mutation:
+Create audit log
+Create action history event
+No exceptions.
+Universal Action Engine complete only when:
+✓ Actions can be created manually
+✓ Actions can be created from modules
+✓ Comments work
+✓ Evidence works
+✓ Verification works
+✓ Escalations work
+✓ Notifications work
+✓ My Actions page works
+✓ Dashboard works
+✓ Aging works
+✓ Audit logs work
+✓ Permissions work
+✓ Equipment integration works
+Before moving to Workflow Engine:
+• 
+• 
+12
+
+--- PAGE 13 ---
+Provide:
+Files created
+Files modified
+Prisma changes
+API endpoints
+Frontend pages/components
+Remaining gaps
+Confirmation that Universal Action Engine is production-ready
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+13

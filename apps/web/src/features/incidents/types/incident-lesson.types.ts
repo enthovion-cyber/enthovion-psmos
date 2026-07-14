@@ -1,0 +1,41 @@
+export type IncidentLesson = {
+  id: string;
+  lesson_number?: string;
+  title: string;
+  lesson_statement?: string;
+  lesson_type?: string;
+  source_type?: string;
+  applicability_scope?: string;
+  target_audience_json?: any[];
+  training_required?: boolean;
+  procedure_update_required?: boolean;
+  communication_required?: boolean;
+  owner_id?: string;
+  due_date?: string;
+  review_status?: string;
+  distribution_status?: string;
+  acknowledgement_status?: string;
+  verification_status?: string;
+  notes?: string;
+};
+
+export type IncidentLessonsData = {
+  restricted?: boolean;
+  header: any;
+  summaryCards: any[];
+  sourceReadiness: any[];
+  lessonsRegister: IncidentLesson[];
+  sourceMapping: any;
+  applicability: any;
+  communicationDistribution: any;
+  trainingProcedureDocumentUpdate: any;
+  acknowledgements: any[];
+  effectivenessVerification: any;
+  review: any;
+  changeHistory: any[];
+  readiness: any;
+  context: any;
+  permissions: string[];
+  readOnly?: boolean;
+  lockedReason?: string | null;
+};

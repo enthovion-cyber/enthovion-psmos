@@ -1,0 +1,2188 @@
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Create Incident Wizard in full detail.
+Route:
+/incidents/new
+This wizard is used to report a new incident, near miss, unsafe condition, process safety event, occupational
+safety event, environmental event, asset/reliability event, chemical release, fire, explosion, injury, exposure,
+or equipment damage event.
+Read the attached PDF/specification carefully before coding. Build the Create Incident Wizard exactly
+according to the PDF. After implementation, cross-check the completed work against the PDF line by line
+and fix every missing field, section, step, card, panel, dialog, API, database model, permission, validation
+rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive UI issue. Do not miss a
+single thing.
+================================================== SCOPE
+==================================================
+Work only on:
+Create Incident Wizard
+Draft incident creation
+Incident submission
+Initial classification
+Actual severity and potential severity capture
+PSM/PSE/API RP 754 initial classification
+Initial investigation priority decision
+Immediate action capture
+Initial attachments/evidence upload if supported
+Backend/data foundation needed for incident creation
+Do not build yet:
+Incident Detail Shell
+Overview tab
+Event Details tab
+Potential Severity Matrix detail tab
+People / Injury / Exposure tab
+Asset / Equipment / Chemical tab
+Timeline tab
+Evidence / Attachments tab
+Immediate Actions detail tab
+Investigation Team tab
+RCA tab
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1
+Barrier / Safeguard Failure tab
+CAPA tab
+Linked Records tab
+Notifications / Regulatory Reporting tab
+Review & Approval tab
+Lessons Learned tab
+History tab
+Final Report / Export tab
+Do not use mock/static data.
+Use:
+Real backend
+Real database
+Real APIs
+Real permissions
+Audit logs
+Incident history events
+Equipment Registry
+Chemical Database / SDS
+Document Control / storage service for attachments
+PTW
+MOC
+PSSR
+HAZOP/PHA
+LOPA/SIL
+Mechanical Integrity
+Notification Center
+Global Search
+IAM/RBAC
+Company/site configuration
+================================================== CORE PURPOSE
+==================================================
+The Create Incident Wizard must allow users to report incidents quickly but with enough structure for
+enterprise process safety management.
+The wizard must capture:
+What happened
+Where it happened
+When it happened
+Who reported it
+Who/what was involved
+Actual outcome
+Potential outcome
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2
+PSM vs Occupational vs Environmental classification
+API RP 754 process safety event information
+Immediate actions taken
+Initial evidence
+Initial investigation priority
+Required next steps
+The wizard must create:
+Incident record
+Incident number
+Initial classification
+Initial severity/risk potential
+Initial investigation workflow status
+Initial audit log
+Initial incident history event
+Optional draft record if user saves progress
+================================================== ROUTE
+==================================================
+Create page:
+/incidents/new
+After successful submit:
+Redirect to /incidents/:id
+Or show success screen with incident number and button to open incident
+From Dashboard/Register:
+“Report Incident” button must navigate to /incidents/new
+================================================== WIZARD STEPS
+==================================================
+The wizard must include these steps:
+Report Type & Basic Info
+Location & Time
+Event Description
+People / Injury / Exposure
+Asset / Equipment / Chemical Involved
+Actual Severity
+Potential Severity / Risk Potential
+PSM / Process Safety / API RP 754 Classification
+Immediate Actions Taken
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+3
+Initial Evidence / Attachments
+Investigation Priority & Required Follow-up
+Review & Submit
+================================================== STEP 1 — REPORT TYPE & BASIC INFO
+==================================================
+Fields:
+Event type
+Incident title
+Short description
+Reporter
+Reporter department
+Reporter contact
+Reporter role
+Reported date/time
+Anonymous report Yes/No if company policy supports
+Contractor involved Yes/No
+Initial confidentiality flag
+Restricted incident Yes/No
+Tags
+Event type options:
+Incident
+Near Miss
+Unsafe Condition
+Process Upset
+Loss of Containment
+Spill
+Release
+Fire
+Explosion
+Injury
+Illness
+Exposure
+Equipment Damage
+Environmental Event
+Security Event
+Quality Event
+Other
+Classification options:
+Occupational Safety
+Process Safety
+Environmental
+10. 
+11. 
+12. 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4
+Asset / Reliability
+Security
+Quality
+Other
+Not Determined
+Rules:
+Event type required.
+Incident title required.
+Short description required.
+Reporter defaults to current user unless anonymous reporting allowed.
+If restricted/confidential is selected, enforce permission and show warning.
+No mock users or fake reporter data.
+Use real IAM/RBAC user data.
+================================================== STEP 2 — LOCATION & TIME
+==================================================
+Fields:
+Company
+Site
+Unit
+Area
+Exact location
+GPS/location if supported
+Event date
+Event time
+Shift
+Workgroup / crew
+Weather condition if outdoor and supported
+Operating mode
+Startup/shutdown/normal/emergency operation
+Permit active Yes/No
+PTW reference if applicable
+MOC active Yes/No
+PSSR active Yes/No
+Operating mode options:
+Normal operation
+Startup
+Shutdown
+Maintenance
+Turnaround
+Emergency operation
+Commissioning
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5
+Decommissioning
+Other
+Rules:
+Site required.
+Event date/time required.
+Event date/time cannot be in future unless user has override permission.
+Unit/area should come from real site hierarchy.
+PTW/MOC/PSSR lookups must use real modules where available.
+User can only select sites/units/areas they have access to.
+================================================== STEP 3 — EVENT DESCRIPTION
+==================================================
+Fields:
+Detailed description: What happened?
+What was being done at the time?
+What abnormal condition was observed?
+Immediate consequence
+Potential consequence
+Initial cause suspected
+Witnesses known Yes/No
+Emergency response activated Yes/No
+Operation stopped Yes/No
+Equipment isolated Yes/No
+Area barricaded Yes/No
+Release/fire/explosion occurred Yes/No
+Environmental impact suspected Yes/No
+Community impact suspected Yes/No
+Rules:
+Detailed description required.
+Keep factual language helper text: “Describe facts, not blame.”
+If emergency response activated, flag for notification/regulatory review.
+If operation stopped/equipment isolated, record for follow-up in detail module later .
+================================================== STEP 4 — PEOPLE / INJURY / EXPOSURE
+==================================================
+Fields:
+People involved Yes/No
+Injured person count
+Employee involved Yes/No
+Contractor involved Yes/No
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6
+Visitor involved Yes/No
+Person name if allowed
+Person type
+Job role
+Injury occurred Yes/No
+Illness occurred Yes/No
+Exposure occurred Yes/No
+Injury type
+Body part
+Treatment type
+Lost time potential Yes/No
+Medical treatment required Yes/No
+Hospitalization Yes/No
+Fatality Yes/No
+PPE used Yes/No
+PPE issue suspected Yes/No
+Exposure route
+Chemical exposure Yes/No
+Confidential medical notes with restricted permission
+Person type:
+Employee
+Contractor
+Visitor
+Public
+Emergency responder
+Other
+Treatment type:
+None
+First aid
+Medical treatment
+Restricted work
+Lost time
+Hospitalization
+Fatality
+Not determined
+Exposure route:
+Inhalation
+Skin contact
+Eye contact
+Ingestion
+Injection
+Noise
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7
+Heat/cold
+Radiation
+Other
+Not applicable
+Rules:
+Medical/confidential fields must be permission protected.
+If fatality/hospitalization/medical treatment is selected, increase investigation priority and regulatory
+review flag.
+If chemical exposure selected, require chemical selection in Step 5 if possible.
+Restricted medical notes must not show to unauthorized users.
+================================================== STEP 5 — ASSET / EQUIPMENT / CHEMICAL
+INVOLVED ==================================================
+Fields:
+Equipment involved Yes/No
+Equipment tag
+Equipment name
+Equipment type
+Unit/area equipment location
+Equipment status at event
+Maintenance/inspection overdue suspected Yes/No
+Safeguard involved Yes/No
+Safeguard failed Yes/No
+IPL involved Yes/No
+SIS/SIF involved Yes/No
+PSV/relief device involved Yes/No
+Alarm/interlock involved Yes/No
+Chemical involved Yes/No
+Chemical name
+CAS number
+SDS link
+Material state
+Estimated quantity involved
+Released quantity if any
+Release unit
+Process condition
+Temperature
+Pressure
+Flow/rate if applicable
+Equipment status:
+Running
+Standby
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8
+Shutdown
+Under maintenance
+Isolated
+Bypassed
+Out of service
+Unknown
+Material state:
+Gas
+Vapor
+Liquid
+Solid
+Dust
+Mixture
+Unknown
+Rules:
+Equipment lookup must use Equipment Registry.
+Chemical lookup must use Chemical Database/SDS.
+SDS link must come from real SDS/document system where available.
+If chemical release selected, Step 8 PSM/API RP 754 fields become required/recommended.
+If safeguard/IPL/SIS/PSV failed, mark Barrier/Safeguard Failure follow-up required.
+If equipment failure selected, mark Mechanical Integrity follow-up required if company policy
+requires.
+================================================== STEP 6 — ACTUAL SEVERITY
+==================================================
+Purpose: Capture what actually happened.
+Fields:
+Actual severity
+Actual consequence category
+Actual injury severity
+Actual environmental impact
+Actual asset damage
+Actual production impact
+Actual financial impact if configured
+Actual consequence notes
+Actual severity values should be configurable, but support:
+Negligible
+Minor
+Moderate
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9
+Serious
+Major
+Fatality
+Catastrophic
+Actual consequence categories:
+No harm / no damage
+First aid
+Medical treatment
+Lost time
+Fatality
+Minor release
+Major release
+Fire
+Explosion
+Equipment damage
+Environmental impact
+Production loss
+Community impact
+Other
+Rules:
+Actual severity required.
+Near miss may have actual severity = Negligible.
+Actual severity must not drive investigation alone.
+Store actual severity separately from potential severity.
+Changing actual severity later must create audit/history.
+================================================== STEP 7 — POTENTIAL SEVERITY / RISK
+POTENTIAL ==================================================
+Purpose: Capture what could reasonably have happened.
+Fields:
+Potential severity
+Potential consequence category
+Potential injury severity
+Potential environmental impact
+Potential asset damage
+Potential process safety consequence
+Likelihood / probability
+Potential risk score
+Potential severity basis
+High potential near miss Yes/No
+Fatality potential Yes/No
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10
+Major process safety potential Yes/No
+Investigation priority
+Investigation level required
+Potential severity values should be configurable, but support:
+Negligible
+Minor
+Moderate
+Serious
+Major
+Fatality
+Catastrophic
+Investigation priority:
+Low
+Medium
+High
+Critical
+Investigation level:
+Simple log
+Supervisor review
+Standard investigation
+Formal investigation
+Full RCA investigation
+Senior management review
+Rules:
+Potential severity required.
+Potential severity must be separate from actual severity.
+Near misses must be prioritized by potential severity.
+If actual severity is low but potential severity is high, mark high-potential near miss.
+Fatality potential requires formal investigation or higher if configured.
+Backend calculates potential risk score and investigation priority from company/site matrix.
+Frontend must not be source of truth for risk score.
+Do not hardcode matrix values; use company/site risk matrix configuration.
+If matrix configuration missing, allow capture but mark risk score as Not Determined and require
+review.
+Example rule: Dropped tool from height hits nobody:
+Actual Severity = Negligible
+Potential Severity = Fatality
+Investigation Priority = High/Critical
+Formal investigation required
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+================================================== STEP 8 — PSM / PROCESS SAFETY / API RP 754
+CLASSIFICATION ==================================================
+Purpose: Distinguish process safety events from occupational safety and classify API RP 754 tier where
+applicable.
+Fields:
+Is PSM Incident Yes/No/Not Determined
+Is Process Safety Event Yes/No/Not Determined
+API RP 754 PSE Tier
+PSE classification status
+Loss of Primary Containment Yes/No/Not Determined
+Released material
+Released quantity
+Release unit
+Release duration
+Threshold quantity
+Threshold exceeded Yes/No/Not Determined
+Acute release Yes/No/Not Determined
+Fire/explosion occurred Yes/No
+Toxic exposure occurred Yes/No
+Injury/fatality occurred Yes/No
+Community impact Yes/No
+Environmental impact Yes/No
+Indoor/outdoor release
+PSE classification basis
+PSE classification reviewer required Yes/No
+API RP 754 tier options:
+Tier 1
+Tier 2
+Tier 3
+Tier 4
+Not Applicable
+Not Determined
+PSE classification status:
+Not Started
+Draft
+Pending Review
+Confirmed
+Rejected
+Not Applicable
+Not Determined
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12
+Rules:
+Is PSM Incident must exist as field.
+Is Process Safety Event must exist as field.
+API RP 754 tier must exist as field.
+Do not hardcode threshold quantities.
+Use company/site chemical threshold configuration where available.
+If threshold config is missing, mark tier as Not Determined.
+If Loss of Primary Containment and chemical release exist, require PSM/PSE review.
+PSE Tier 1/Tier 2 must require senior review/regulatory review if company policy requires.
+PSM classification changes must create audit/history.
+Frontend must show helper text distinguishing:
+Occupational safety: slip/trip/fall, ergonomics, manual handling, office injury, PPE issue
+Process safety: chemical release, fire, explosion, LOPC, process upset, safeguard/IPL failure, SIS/PSV
+failure, operating envelope exceedance
+================================================== STEP 9 — IMMEDIATE ACTIONS TAKEN
+==================================================
+Fields:
+Immediate actions taken Yes/No
+Area isolated
+Equipment stopped
+Spill contained
+Fire response activated
+First aid provided
+Emergency response called
+Barricade installed
+Permit suspended
+Operation stopped
+Temporary control added
+Notification sent
+Other immediate action
+Current site condition
+Is area safe now Yes/No/Unknown
+Restart blocked Yes/No
+Temporary control expiration date
+Immediate action notes
+Rules:
+If area not safe, incident cannot be submitted as normal; must flag emergency/open condition.
+Restart blocked should trigger PSSR/MOC/review follow-up if configured.
+Temporary controls require owner and expiration if company policy requires.
+Immediate actions are not final corrective actions.
+Final CAPA will be handled later by Universal Action Engine.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+================================================== STEP 10 — INITIAL EVIDENCE / ATTACHMENTS
+==================================================
+Fields:
+Upload photos/files
+Evidence type
+Evidence description
+Source
+Taken/collected by
+Collected date/time
+Classification
+Restricted Yes/No
+Notes
+Evidence types:
+Photo
+Video
+Witness statement
+DCS trend
+Alarm log
+Permit copy
+Maintenance record
+Inspection record
+SDS
+Lab report
+CCTV reference
+Emergency response log
+Medical record restricted
+Other
+Rules:
+Use existing storage service.
+Do not store file content directly in DB.
+Use secure upload.
+File size/type validation required.
+Medical/confidential evidence must be restricted.
+Evidence upload creates audit/history.
+If upload fails, allow save draft without losing entered data.
+================================================== STEP 11 — INVESTIGATION PRIORITY &
+REQUIRED FOLLOW-UP ==================================================
+Backend-generated recommendation based on previous steps.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+Show:
+Investigation priority
+Required investigation level
+Formal investigation team required Yes/No
+RCA required Yes/No
+PSM review required Yes/No
+Regulatory reporting review required Yes/No
+MOC required Yes/No
+PSSR required Yes/No
+PTW review required Yes/No
+HAZOP/PHA review required Yes/No
+LOPA/SIL review required Yes/No
+Mechanical Integrity follow-up required Yes/No
+Equipment inspection required Yes/No
+SDS/chemical review required Yes/No
+Notification required Yes/No
+Suggested due date
+Suggested investigation owner
+Reason for each recommendation
+Rules:
+Backend generates recommendations.
+Frontend displays only.
+User can request override only with permission and reason.
+High potential severity should drive higher investigation level.
+PSM/PSE Tier 1/Tier 2 should drive senior review and regulatory reporting review.
+Safeguard/IPL failure should drive LOPA/MI follow-up.
+Equipment failure should drive MI follow-up.
+Restart blocked should drive PSSR review.
+Engineering/procedure change need should drive MOC.
+================================================== STEP 12 — REVIEW & SUBMIT
+==================================================
+Show final review summary:
+Event type
+Classification
+Title
+Description
+Site/unit/area/location
+Event date/time
+Reporter
+People/injury/exposure summary
+Equipment/chemical summary
+Actual severity
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15
+Potential severity
+Potential risk score
+Investigation priority
+PSM Incident status
+Process Safety Event status
+API RP 754 tier
+Immediate actions
+Evidence count
+Required follow-ups
+Investigation owner
+Due date
+Confidential/restricted status
+Actions:
+Save Draft
+Submit Incident
+Cancel
+Back
+Submit and Open Incident
+Submit and Create Another if permission/policy supports
+Validation before submit:
+Required fields complete
+Actual severity complete
+Potential severity complete
+Site/location complete
+Event date/time complete
+Description complete
+PSM/PSE review status complete or marked Not Determined
+Required immediate safety fields complete if unsafe condition remains
+Required attachments complete if company policy requires
+Required owner/due date complete if formal investigation required
+Rules:
+Submit creates incident number .
+Submit creates incident record.
+Submit creates incident history event.
+Submit creates audit log.
+Submit triggers notifications if configured.
+Submit updates dashboard/register .
+Draft can be saved with partial data.
+Draft must remain editable by creator/authorized users.
+Submitted incident becomes visible according to permissions.
+================================================== DRAFT / AUTOSAVE BEHAVIOR
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16
+Support:
+Save Draft
+Autosave if existing app pattern supports
+Resume draft
+Delete draft if permission allows
+Unsaved changes warning
+Step completion indicators
+Rules:
+Draft incident has status Draft.
+Draft is not counted as submitted incident unless dashboard includes draft count.
+Draft saves partial data.
+Draft save creates audit/history only if policy requires.
+Draft must respect company/site permissions.
+================================================== DATABASE REQUIREMENTS
+==================================================
+Create/update models if missing.
+incidents:
+id
+company_id
+site_id
+incident_number
+title
+short_description
+detailed_description
+event_type
+classification
+status
+event_datetime
+reported_datetime
+reported_by
+reporter_department
+reporter_contact
+reporter_role
+anonymous_report
+contractor_involved
+restricted
+confidential
+site_area_id nullable
+unit_id nullable
+area_id nullable
+location_text
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17
+gps_location_json nullable
+shift
+workgroup
+operating_mode
+ptw_involved
+ptw_id nullable
+moc_involved
+moc_id nullable
+pssr_involved
+pssr_id nullable
+emergency_response_activated
+operation_stopped
+equipment_isolated
+area_barricaded
+environmental_impact
+community_impact
+actual_severity
+actual_consequence_category
+potential_severity
+potential_consequence_category
+likelihood
+potential_risk_score
+potential_severity_basis
+high_potential_near_miss
+fatality_potential
+major_process_safety_potential
+investigation_priority
+investigation_level_required
+investigation_owner_id nullable
+due_date nullable
+formal_team_required
+rca_required
+rca_status
+is_psm_incident
+is_process_safety_event
+pse_tier
+pse_classification_status
+lopc_status
+released_material_id nullable
+released_quantity nullable
+release_unit nullable
+release_duration nullable
+threshold_quantity nullable
+threshold_exceeded nullable
+acute_release nullable
+fire_explosion_occurred
+toxic_exposure_occurred
+injury_occurred
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18
+regulatory_reporting_required
+pse_classification_basis
+pse_reviewer_required
+moc_required
+pssr_required
+ptw_review_required
+hazop_review_required
+lopa_review_required
+mechanical_integrity_followup_required
+equipment_inspection_required
+sds_chemical_review_required
+notification_required
+evidence_status
+tags_json
+created_by
+updated_by
+created_at
+updated_at
+submitted_by nullable
+submitted_at nullable
+incident_people_initial:
+id
+company_id
+site_id
+incident_id
+person_type
+person_name nullable
+job_role nullable
+employee_id nullable
+contractor_company nullable
+injury_occurred
+illness_occurred
+exposure_occurred
+injury_type nullable
+body_part nullable
+treatment_type nullable
+lost_time_potential
+medical_treatment_required
+hospitalization
+fatality
+ppe_used
+ppe_issue_suspected
+exposure_route nullable
+chemical_exposure
+confidential_notes nullable
+created_by
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19
+created_at
+incident_equipment_chemical_initial:
+id
+company_id
+site_id
+incident_id
+equipment_involved
+equipment_id nullable
+equipment_tag_snapshot nullable
+equipment_status nullable
+maintenance_overdue_suspected
+safeguard_involved
+safeguard_failed
+ipl_involved
+sis_sif_involved
+psv_relief_involved
+alarm_interlock_involved
+chemical_involved
+chemical_id nullable
+chemical_name_snapshot nullable
+cas_number_snapshot nullable
+sds_id nullable
+material_state nullable
+estimated_quantity_involved nullable
+released_quantity nullable
+release_unit nullable
+process_condition nullable
+temperature nullable
+pressure nullable
+flow_rate nullable
+created_by
+created_at
+incident_immediate_actions_initial:
+id
+company_id
+site_id
+incident_id
+action_key
+action_label
+completed
+notes nullable
+owner_id nullable
+temporary_control
+temporary_control_expiry nullable
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20
+created_by
+created_at
+incident_initial_evidence:
+id
+company_id
+site_id
+incident_id
+evidence_type
+file_name
+description
+storage_provider
+storage_key
+file_type
+mime_type
+file_size
+classification
+restricted
+collected_by
+collected_at
+notes
+uploaded_by
+uploaded_at
+incident_history_events:
+id
+company_id
+site_id
+incident_id
+event_number
+event_type
+event_category
+event_title
+event_description
+related_record_type nullable
+related_record_id nullable
+actor_user_id nullable
+actor_role nullable
+severity
+reason nullable
+before_values_json nullable
+after_values_json nullable
+metadata_json nullable
+source_system nullable
+audit_log_id nullable
+correlation_id nullable
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21
+created_at
+incident_drafts if separate draft table is preferred:
+id
+company_id
+site_id
+created_by
+draft_json
+current_step
+last_saved_at
+created_at
+updated_at
+Rules:
+Use existing incidents table if already created for register .
+Extend instead of duplicating.
+All records require company_id/site_id.
+No cross-company/site leakage.
+Restricted/confidential data protected.
+Medical/confidential info protected.
+Submit creates immutable initial history event.
+Drafts are editable until submitted.
+================================================== BACKEND API REQUIREMENTS
+==================================================
+Wizard context:
+GET /incidents/new/context
+GET /incidents/new/site-context
+GET /incidents/new/risk-matrix
+GET /incidents/new/classification-config
+GET /incidents/new/pse-threshold-config
+Draft:
+POST /incidents/drafts
+GET /incidents/drafts/:draftId
+PATCH /incidents/drafts/:draftId
+DELETE /incidents/drafts/:draftId
+POST /incidents/drafts/:draftId/submit
+Create/submit:
+POST /incidents
+POST /incidents/validate
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22
+POST /incidents/calculate-potential-risk
+POST /incidents/classify-psm-pse
+POST /incidents/recommend-followups
+Lookups:
+GET /incidents/lookups/equipment
+GET /incidents/lookups/chemicals
+GET /incidents/lookups/sds
+GET /incidents/lookups/ptw
+GET /incidents/lookups/moc
+GET /incidents/lookups/pssr
+GET /incidents/lookups/users
+Evidence:
+POST /incidents/evidence/upload
+DELETE /incidents/evidence/:evidenceId
+API rules:
+All APIs enforce company_id/site_id.
+All APIs enforce permissions.
+Validate user access to selected site/unit/area.
+Validate selected equipment/chemical/SDS/PTW/MOC/PSSR access.
+Risk score generated by backend.
+PSM/PSE classification support generated by backend.
+Follow-up recommendations generated by backend.
+Submit creates audit/history.
+Upload creates audit/history.
+Errors are safe/user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-create-wizard.service.ts
+incident-draft.service.ts
+incident-number.service.ts
+incident-validation.service.ts
+incident-risk-matrix.service.ts
+incident-potential-severity.service.ts
+incident-psm-pse-classification.service.ts
+incident-followup-recommendation.service.ts
+incident-evidence-upload.service.ts
+incident-storage.service.ts
+incident-permission.service.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+23
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-equipment-integration.service.ts
+incident-chemical-sds-integration.service.ts
+incident-ptw-integration.service.ts
+incident-moc-integration.service.ts
+incident-pssr-integration.service.ts
+incident-notification.service.ts
+incident-global-search.service.ts
+Backend rules:
+Backend validates required fields.
+Backend calculates potential risk.
+Backend recommends investigation priority and follow-ups.
+Backend supports PSM/PSE/API RP 754 tier fields.
+Backend does not hardcode thresholds or matrix values.
+Backend uses company/site configuration.
+Backend creates incident number on submit.
+Backend logs all submit/classification/severity/upload actions.
+Backend indexes safe metadata to Global Search after submit.
+Backend triggers notifications if configured.
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Create/update:
+Page:
+app/(app)/incidents/new/page.tsx or existing route equivalent
+Main wizard:
+features/incidents/components/create/IncidentCreateWizard.tsx
+features/incidents/components/create/IncidentWizardHeader.tsx
+features/incidents/components/create/IncidentWizardStepper.tsx
+features/incidents/components/create/IncidentWizardFooter.tsx
+Step components:
+features/incidents/components/create/steps/ReportTypeBasicInfoStep.tsx
+features/incidents/components/create/steps/LocationTimeStep.tsx
+features/incidents/components/create/steps/EventDescriptionStep.tsx
+features/incidents/components/create/steps/PeopleInjuryExposureStep.tsx
+features/incidents/components/create/steps/AssetEquipmentChemicalStep.tsx
+features/incidents/components/create/steps/ActualSeverityStep.tsx
+features/incidents/components/create/steps/PotentialSeverityRiskStep.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+24
+features/incidents/components/create/steps/PsmPseClassificationStep.tsx
+features/incidents/components/create/steps/ImmediateActionsStep.tsx
+features/incidents/components/create/steps/InitialEvidenceStep.tsx
+features/incidents/components/create/steps/InvestigationFollowupStep.tsx
+features/incidents/components/create/steps/ReviewSubmitStep.tsx
+Supporting components:
+features/incidents/components/create/ActualSeveritySelector.tsx
+features/incidents/components/create/PotentialSeverityMatrix.tsx
+features/incidents/components/create/PsmPseClassificationPanel.tsx
+features/incidents/components/create/FollowupRecommendationPanel.tsx
+features/incidents/components/create/IncidentEvidenceUploader.tsx
+features/incidents/components/create/IncidentDraftSaveStatus.tsx
+features/incidents/components/create/IncidentSubmitSuccessDialog.tsx
+Shared badges:
+features/incidents/components/shared/ActualSeverityBadge.tsx
+features/incidents/components/shared/PotentialSeverityBadge.tsx
+features/incidents/components/shared/PsmIncidentBadge.tsx
+features/incidents/components/shared/PseTierBadge.tsx
+features/incidents/components/shared/InvestigationPriorityBadge.tsx
+features/incidents/components/shared/IncidentClassificationBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentCreateWizard.ts
+features/incidents/hooks/useIncidentDraft.ts
+features/incidents/hooks/useIncidentCreateContext.ts
+features/incidents/hooks/useIncidentRiskMatrix.ts
+features/incidents/hooks/useIncidentPsmPseClassification.ts
+features/incidents/hooks/useIncidentFollowupRecommendations.ts
+features/incidents/hooks/useIncidentEvidenceUpload.ts
+features/incidents/hooks/useIncidentSubmit.ts
+Services:
+features/incidents/services/incident-create.service.ts
+features/incidents/services/incident-draft.service.ts
+features/incidents/services/incident-risk.service.ts
+features/incidents/services/incident-classification.service.ts
+features/incidents/services/incident-evidence.service.ts
+features/incidents/services/incident-lookups.service.ts
+Schemas:
+features/incidents/schemas/incident-create.schema.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+25
+features/incidents/schemas/incident-draft.schema.ts
+features/incidents/schemas/incident-severity.schema.ts
+features/incidents/schemas/incident-psm-pse.schema.ts
+features/incidents/schemas/incident-evidence.schema.ts
+Types:
+features/incidents/types/incident-create.types.ts
+features/incidents/types/incident-draft.types.ts
+features/incidents/types/incident-severity.types.ts
+features/incidents/types/incident-psm-pse.types.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+Wizard behavior:
+Stepper with progress.
+Save draft button.
+Previous/Next buttons.
+Validation per step.
+Review all data before submit.
+Unsaved changes warning.
+Submit success screen/dialog.
+Redirect to incident detail after submit.
+Responsive mobile stepper .
+Dark/light theme support.
+Data behavior:
+Load context from backend.
+Load site/unit/area options from backend.
+Load severity matrix from backend.
+Load PSM/PSE config from backend.
+Calculate potential risk through backend.
+Recommend follow-ups through backend.
+Upload evidence through backend/storage.
+Save draft through backend.
+Submit incident through backend.
+UI rules:
+No mock/static values.
+Every disabled button shows exact reason.
+Every backend error is user-readable.
+Sensitive data is redacted/protected.
+Mobile UI must be clean and easy for operators.
+Use modern professional UI with cards, step sections, helper text, badges, and clear warnings.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+26
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.create
+incidents.draft.create
+incidents.draft.edit
+incidents.draft.delete
+incidents.submit
+incidents.restricted.create
+incidents.confidential.create
+incidents.medical_fields.manage
+incidents.evidence.upload
+incidents.psm.classify
+incidents.severity.review
+incidents.followup.override
+incidents.equipment.lookup
+incidents.chemical.lookup
+incidents.ptw.lookup
+incidents.moc.lookup
+incidents.pssr.lookup
+Rules:
+Backend enforces permissions.
+Frontend hides unauthorized controls.
+Restricted/confidential reports require permission.
+PSM/PSE classification override requires permission.
+Follow-up override requires permission.
+Medical fields require special permission.
+================================================== REQUIRED STATES
+==================================================
+States:
+Loading context
+Context load error
+Permission denied
+Draft loading
+Draft saved
+Draft save failed
+Unsaved changes
+Step validation error
+Backend validation error
+Calculating risk
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+27
+Risk calculation failed
+Classifying PSM/PSE
+Classification failed
+Uploading evidence
+Upload failed
+Submitting
+Submit failed
+Submit success
+Redirecting
+Restricted/confidential warning
+Missing risk matrix config
+Missing PSE threshold config
+Mobile layout
+================================================== TESTING
+==================================================
+Backend tests:
+Create draft.
+Update draft.
+Delete draft.
+Validate required fields.
+Calculate potential risk from configured matrix.
+Classify PSM/PSE using config.
+Mark tier Not Determined if config missing.
+Recommend follow-ups.
+Upload evidence.
+Submit incident.
+Generate incident number .
+Create audit log.
+Create incident history event.
+Enforce company_id/site_id.
+Enforce permissions.
+Block inaccessible site/equipment/chemical/PTW/MOC/PSSR references.
+Protect medical/confidential fields.
+Frontend tests:
+Wizard renders.
+All steps render .
+Step validation works.
+Save draft works.
+Resume draft works.
+Actual severity step works.
+Potential severity matrix step works.
+PSM/PSE classification step works.
+Follow-up recommendation step works.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+28
+Evidence upload works.
+Review submit works.
+Submit success works.
+Permission states work.
+Missing config states work.
+Dark/light theme works.
+Responsive layout works.
+E2E: 1. Open /incidents/new. 2. Fill report type/basic info. 3. Select site/unit/area and event time. 4.
+Enter event description. 5. Add people/injury data if needed. 6. Add equipment/chemical if needed. 7. Select
+actual severity. 8. Select potential severity. 9. Complete PSM/PSE classification. 10. Add immediate actions.
+11. Upload evidence. 12. Review follow-up recommendations. 13. Submit incident. 14. Confirm incident
+number created. 15. Confirm redirect to /incidents/:id. 16. Confirm incident appears in /incidents
+register . 17. Confirm audit log and incident history event created.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This phase is complete only when:
+✓ /incidents/new route exists
+✓ Create Incident Wizard works
+✓ All 12 steps exist
+✓ Save Draft works
+✓ Submit Incident works
+✓ Incident number is generated
+✓ Actual Severity and Potential Severity are separate
+✓ Potential Severity drives investigation priority
+✓ PSM Incident / Process Safety Event / API RP 754 Tier fields exist
+✓ Backend calculates potential risk
+✓ Backend recommends investigation follow-ups
+✓ Equipment Registry lookup works
+✓ Chemical/SDS lookup works
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+29
+✓ PTW/MOC/PSSR lookup works where available
+✓ Evidence upload works
+✓ Permissions work
+✓ Restricted/confidential/medical fields are protected
+✓ company_id/site_id isolation works
+✓ Audit logs and incident history events work
+✓ Dashboard/Register updates after submit
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. Create Incident Wizard built 2. Files reviewed 3. Files modified/created 4. Database changes
+5. APIs added/fixed 6. Backend services added/fixed 7. Draft save/resume completed 8. Submit incident
+completed 9. Actual/Potential severity completed 10. PSM/PSE/API RP 754 classification completed 11.
+Potential risk calculation completed 12. Follow-up recommendations completed 13. Evidence upload
+completed 14. Lookups connected 15. Permissions connected 16. Audit/history connected 17. Dark/light
+responsive UI completed 18. Tests added 19. Bugs fixed 20. Remaining gaps, if any
+30

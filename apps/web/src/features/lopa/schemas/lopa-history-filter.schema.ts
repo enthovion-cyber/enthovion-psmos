@@ -1,0 +1,1 @@
+import { z } from 'zod'; export const lopaHistoryFilterSchema=z.object({q:z.string().optional(),relatedTab:z.string().optional(),eventType:z.string().optional(),severity:z.string().optional(),actorId:z.string().optional(),dateFrom:z.string().optional(),dateTo:z.string().optional(),hasDiff:z.string().optional(),workflowOnly:z.string().optional()});

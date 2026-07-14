@@ -1,0 +1,2 @@
+import { InfoRows, TabPanel } from '../shared/IncidentTabPrimitives';
+export function ApplicabilityReplicationPanel({ data }: { data: any }) { return <TabPanel title="Applicability / Replication"><InfoRows rows={[['Applicable site', data?.site], ['Applicable unit/area', `${data?.unit ?? '-'} / ${data?.area ?? '-'}`], ['Cross-site lessons', data?.crossSiteLessons?.length ?? 0], ['Replication risk', data?.replicationRisk], ['Notes', data?.notes]]} /></TabPanel>; }

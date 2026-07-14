@@ -1,0 +1,553 @@
+
+---PAGE 1---
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW History tab and Attachments tab fully.
+Context: The PTW Create Permit wizard, Permit Detail Page, Isolation / LOTO tab, Gas Test tab, Workforce
+tab, Shift Handover tab, Conflicts / SIMOPS tab, and Signatures tab exist or are in progress. Now make
+History and Attachments real, database-driven, and fully functional.
+Route:
+• /ptw/:id
+• Tabs:
+• History
+• Attachments
+Do NOT create static demo UI. Do NOT use mock timeline events or mock files. Do NOT redesign the PTW
+page. Keep the current dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Storage: S3 or Supabase Storage
+• PDF/preview: existing PDF/document preview engine if available
+• Auth: existing IAM/RBAC
+• Audit: existing audit log
+• Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+History tab must show the complete chronological permit record.
+Attachments tab must manage all files linked to the permit.
+Both tabs must support:
+• Real API data
+• Database persistence
+• Upload/download/preview/delete
+• Audit logs
+• Permit history events
+• Site-aware access control
+• Instant React Query refetch after mutations
+1
+
+---PAGE 2---
+================================================== PART 1 — HISTORY TAB
+==================================================
+The History tab must show the full permit timeline.
+It must include every important PTW event from creation to closure.
+History events must be created by all PTW modules:
+• Permit details
+• Lifecycle actions
+• Isolation / LOTO
+• Gas testing
+• Workforce
+• Shift handover
+• Conflicts / SIMOPS
+• Signatures
+• Attachments
+• Certificates
+• Offline sync
+• Notifications if useful
+================================================== HISTORY TAB UI
+==================================================
+Show:
+1. History Summary Card
+2. Total events
+3. Last event
+4. Last updated by
+5. Last updated at
+6. Permit age
+7. Current permit status
+8. Number of lifecycle events
+9. Number of safety-critical events
+10. Timeline Filter Bar Filters:
+11. All
+12. Lifecycle
+13. Details
+14. Isolation
+2
+
+---PAGE 3---
+15. Gas Test
+16. Workforce
+17. Handover
+18. Conflicts
+19. Signatures
+20. Attachments
+21. Certificates
+22. System
+23. Safety-Critical
+Also include:
+• Date range filter
+• User filter
+• Event type filter
+• Search within history
+• Timeline View Each event card must show:
+• Event type
+• Event category
+• Description
+• User
+• Role
+• Date/time
+• Related record link
+• Before value
+• After value
+• Safety-critical badge if applicable
+• Source module/submodule
+• IP address if available
+• Before/After Drawer For updates, show:
+• Field changed
+• Before value
+• After value
+• Changed by
+• Changed at
+• Export History Button Generate permit history export:
+• PDF
+3
+
+---PAGE 4---
+• Excel/CSV if export engine exists
+================================================== HISTORY EVENTS
+==================================================
+Create/display events for:
+Permit lifecycle:
+• Permit created
+• Permit submitted
+• Permit approved
+• Permit issued
+• Permit activated
+• Permit suspended
+• Permit extended
+• Permit closed
+• Permit cancelled
+• Permit duplicated
+• MOC created from permit
+Details:
+• Permit details edited
+• Risk level changed
+• Equipment changed
+• Area changed
+• Work scope changed
+• Planned date changed
+• Expiry date changed
+Isolation:
+• Isolation point added
+• Isolation point edited
+• Isolation point deleted
+• Isolation confirmed
+• Isolation verified
+• De-isolation started
+• De-isolation completed
+• Removal verified
+• Isolation certificate generated
+Gas testing:
+• Gas test added
+• Gas test edited
+• Gas test deleted
+4
+
+---PAGE 5---
+• Gas test passed
+• Gas test failed
+• Gas retest due
+• Gas retest overdue
+• Permit auto-suspended due to gas test
+• Gas threshold changed
+Workforce:
+• Worker added
+• Worker edited
+• Worker removed
+• Briefing completed
+• Worker signed in
+• Worker signed out
+• Accountability check completed
+Shift handover:
+• Handover created
+• Handover draft saved
+• Handover acknowledged
+• Handover completed
+• Permit suspended during handover
+Conflicts / SIMOPS:
+• Conflict check run
+• Conflict detected
+• Conflict resolved
+• Conflict overridden
+• Conflict marked false positive
+• SIMOPS review created
+• SIMOPS approved
+• SIMOPS rejected
+• Control room acknowledged
+Signatures:
+• Signature requirement generated
+• Signature completed
+• Signature rejected
+• Signature expired
+• Signature revalidation required
+Attachments:
+• Attachment uploaded
+• Attachment previewed
+5
+
+---PAGE 6---
+• Attachment downloaded
+• Attachment deleted
+• Document linked from Document Control
+• Document unlinked
+Certificates:
+• Permit certificate generated
+• Isolation certificate generated
+• Certificate downloaded
+• Certificate printed
+Offline:
+• Offline change queued
+• Offline change synced
+• Offline sync conflict resolved
+System:
+• Notification emitted
+• Search index updated
+• Workflow event synced
+• Action created from PTW
+================================================== HISTORY DATABASE
+==================================================
+Create/update:
+permit_history_events
+Fields:
+• id
+• permit_id
+• company_id
+• site_id
+• event_category
+• event_type
+• event_title
+• description
+• user_id
+• user_name
+• user_role
+• related_record_type
+• related_record_id
+• related_record_number
+6
+
+---PAGE 7---
+• before_value
+• after_value
+• metadata
+• is_safety_critical
+• ip_address
+• user_agent
+• created_at
+Indexes:
+• permit_id
+• company_id
+• site_id
+• event_category
+• event_type
+• created_at
+================================================== HISTORY APIs
+==================================================
+Create/update:
+• GET /ptw/:id/history
+• GET /ptw/:id/history/summary
+• GET /ptw/:id/history/:eventId
+• GET /ptw/:id/history/export/pdf
+• GET /ptw/:id/history/export/csv
+Query params:
+• category
+• event_type
+• user_id
+• date_from
+• date_to
+• search
+• safety_critical
+• page
+• limit
+================================================== HISTORY FRONTEND FILES
+==================================================
+Create/fix:
+• features/ptw/components/tabs/PermitHistoryTab.tsx
+• features/ptw/components/history/PermitHistorySummaryCard.tsx
+• features/ptw/components/history/PermitHistoryFilterBar.tsx
+7
+
+---PAGE 8---
+• features/ptw/components/history/PermitTimeline.tsx
+• features/ptw/components/history/PermitHistoryEventCard.tsx
+• features/ptw/components/history/BeforeAfterDrawer.tsx
+• features/ptw/hooks/usePermitHistory.ts
+• features/ptw/services/ptw-history.service.ts
+================================================== PART 2 — ATTACHMENTS TAB
+==================================================
+Attachments tab must manage all files linked to the permit.
+It is not the same as Document Control, but it can link to Document Control documents.
+Attachments are permit-specific working files and evidence.
+================================================== ATTACHMENT TYPES
+==================================================
+Support:
+• Job Safety Analysis
+• Method Statement
+• Rescue Plan
+• Excavation Drawing
+• Radiography Plan
+• Electrical Isolation Drawing
+• P&ID
+• SOP
+• LOTO Photo
+• Gas Test Certificate
+• Worksite Photo
+• Closure Photo
+• Fire Watch Record
+• Toolbox Talk Record
+• SIMOPS Plan
+• Control Room Instruction
+• Permit Certificate
+• Isolation Certificate
+• Other
+================================================== ATTACHMENTS TAB UI
+==================================================
+Show:
+1. Attachments Summary Card
+8
+
+---PAGE 9---
+2. Total attachments
+3. Required attachments
+4. Missing required attachments
+5. Uploaded today
+6. Linked Document Control files
+7. Storage used
+8. Attachment readiness status:
+9. Complete
+10. Missing Required Files
+11. Optional Only
+12. Not Required
+13. Required Attachments Checklist Show required files based on permit type/risk:
+Confined Space:
+• Rescue Plan required
+• Gas Test Certificate optional/required by site policy
+• Entry checklist optional
+Excavation:
+• Excavation Drawing required if depth exceeds threshold
+• Buried services check required
+Radiography:
+• Radiography Plan required
+• Exclusion Zone Plan required
+Working at Height:
+• Rescue Plan required if configured
+• Scaffold tag/photo optional
+High/Critical Risk:
+• JSA or Method Statement required
+LOTO:
+• Isolation Certificate required after generation
+• LOTO photo optional
+• Upload Panel Fields:
+9
+
+---PAGE 10---
+• Attachment type
+• File
+• Description
+• Related permit section
+• Mark as evidence
+• Visibility
+• Expiry/review date optional
+• Attachments Grid/Table Each file shows:
+• File name
+• Type
+• Description
+• File size
+• Uploaded by
+• Uploaded date
+• Related section
+• Evidence badge
+• Required/optional badge
+• Preview button
+• Download button
+• Delete button
+• Preview Drawer Preview:
+• Images
+• PDFs
+• Office files if preview engine available
+• Otherwise show file metadata and download link
+• Link Existing Document Control File If Document Control exists:
+• Search documents
+• Link selected document to permit
+• Show document number/version/status
+• Do not duplicate controlled document file unless required
+================================================== ATTACHMENTS DATABASE
+==================================================
+Create/update:
+10
+
+---PAGE 11---
+permit_attachments permit_attachment_requirements
+permit_attachments fields:
+• id
+• permit_id
+• company_id
+• site_id
+• attachment_type
+• file_name
+• file_key
+• file_url
+• mime_type
+• file_size
+• description
+• related_section
+• is_evidence
+• is_required
+• visibility
+• document_id optional
+• document_version_id optional
+• uploaded_by
+• uploaded_at
+• deleted_by
+• deleted_at
+• created_at
+• updated_at
+permit_attachment_requirements fields:
+• id
+• company_id
+• site_id
+• permit_type
+• risk_level optional
+• condition_rule optional
+• attachment_type
+• is_required
+• description
+• is_active
+• created_by
+• created_at
+• updated_at
+================================================== ATTACHMENTS APIs
+==================================================
+11
+
+---PAGE 12---
+Create/update:
+• GET /ptw/:id/attachments
+• GET /ptw/:id/attachments/summary
+• POST /ptw/:id/attachments
+• GET /ptw/:id/attachments/:attachmentId
+• DELETE /ptw/:id/attachments/:attachmentId
+• GET /ptw/:id/attachments/:attachmentId/download
+• GET /ptw/:id/attachments/:attachmentId/preview
+Requirements:
+• GET /ptw/:id/attachments/requirements
+• GET /ptw/attachment-requirements
+• POST /ptw/attachment-requirements
+• PATCH /ptw/attachment-requirements/:requirementId
+• DELETE /ptw/attachment-requirements/:requirementId
+Document Control:
+• POST /ptw/:id/attachments/link-document
+• DELETE /ptw/:id/attachments/unlink-document/:documentId
+================================================== ATTACHMENTS FRONTEND FILES
+==================================================
+Create/fix:
+• features/ptw/components/tabs/PermitAttachmentsTab.tsx
+• features/ptw/components/attachments/AttachmentSummaryCard.tsx
+• features/ptw/components/attachments/RequiredAttachmentsChecklist.tsx
+• features/ptw/components/attachments/AttachmentUploadPanel.tsx
+• features/ptw/components/attachments/AttachmentsGrid.tsx
+• features/ptw/components/attachments/AttachmentPreviewDrawer.tsx
+• features/ptw/components/attachments/LinkDocumentDialog.tsx
+• features/ptw/hooks/usePermitAttachments.ts
+• features/ptw/hooks/usePermitAttachmentMutations.ts
+• features/ptw/schemas/attachment.schema.ts
+• features/ptw/services/ptw-attachment.service.ts
+================================================== ATTACHMENT RULES
+==================================================
+1. File upload:
+2. Upload file to storage.
+3. Save file metadata to database.
+12
+
+---PAGE 13---
+4. Link file to permit.
+5. Create audit log.
+6. Create permit history event.
+7. Refetch attachments and summary instantly.
+8. File delete:
+9. Soft delete by default.
+10. Remove from UI after success.
+11. Keep audit record.
+12. Create permit history event.
+13. Required attachment blocking: Permit cannot activate or close if required attachment is missing
+based on permit type/site policy.
+14. File validation: Allowed:
+15. Images
+16. PDF
+17. DOCX
+18. XLSX
+19. CSV
+20. TXT
+Reject:
+• executable files
+• unsafe file types
+• Storage: File path should include: company_id/site_id/ptw/permit_id/
+• Permissions:
+• ptw.attachments.view
+• ptw.attachments.upload
+• ptw.attachments.preview
+• ptw.attachments.download
+• ptw.attachments.delete
+• ptw.attachment_requirements.manage
+================================================== REACT QUERY BEHAVIOR
+==================================================
+13
+
+---PAGE 14---
+After history-related mutations: Invalidate:
+• permit history
+• permit history summary
+• permit detail
+• right summary panel
+After attachment mutations: Invalidate:
+• permit attachments
+• attachment summary
+• required attachment checklist
+• permit detail
+• lifecycle blockers
+• permit history
+• right summary panel
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+History Loading: Show timeline skeleton.
+History Empty: “No history events recorded yet.”
+Attachments Loading: Show attachment skeleton cards.
+Attachments Empty: “No attachments uploaded yet.”
+Attachment Missing Required: Show strong warning banner.
+Error: Show clear message and retry button.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+History tab is complete only when:
+✓ History summary loads from API
+✓ Timeline loads real permit events
+✓ Filters work
+✓ Before/after drawer works
+✓ Export works if PDF/export engine exists
+14
+
+---PAGE 15---
+✓ All PTW modules write history events
+✓ No mock timeline data remains
+Attachments tab is complete only when:
+✓ Attachment summary loads from API
+✓ Required attachment checklist works
+✓ Upload works
+✓ Preview works
+✓ Download works
+✓ Delete works
+✓ Link Document Control document works if Document Control exists
+✓ Required missing attachments block lifecycle if configured
+✓ Audit logs are created
+✓ Permit history events are created
+✓ React Query refreshes all affected panels
+✓ No static/mock attachment data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+15

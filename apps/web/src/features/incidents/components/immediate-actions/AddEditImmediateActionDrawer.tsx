@@ -1,0 +1,3 @@
+import { buttonPrimary, buttonSecondary } from '../shared/IncidentTabPrimitives';
+import { DrawerShell, ImmediateActionForm } from './ImmediateActionsPrimitives';
+export function AddEditImmediateActionDrawer({ open, form, set, saving, onClose, onSave }: any) { return <DrawerShell open={open} title={form.id ? 'Edit Immediate Action' : 'Add Immediate Action'} onClose={onClose}><ImmediateActionForm form={form} set={set} /><div className="mt-4 flex justify-end gap-2"><button className={buttonSecondary} onClick={onClose}>Cancel</button><button className={buttonPrimary} disabled={saving} onClick={onSave}>{saving ? 'Saving...' : 'Save Action'}</button></div></DrawerShell>; }

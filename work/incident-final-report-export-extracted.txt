@@ -1,0 +1,1640 @@
+\n\n===== PAGE 1 =====\nYou are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Final Report / Export tab.
+Route:
+/incidents/:id
+Tab:
+Final Report / Export
+Read the attached PDF/specification carefully before coding. Build this tab exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer , dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, dark/light theme issue, and responsive UI issue. Do not miss a
+single thing.
+Keep this implementation detailed but not unnecessarily oversized. Build only what belongs to this tab.
+================================================== SCOPE
+==================================================
+Work only on:
+Final Report / Export
+Use existing modules/data:
+Incident Dashboard/Register
+Incident Detail Shell
+Overview
+Event Details & Classification
+Potential Severity / Risk Matrix
+People / Injury / Exposure
+Asset / Equipment / Chemical
+Timeline
+Evidence / Attachments
+Immediate Actions
+Investigation Team
+Root Cause Analysis
+Barrier / Safeguard Failure
+Corrective / Preventive Actions
+Linked Records
+Notifications / Regulatory Reporting
+Review & Approval
+Lessons Learned
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1\n\n\n===== PAGE 2 =====\nHistory
+Document Control
+Storage service
+Universal E-Signature
+Workflow Engine
+IAM/RBAC
+Audit Log
+Incident History
+Global Search
+Company/site report templates and export configuration
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+Important:
+Do not create duplicate document/export systems.
+Use existing Document Control, storage, report rendering/export utilities, Workflow Engine, and
+Universal E-Signature where available.
+Backend is the source of truth for final report readiness, redaction, included sections, approved
+source snapshots, export status, and official report publishing.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one large tab file.
+Tab container must be clean only:
+features/incidents/components/detail/FinalReportExportTab.tsx
+Create separate folder:
+features/incidents/components/final-report-export/
+Shared badges/components:
+features/incidents/components/shared/
+Also separate:
+hooks
+services
+schemas
+types
+SQL migrations
+No messy single-file implementation.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+2\n\n\n===== PAGE 3 =====\n================================================== CORE PURPOSE
+==================================================
+This tab must answer:
+Is the investigation ready to generate a final report?
+Which report template should be used?
+Which sections should be included or excluded?
+Which source data snapshot is used?
+Are sensitive, restricted, confidential, and medical fields redacted correctly?
+Which evidence, attachments, CAPA, lessons learned, approvals, signatures, and history items are
+included?
+Can users preview the report before export?
+Can reports be exported as PDF, DOCX, Excel/CSV index, and evidence package where configured?
+Can one report be marked official and published to Document Control?
+Are previous report versions preserved?
+Is export/download/publish fully audited?
+================================================== REQUIRED SECTIONS
+==================================================
+Build these panels:
+Final Report / Export Header
+Report Summary Cards
+Final Report Readiness Panel
+Report Template Selection Panel
+Report Section Builder Panel
+Source Data Snapshot Panel
+Report Preview Panel
+Redaction / Permission Preview Panel
+Appendices / Evidence Package Panel
+Generated Reports Register
+Generate Report Drawer
+Report Detail Drawer
+Export Options Panel
+Publish to Document Control Panel
+Report Version History Panel
+Distribution / Download Log Panel
+Final Report Review Panel
+Final Report Change History Panel
+Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. FINAL REPORT / EXPORT HEADER
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+3\n\n\n===== PAGE 4 =====\nShow:
+Incident number
+Incident title
+Incident status
+Actual severity
+Potential severity
+PSM/PSE/API tier
+Review & Approval status
+Lessons Learned status
+History/audit completeness
+Final report readiness
+Official report status
+Latest generated report
+Latest export date
+Published to Document Control Yes/No
+Last updated
+Actions:
+Run Report Readiness Check
+Select Template
+Preview Report
+Generate Report
+Generate Evidence Package
+Export PDF
+Export DOCX if supported
+Export Excel/CSV Index
+Publish to Document Control
+Mark Official
+Refresh
+Rules:
+Use real backend values.
+Hide unauthorized actions.
+Disabled actions must show exact reason.
+Closed incidents can still allow export if permission allows.
+Restricted/confidential/medical data must be redacted according to permission/export policy.
+================================================== 2. REPORT SUMMARY CARDS
+==================================================
+Cards:
+Final report readiness
+Template selected
+Sections included
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+4\n\n\n===== PAGE 5 =====\nMissing required sections
+Evidence package status
+Redaction status
+Approval status
+E-signature status
+Lessons included
+History/audit included
+Reports generated
+Official report
+Published document
+Last export
+Export errors
+Ready to publish
+Rules:
+No fake counts.
+Values come from backend.
+Cards update Overview and Dashboard/Register where needed.
+================================================== 3. FINAL REPORT READINESS PANEL
+==================================================
+Backend-generated checklist:
+Required incident details complete
+Severity/risk complete
+People/injury protected/redacted
+Asset/chemical/release data complete
+Timeline complete enough
+Evidence package complete
+RCA complete if required
+Barrier analysis complete if required
+CAPA complete or accepted exceptions recorded
+Linked records complete
+Notifications/regulatory reporting complete if required
+Review & Approval complete
+Lessons Learned complete if required
+History/audit trail available
+Required signatures complete
+Final report template available
+Redaction policy applied
+Missing items must link to source tab/section.
+Rules:
+Backend generates readiness.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+5\n\n\n===== PAGE 6 =====\nReport generation can be blocked if critical items are missing.
+Export with warnings requires permission and reason.
+================================================== 4. REPORT TEMPLATE SELECTION PANEL
+==================================================
+Fields:
+Template
+Template type
+Template version
+Language
+Company/site template
+Required sections
+Optional sections
+Header/footer branding
+Approval/signature block
+Redaction profile
+Output formats
+Selected by
+Selected at
+Notes
+Template types:
+Full investigation report
+Executive summary
+PSM incident report
+Near miss report
+Regulatory support package
+CAPA summary report
+Lessons learned bulletin
+Evidence index
+Audit trail report
+Custom company/site template
+Rules:
+Templates come from company/site configuration or Document Control.
+Do not hardcode templates.
+Template selection changes create audit/history.
+================================================== 5. REPORT SECTION BUILDER PANEL
+==================================================
+Sections:
+Cover page
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+6\n\n\n===== PAGE 7 =====\nExecutive summary
+Incident details
+Severity/risk matrix
+People/injury/exposure
+Asset/equipment/chemical
+Timeline
+Evidence summary
+Immediate actions
+Investigation team
+RCA
+Barrier/safeguard failure
+CAPA
+Linked records
+Notifications/regulatory reporting
+Review & approvals
+Lessons learned
+History/audit trail
+Appendices
+Fields:
+Section
+Required Yes/No
+Included Yes/No
+Source status
+Missing data
+Redaction required
+Page/order
+Notes
+Rules:
+Required sections cannot be excluded without permission and reason.
+Section builder must use backend readiness/status for each source tab.
+Changes create audit/history.
+================================================== 6. SOURCE DATA SNAPSHOT PANEL
+==================================================
+Purpose: Lock the exact source data used for the generated report.
+Fields:
+Snapshot number
+Snapshot created by
+Snapshot created at
+Source tabs included
+Source record versions
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+7\n\n\n===== PAGE 8 =====\nApproval state at snapshot
+Redaction profile
+Snapshot status
+Notes
+Rules:
+Every generated report must use a source snapshot.
+Snapshots are immutable.
+Regenerating report creates a new snapshot/version.
+Snapshot creation creates audit/history.
+================================================== 7. REPORT PREVIEW PANEL
+==================================================
+Features:
+Preview report before export
+Show included sections
+Show redacted view according to current user/export profile
+Show missing data warnings
+Show approval/signature block
+Show appendices list
+Show page/section navigation
+Rules:
+Preview must use real backend-rendered report data.
+No fake preview.
+Restricted/medical values must never leak.
+Preview failure must show safe user-readable error .
+================================================== 8. REDACTION / PERMISSION PREVIEW PANEL
+==================================================
+Fields:
+Export audience
+Redaction profile
+Medical fields included/excluded
+Confidential fields included/excluded
+Restricted evidence included/excluded
+Personal data redaction status
+Legal/regulatory redaction status
+Preview as role/user
+Redaction warnings
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+8\n\n\n===== PAGE 9 =====\nRules:
+Backend applies redaction.
+Frontend must not be source of truth for redaction.
+Export must respect permissions.
+Redaction settings changes create audit/history.
+================================================== 9. APPENDICES / EVIDENCE PACKAGE PANEL
+==================================================
+Appendix types:
+Evidence index
+Evidence files package
+Timeline details
+RCA details
+CAPA register
+Approval/e-signature log
+Regulatory reporting log
+History/audit trail
+Linked records index
+Lessons learned
+Fields:
+Appendix
+Included Yes/No
+Source status
+File count
+Restricted content
+Export status
+Notes
+Rules:
+Evidence package uses Evidence/Attachments and storage service.
+Restricted evidence must be excluded/redacted without permission.
+Large package generation must show progress/status.
+================================================== 10. GENERATED REPORTS REGISTER
+==================================================
+Columns:
+Report number
+Report type
+Template
+Version
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+9\n\n\n===== PAGE 10 =====\nGenerated by
+Generated at
+Format
+Status
+Official Yes/No
+Published Yes/No
+Document Control link
+File size
+Redaction profile
+Actions
+Statuses:
+Draft
+Generating
+Generated
+Failed
+Ready for Review
+Official
+Published
+Superseded
+Archived
+Actions:
+Preview
+Download
+Mark official
+Publish
+Supersede
+Archive
+Regenerate
+View details
+================================================== 11. GENERATE REPORT DRAWER
+==================================================
+Fields:
+Report type
+Template
+Output format
+Include appendices
+Include evidence package
+Redaction profile
+Export audience
+Include audit trail Yes/No
+Include signatures Yes/No
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+10\n\n\n===== PAGE 11 =====\nNotes
+Generation reason
+Rules:
+Required fields must validate.
+Drawer must be responsive and full-screen on mobile.
+Generate action creates source snapshot, render job, report record, audit/history.
+================================================== 12. REPORT DETAIL DRAWER
+==================================================
+Fields:
+Report number
+Template/version
+Source snapshot
+Generated file
+Output format
+Status
+Official status
+Published document
+Redaction profile
+Included sections
+Appendices
+Download history
+Generation errors if any
+Notes
+Actions:
+Preview
+Download
+Regenerate
+Mark official
+Publish to Document Control
+Archive/supersede
+Rules:
+Restricted report data redacted based on permission.
+Downloads may be audited if project policy supports it.
+================================================== 13. EXPORT OPTIONS PANEL
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11\n\n\n===== PAGE 12 =====\nSupported exports where configured:
+PDF final report
+DOCX report
+Excel CAPA/action register
+CSV evidence index
+CSV history/audit trail
+Evidence package ZIP
+Linked records index
+Lessons learned bulletin
+Rules:
+Only show formats supported by backend/config.
+Export must respect redaction and permissions.
+Export creates audit/history.
+Failed export shows clear error and retry option.
+================================================== 14. PUBLISH TO DOCUMENT CONTROL PANEL
+==================================================
+Fields:
+Publish required Yes/No
+Document title
+Document type
+Document number
+Revision
+Owner
+Approval status
+Published by
+Published at
+Document Control link
+Superseded report/document
+Notes
+Rules:
+Use Document Control.
+Do not duplicate document system.
+Publishing official report requires permission.
+Published report should be immutable unless superseded.
+Publish creates audit/history and updates Linked Records.
+================================================== 15. REPORT VERSION HISTORY PANEL
+==================================================
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+12\n\n\n===== PAGE 13 =====\nFields:
+Version
+Report number
+Generated by
+Generated at
+Source snapshot
+Changes since previous version
+Official status
+Superseded by
+Notes
+Rules:
+Preserve report versions.
+Official report changes require supersede/new version.
+No destructive overwrite of official reports.
+================================================== 16. DISTRIBUTION / DOWNLOAD LOG PANEL
+==================================================
+Fields:
+Report
+Action type
+User/recipient
+Downloaded/shared/sent at
+Channel
+Purpose/reason
+Status
+Rules:
+Use audit log and Notification Center where available.
+Do not invent access/download logs if audit system does not support them.
+Restricted downloads require permission.
+================================================== 17. FINAL REPORT REVIEW PANEL
+==================================================
+Fields:
+Review required
+Reviewer
+Due date
+Review status
+Review comments
+Approved by
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13\n\n\n===== PAGE 14 =====\nApproved at
+Rejection reason
+Rework required
+Actions:
+Request review
+Approve
+Reject
+Reopen
+Create action
+Rules:
+Approval requires readiness checks passed.
+Review decisions require permission and comment.
+Audit/history required.
+================================================== 18. CHANGE HISTORY PANEL
+==================================================
+Show read-only history:
+Changed field
+Previous value
+New value
+Changed by
+Changed at
+Reason
+Related report/export
+Audit reference
+Rules:
+Use incident history/audit data.
+Redact restricted/medical values.
+No fake history.
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+supabase/migrations/<timestamp>_incident_final_report_tables.sql
+supabase/migrations/<timestamp>_incident_final_report_rls_policies.sql
+supabase/migrations/<timestamp>_incident_final_report_indexes.sql
+supabase/migrations/<timestamp>_incident_final_report_constraints.sql
+Add/fix tables:
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14\n\n\n===== PAGE 15 =====\nincident_report_templates
+id
+company_id
+site_id nullable
+template_name
+template_type
+template_version
+supported_formats_json
+required_sections_json
+optional_sections_json
+redaction_profiles_json
+document_template_id nullable
+active
+created_by
+updated_by
+created_at
+updated_at
+incident_report_snapshots
+id
+company_id
+site_id
+incident_id
+snapshot_number
+source_tabs_json
+source_versions_json
+approval_state_json
+redaction_profile
+created_by
+created_at
+incident_reports
+id
+company_id
+site_id
+incident_id
+report_number
+report_type
+template_id
+template_version
+snapshot_id
+output_format
+status
+official
+published
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+15\n\n\n===== PAGE 16 =====\ndocument_id nullable
+storage_key nullable
+file_size nullable
+redaction_profile
+generated_by
+generated_at
+superseded_by nullable
+archived_at nullable
+notes
+created_by
+updated_by
+created_at
+updated_at
+incident_report_sections
+id
+company_id
+site_id
+incident_id
+report_id
+section_key
+section_title
+included
+required
+source_status
+redaction_required
+display_order
+notes
+created_by
+updated_by
+created_at
+updated_at
+incident_report_exports
+id
+company_id
+site_id
+incident_id
+report_id
+export_type
+status
+requested_by
+requested_at
+completed_at
+error_message nullable
+storage_key nullable
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+16\n\n\n===== PAGE 17 =====\ncreated_at
+incident_report_reviews
+id
+company_id
+site_id
+incident_id
+report_id nullable
+status
+reviewer_id
+due_date
+comments
+approved_by
+approved_at
+rejected_by
+rejected_at
+rejection_reason
+rework_required
+created_by
+updated_by
+created_at
+updated_at
+Also update/use:
+incident_history_events
+Document Control tables
+Storage references
+Audit Log tables
+SQL rules:
+Include indexes, foreign keys, constraints, RLS/company-site isolation.
+Include audit/history triggers if project pattern uses DB triggers.
+Include rollback/down migration if current project supports it.
+Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Add/fix:
+GET /incidents/:id/final-report
+GET /incidents/:id/final-report/summary
+GET /incidents/:id/final-report/readiness
+POST /incidents/:id/final-report/run-readiness-check
+GET /incidents/:id/final-report/templates
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+17\n\n\n===== PAGE 18 =====\nPOST /incidents/:id/final-report/select-template
+GET /incidents/:id/final-report/sections
+PATCH /incidents/:id/final-report/sections
+POST /incidents/:id/final-report/create-snapshot
+GET /incidents/:id/final-report/preview
+GET /incidents/:id/final-report/redaction-preview
+GET /incidents/:id/final-report/appendices
+PATCH /incidents/:id/final-report/appendices
+GET /incidents/:id/final-report/reports
+POST /incidents/:id/final-report/generate
+GET /incidents/:id/final-report/reports/:reportId
+GET /incidents/:id/final-report/reports/:reportId/preview
+GET /incidents/:id/final-report/reports/:reportId/download
+POST /incidents/:id/final-report/reports/:reportId/mark-official
+POST /incidents/:id/final-report/reports/:reportId/publish
+POST /incidents/:id/final-report/reports/:reportId/supersede
+POST /incidents/:id/final-report/reports/:reportId/archive
+GET /incidents/:id/final-report/version-history
+GET /incidents/:id/final-report/download-log
+GET /incidents/:id/final-report/review
+POST /incidents/:id/final-report/request-review
+POST /incidents/:id/final-report/approve-review
+POST /incidents/:id/final-report/reject-review
+GET /incidents/:id/final-report/history
+GET /incidents/:id/final-report/context
+Export APIs:
+POST /incidents/:id/final-report/export/pdf
+POST /incidents/:id/final-report/export/docx
+POST /incidents/:id/final-report/export/excel
+POST /incidents/:id/final-report/export/csv
+POST /incidents/:id/final-report/export/evidence-package
+POST /incidents/:id/final-report/export/linked-records-index
+POST /incidents/:id/final-report/export/lessons-bulletin
+Lookups:
+GET /incidents/:id/lookups/report-templates
+GET /incidents/:id/lookups/redaction-profiles
+GET /incidents/:id/lookups/document-control-folders
+GET /incidents/:id/lookups/evidence
+GET /incidents/:id/lookups/approvals
+API rules:
+Enforce company_id/site_id.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+18\n\n\n===== PAGE 19 =====\nEnforce permissions.
+Enforce restricted/confidential/medical redaction.
+Backend generates readiness, preview, source snapshots, export package, and blockers.
+All mutations create audit log and incident history.
+Export/download/publish must be permission-controlled.
+Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+incident-final-report.service.ts
+incident-final-report-summary.service.ts
+incident-final-report-readiness.service.ts
+incident-report-template.service.ts
+incident-report-section.service.ts
+incident-report-snapshot.service.ts
+incident-report-preview.service.ts
+incident-report-redaction.service.ts
+incident-report-render.service.ts
+incident-report-export.service.ts
+incident-report-appendix.service.ts
+incident-report-version.service.ts
+incident-report-review.service.ts
+incident-report-history.service.ts
+incident-document-control-integration.service.ts
+incident-storage-integration.service.ts
+incident-permission.service.ts
+incident-history.service.ts
+incident-audit-log-integration.service.ts
+incident-global-search.service.ts
+incident-notification.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tab:
+features/incidents/components/detail/FinalReportExportTab.tsx
+Components:
+features/incidents/components/final-report-export/FinalReportHeader.tsx
+features/incidents/components/final-report-export/FinalReportSummaryCards.tsx
+features/incidents/components/final-report-export/
+FinalReportReadinessPanel.tsx
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+19\n\n\n===== PAGE 20 =====\nfeatures/incidents/components/final-report-export/
+ReportTemplateSelectionPanel.tsx
+features/incidents/components/final-report-export/
+ReportSectionBuilderPanel.tsx
+features/incidents/components/final-report-export/SourceDataSnapshotPanel.tsx
+features/incidents/components/final-report-export/ReportPreviewPanel.tsx
+features/incidents/components/final-report-export/
+RedactionPermissionPreviewPanel.tsx
+features/incidents/components/final-report-export/
+AppendicesEvidencePackagePanel.tsx
+features/incidents/components/final-report-export/GeneratedReportsRegister.tsx
+features/incidents/components/final-report-export/GenerateReportDrawer.tsx
+features/incidents/components/final-report-export/ReportDetailDrawer.tsx
+features/incidents/components/final-report-export/ExportOptionsPanel.tsx
+features/incidents/components/final-report-export/
+PublishToDocumentControlPanel.tsx
+features/incidents/components/final-report-export/
+ReportVersionHistoryPanel.tsx
+features/incidents/components/final-report-export/
+DistributionDownloadLogPanel.tsx
+features/incidents/components/final-report-export/FinalReportReviewPanel.tsx
+features/incidents/components/final-report-export/
+FinalReportChangeHistoryPanel.tsx
+Shared:
+features/incidents/components/shared/ReportStatusBadge.tsx
+features/incidents/components/shared/ExportStatusBadge.tsx
+features/incidents/components/shared/OfficialReportBadge.tsx
+features/incidents/components/shared/PublishedStatusBadge.tsx
+features/incidents/components/shared/RedactionStatusBadge.tsx
+features/incidents/components/shared/ReviewStatusBadge.tsx
+features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+features/incidents/hooks/useIncidentFinalReport.ts
+features/incidents/hooks/useIncidentFinalReportSummary.ts
+features/incidents/hooks/useIncidentFinalReportReadiness.ts
+features/incidents/hooks/useIncidentReportTemplates.ts
+features/incidents/hooks/useIncidentReportSections.ts
+features/incidents/hooks/useIncidentReportPreview.ts
+features/incidents/hooks/useIncidentReportExports.ts
+features/incidents/hooks/useIncidentGeneratedReports.ts
+features/incidents/hooks/useIncidentFinalReportReview.ts
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+20\n\n\n===== PAGE 21 =====\nServices:
+features/incidents/services/incident-final-report.service.ts
+features/incidents/services/incident-report-template.service.ts
+features/incidents/services/incident-report-preview.service.ts
+features/incidents/services/incident-report-export.service.ts
+features/incidents/services/incident-report-review.service.ts
+features/incidents/services/incident-report-lookups.service.ts
+Schemas:
+features/incidents/schemas/incident-final-report.schema.ts
+features/incidents/schemas/incident-report-template.schema.ts
+features/incidents/schemas/incident-report-section.schema.ts
+features/incidents/schemas/incident-report-generate.schema.ts
+features/incidents/schemas/incident-report-review.schema.ts
+Types:
+features/incidents/types/incident-final-report.types.ts
+features/incidents/types/incident-report-template.types.ts
+features/incidents/types/incident-report-section.types.ts
+features/incidents/types/incident-report-export.types.ts
+features/incidents/types/incident-report-readiness.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+incidents.final_report.view
+incidents.final_report.configure
+incidents.final_report.preview
+incidents.final_report.generate
+incidents.final_report.download
+incidents.final_report.export
+incidents.final_report.mark_official
+incidents.final_report.publish
+incidents.final_report.supersede
+incidents.final_report.archive
+incidents.final_report.review.request
+incidents.final_report.review.approve
+incidents.final_report.review.reject
+incidents.evidence.export_package
+incidents.history.export
+incidents.medical_fields.view
+incidents.restricted.view
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+21\n\n\n===== PAGE 22 =====\nincidents.confidential.view
+Rules:
+Backend enforces all permissions.
+Frontend hides unauthorized controls.
+Disabled controls show exact reason.
+Export/download/publish/official actions require permission and audit/history.
+Restricted/medical export requires permission and redaction rules.
+================================================== REQUIRED STATES
+==================================================
+Implement:
+Loading
+Empty
+Error
+Permission denied
+Restricted/redacted
+Medical data hidden
+Read-only closed
+Report not ready
+Missing required source data
+Template missing
+Redaction required
+Preview generating
+Preview failed
+Report generating
+Report generated
+Report generation failed
+Export running
+Export failed
+Evidence package generating
+Publish pending
+Published
+Official report exists
+Superseded
+Review requested
+Review approved
+Review rejected
+Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+Nice, clean, professional enterprise UI.
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+22\n\n\n===== PAGE 23 =====\nUse cards, badges, tables, drawers, report preview, section builder , readiness checklist, warning
+banners, version history, export options, and mini summaries.
+All UI must use real backend data only.
+No mock/static data.
+Dark/light theme must be polished.
+Desktop: clean multi-column layout.
+Tablet/mobile: stacked cards and full-screen drawers.
+Every disabled button must show exact reason.
+Every panel must be easy to edit/debug because it is separated into its own file.
+================================================== TESTING
+==================================================
+Add tests for:
+Fetch Final Report / Export tab
+Summary cards
+Readiness check
+Template selection
+Section builder
+Source snapshot creation
+Preview generation
+Redaction preview
+Report generation
+PDF export
+Evidence package export
+Mark official
+Publish to Document Control
+Version history
+Review request/approve/reject
+Enforce permissions
+Enforce company_id/site_id isolation
+Redact restricted/confidential/medical data
+Create audit log
+Create incident history event
+Update Overview/Register
+Dark/light UI
+Responsive layout
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Final Report / Export tab exists
+✓ Uses real backend data only
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+23\n\n\n===== PAGE 24 =====\n✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ Final report readiness works
+✓ Template selection works
+✓ Section builder works
+✓ Source snapshots are immutable
+✓ Report preview works
+✓ Redaction/permission preview works
+✓ Evidence package/appendices work
+✓ Generated reports register works
+✓ Export options work
+✓ Mark official works
+✓ Publish to Document Control works
+✓ Version history works
+✓ Review/readiness works
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+24\n\n\n===== PAGE 25 =====\nFinal output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. Final Report / Export tab completed 11. Template/section builder
+completed 12. Source snapshot completed 13. Preview/redaction completed 14. Export/report generation
+completed 15. Evidence package completed 16. Document Control publishing completed 17. Permissions
+connected 18. Audit/history connected 19. Overview/Register updates connected 20. Dark/light responsive
+UI completed 21. Tests added/fixed 22. Remaining gaps, if any
+25

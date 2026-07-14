@@ -1,0 +1,592 @@
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Conflicts / SIMOPS tab fully.
+Context: The PTW Create Permit wizard, Permit Detail Page, Isolation / LOTO tab, Gas Test tab, Workforce
+tab, and Shift Handover tab exist or are in progress. Now make the Conflicts / SIMOPS tab real, database-
+driven, and fully functional.
+Route:
+• /ptw/:id
+• Tab: Conflicts / SIMOPS
+Do NOT create static demo UI. Do NOT use mock conflict records. Do NOT redesign the PTW page. Keep the
+current dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL + Redis/BullMQ
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Auth: existing IAM/RBAC
+• Audit: existing audit log
+• Notification: existing Notification Center
+• Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+The Conflicts / SIMOPS tab must detect and manage unsafe simultaneous permits.
+It must support:
+• Same equipment conflicts
+• Same area conflicts
+• Nearby permit conflicts
+• Incompatible permit type conflicts
+• Hot Work + Confined Space conflict
+• Hot Work + Line Breaking conflict
+• Hot Work + Excavation conflict if hazardous vapor release possible
+• Confined Space + Line Breaking conflict
+• SIMOPS review
+• Permit map conflict markers
+• Conflict severity ranking
+• Conflict override with written justification
+1
+
+---PAGE---
+
+• Area Authority approval for override
+• Notification to Permit Issuer, Area Authority, Control Room, and affected permit holders
+• Permit activation blocking if unresolved high/critical conflict exists
+• Audit log and permit history events
+================================================== CONFLICTS / SIMOPS TAB UI
+==================================================
+The tab must show:
+1. Conflict Summary Card
+2. Total conflicts
+3. Open conflicts
+4. Overridden conflicts
+5. Resolved conflicts
+6. Critical conflicts
+7. High conflicts
+8. Last conflict check time
+9. Overall conflict status:
+10. No Conflict
+11. Review Required
+12. Blocked
+13. Overridden
+14. Resolved
+15. Activation Blocker Banner Show if permit cannot activate because:
+16. Critical conflict is open
+17. High conflict is open and not overridden
+18. Required SIMOPS review is incomplete
+19. Area Authority override is missing
+20. Conflict check has not been run
+21. Conflict check is stale
+22. Run Conflict Check Panel Show:
+23. Last checked by
+24. Last checked at
+25. Check scope
+26. Same equipment
+27. Same area
+2
+
+---PAGE---
+
+28. Same process unit
+29. Nearby radius
+30. Incompatible permit matrix
+31. SIMOPS rules
+32. Run Conflict Check button
+33. Conflict List / Table Columns:
+34. Conflict Type
+35. Severity
+36. Current Permit
+37. Conflicting Permit
+38. Area / Unit
+39. Equipment
+40. Description
+41. Status
+42. Detected At
+43. Override Status
+44. Actions
+45. Conflict Detail Drawer / Modal Show:
+46. Conflict type
+47. Severity
+48. Description
+49. Why this conflict matters
+50. Current permit details
+51. Conflicting permit details
+52. Equipment tags
+53. Area/unit
+54. Distance if location data exists
+55. Required controls
+56. Recommended action
+57. Override history
+58. Related notifications
+59. SIMOPS Review Panel Show:
+60. SIMOPS required: Yes/No
+61. SIMOPS coordinator
+62. Concurrent work description
+63. Active nearby permits
+3
+
+---PAGE---
+
+64. Interaction hazards
+65. Required coordination controls
+66. Control room acknowledgement
+67. Area Authority review
+68. SIMOPS status
+69. Incompatible Permit Matrix Panel Visible to permitted admin/HSE users:
+70. View matrix rules
+71. Site/unit-specific rules
+72. Permit type A
+73. Permit type B
+74. Conflict severity
+75. Required control
+76. Block activation: Yes/No
+77. Override allowed: Yes/No
+78. Permit Map Conflict Panel Show:
+79. Current permit marker
+80. Conflicting permit markers
+81. Area markers
+82. Equipment markers
+83. Conflict radius
+84. If plant SVG map is not available, show data-driven area list/map placeholder.
+================================================== CONFLICT TYPES
+==================================================
+Support these conflict types:
+• Same Equipment
+• Same Area
+• Same Process Unit
+• Nearby Radius
+• Incompatible Permit Types
+• Hot Work Near Confined Space
+• Hot Work With Line Breaking
+• Hot Work With Excavation
+• Confined Space With Line Breaking
+• Electrical Isolation Conflict
+• LOTO Conflict
+• SIMOPS Conflict
+• Area Congestion
+4
+
+---PAGE---
+
+• Control Room Manual Flag
+• Other
+================================================== CONFLICT SEVERITY
+==================================================
+Severity levels:
+• Low
+• Medium
+• High
+• Critical
+Default severity examples:
+• Same equipment active permit: High
+• Hot Work + Confined Space same area: Critical
+• Hot Work + Line Breaking same unit: Critical
+• Confined Space + Line Breaking same equipment/area: Critical
+• Two cold work permits same area: Low/Medium depending site config
+• Excavation + Hot Work in hazardous area: High/Critical
+• Electrical isolation affecting another active permit: Critical
+Backend must calculate severity from configurable site rules.
+================================================== CONFLICT STATUS
+==================================================
+Conflict status:
+• Open
+• Under Review
+• Overridden
+• Resolved
+• False Positive
+• Cancelled
+Override status:
+• Not Requested
+• Pending Approval
+• Approved
+• Rejected
+SIMOPS status:
+• Not Required
+• Required
+5
+
+---PAGE---
+
+• Under Review
+• Approved
+• Rejected
+• Completed
+================================================== BACKEND DATABASE
+==================================================
+Create/update models:
+permit_conflicts permit_conflict_overrides permit_simops_reviews permit_simops_controls
+permit_conflict_matrix_rules permit_conflict_history
+permit_conflicts fields:
+• id
+• company_id
+• site_id
+• permit_id
+• conflicting_permit_id
+• conflict_type
+• severity
+• status
+• override_status
+• description
+• reason
+• area_id
+• unit_id
+• equipment_id
+• conflicting_equipment_id
+• distance_meters
+• detected_by
+• detected_at
+• resolved_by
+• resolved_at
+• resolution_notes
+• created_at
+• updated_at
+permit_conflict_overrides fields:
+• id
+• company_id
+• site_id
+• conflict_id
+• permit_id
+• requested_by
+• requested_at
+6
+
+---PAGE---
+
+• justification
+• required_controls
+• approved_by
+• approved_at
+• rejected_by
+• rejected_at
+• rejection_reason
+• status
+• signature_id
+• ip_address
+• created_at
+• updated_at
+permit_simops_reviews fields:
+• id
+• company_id
+• site_id
+• permit_id
+• simops_required
+• coordinator_id
+• coordinator_name
+• concurrent_work_description
+• interaction_hazards
+• required_controls
+• control_room_acknowledged
+• control_room_acknowledged_by
+• control_room_acknowledged_at
+• area_authority_reviewed
+• area_authority_reviewed_by
+• area_authority_reviewed_at
+• status
+• comments
+• created_by
+• created_at
+• updated_at
+permit_simops_controls fields:
+• id
+• company_id
+• site_id
+• simops_review_id
+• permit_id
+• control_description
+• responsible_user_id
+• due_at
+• status
+7
+
+---PAGE---
+
+• completed_by
+• completed_at
+• created_at
+• updated_at
+permit_conflict_matrix_rules fields:
+• id
+• company_id
+• site_id
+• unit_id optional
+• area_classification optional
+• permit_type_a
+• permit_type_b
+• conflict_type
+• severity
+• block_activation
+• override_allowed
+• required_control
+• radius_meters optional
+• is_active
+• created_by
+• created_at
+• updated_at
+permit_conflict_history fields:
+• id
+• company_id
+• site_id
+• permit_id
+• conflict_id
+• event_type
+• description
+• user_id
+• before_value
+• after_value
+• created_at
+================================================== BACKEND APIs
+==================================================
+Create/update:
+• GET /ptw/:id/conflicts
+• GET /ptw/:id/conflicts/summary
+• POST /ptw/:id/conflicts/check
+• GET /ptw/:id/conflicts/:conflictId
+8
+
+---PAGE---
+
+• PATCH /ptw/:id/conflicts/:conflictId
+• POST /ptw/:id/conflicts/:conflictId/resolve
+• POST /ptw/:id/conflicts/:conflictId/false-positive
+Override:
+• POST /ptw/:id/conflicts/:conflictId/override/request
+• POST /ptw/:id/conflicts/:conflictId/override/approve
+• POST /ptw/:id/conflicts/:conflictId/override/reject
+• GET /ptw/:id/conflicts/:conflictId/override-history
+SIMOPS:
+• GET /ptw/:id/simops
+• POST /ptw/:id/simops
+• PATCH /ptw/:id/simops/:simopsId
+• POST /ptw/:id/simops/:simopsId/approve
+• POST /ptw/:id/simops/:simopsId/reject
+• POST /ptw/:id/simops/:simopsId/control-room-acknowledge
+• POST /ptw/:id/simops/:simopsId/controls
+• PATCH /ptw/:id/simops/:simopsId/controls/:controlId
+Matrix:
+• GET /ptw/conflict-matrix
+• POST /ptw/conflict-matrix
+• PATCH /ptw/conflict-matrix/:ruleId
+• DELETE /ptw/conflict-matrix/:ruleId
+Map:
+• GET /ptw/:id/conflicts/map
+History:
+• GET /ptw/:id/conflicts/history
+================================================== BACKEND SERVICES
+==================================================
+Create/fix:
+• ptw-conflict.service.ts
+• simops.service.ts
+• conflict-matrix.service.ts
+• conflict-detection.engine.ts
+• conflict-severity.engine.ts
+• conflict-override.policy.ts
+• simops-policy.ts
+9
+
+---PAGE---
+
+Conflict detection engine must check:
+• Active permits on same equipment
+• Active permits on linked/child equipment
+• Active permits in same area
+• Active permits in same unit
+• Active permits within radius if coordinates exist
+• Incompatible permit matrix rules
+• Open isolations that affect another active permit
+• Existing MOC/action/equipment risks if available
+================================================== BACKEND RULES
+==================================================
+1. Permit activation rule: Permit cannot activate if:
+2. Critical conflict is open
+3. High conflict is open and not overridden
+4. Conflict check has not been run
+5. Conflict check is stale
+6. SIMOPS review is required but not approved
+7. Override rule: Only Area Authority or user with ptw.conflict.override can approve override.
+Override requires:
+• Written justification
+• Required controls
+• Electronic signature
+• Timestamp
+• IP address
+• False positive rule: Only HSE / Area Authority / Permit Issuer can mark false positive. Reason
+required.
+• Conflict check freshness: Site policy defines freshness window. Example:
+• conflict check must be run within 30 minutes before activation.
+• SIMOPS rule: If SIMOPS conflict exists:
+• SIMOPS review must be created.
+• SIMOPS coordinator must be assigned.
+10
+
+---PAGE---
+
+• Control room acknowledgement may be required.
+• Area Authority review required.
+• Audit/history rules: Every conflict check, detection, override, approval, rejection, false positive,
+SIMOPS review, and control completion must create:
+• audit log
+• permit history event
+• conflict history event
+• Site isolation: Every query and mutation must enforce company_id and site_id.
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+• features/ptw/components/tabs/PermitConflictsTab.tsx
+• features/ptw/components/conflicts/ConflictSummaryCard.tsx
+• features/ptw/components/conflicts/ConflictBlockerBanner.tsx
+• features/ptw/components/conflicts/RunConflictCheckPanel.tsx
+• features/ptw/components/conflicts/ConflictListTable.tsx
+• features/ptw/components/conflicts/ConflictDetailDrawer.tsx
+• features/ptw/components/conflicts/ConflictOverrideDialog.tsx
+• features/ptw/components/conflicts/SIMOPSReviewPanel.tsx
+• features/ptw/components/conflicts/SIMOPSControlsTable.tsx
+• features/ptw/components/conflicts/ConflictMatrixPanel.tsx
+• features/ptw/components/conflicts/PermitConflictMapPanel.tsx
+• features/ptw/hooks/usePermitConflicts.ts
+• features/ptw/hooks/usePermitConflictMutations.ts
+• features/ptw/schemas/conflict.schema.ts
+• features/ptw/services/ptw-conflict.service.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+Use React Query.
+Queries:
+• conflict summary
+• conflict list
+• conflict details
+• override history
+11
+
+---PAGE---
+
+• SIMOPS review
+• conflict matrix rules
+• conflict map
+• conflict history
+Mutations:
+• run conflict check
+• resolve conflict
+• mark false positive
+• request override
+• approve override
+• reject override
+• create/update SIMOPS review
+• approve/reject SIMOPS review
+• control room acknowledgement
+• add/update SIMOPS control
+• create/update/delete matrix rule
+After every mutation: Invalidate/refetch:
+• permit detail
+• conflict tab
+• conflict summary
+• SIMOPS review
+• permit lifecycle blockers
+• right summary panel
+• permit history
+• notifications if emitted
+• dashboard counters
+================================================== FORMS
+==================================================
+Conflict Override Form:
+• Justification
+• Required controls
+• Override expiry optional
+• Approver signature
+• Comment
+Validation:
+• Justification required
+• Required controls required for High/Critical conflicts
+• Electronic signature required for approval
+• Cannot override if override_allowed = false
+12
+
+---PAGE---
+
+SIMOPS Review Form:
+• SIMOPS coordinator
+• Concurrent work description
+• Interaction hazards
+• Required coordination controls
+• Control room acknowledgement required
+• Area Authority review required
+• Comments
+Validation:
+• Coordinator required
+• Interaction hazards required
+• Required controls required
+• Area Authority approval required before SIMOPS Approved
+Conflict Matrix Rule Form:
+• Permit type A
+• Permit type B
+• Conflict type
+• Severity
+• Block activation
+• Override allowed
+• Required control
+• Radius meters optional
+• Site/unit/area classification scope
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• ptw.conflict.view
+• ptw.conflict.check
+• ptw.conflict.resolve
+• ptw.conflict.override.request
+• ptw.conflict.override.approve
+• ptw.conflict.false_positive
+• ptw.simops.view
+• ptw.simops.create
+• ptw.simops.approve
+• ptw.conflict_matrix.manage
+Rules:
+• Permit holder can view conflicts.
+13
+
+---PAGE---
+
+• Permit issuer can run conflict check.
+• Area Authority can approve override.
+• HSE can manage conflict matrix.
+• Control room can acknowledge SIMOPS.
+• Backend must enforce permissions.
+• Frontend hides buttons if permission missing.
+================================================== INTEGRATIONS
+==================================================
+Permit lifecycle:
+• Activation blocked if unresolved conflict exists.
+• Activation allowed only when conflicts resolved, false-positive, or approved override exists.
+Notification Center: Emit events:
+• ptw.conflict.detected
+• ptw.conflict.high_detected
+• ptw.conflict.critical_detected
+• ptw.conflict.override_requested
+• ptw.conflict.override_approved
+• ptw.conflict.override_rejected
+• ptw.simops.review_required
+• ptw.simops.approved
+• ptw.simops.rejected
+Action Engine: High/Critical conflict may create corrective action if configured.
+Equipment Registry: Conflict events appear in linked equipment timeline.
+PTW Dashboard: Open conflicts counter must update.
+Permit Map: Conflict markers must appear on PTW map.
+Audit: Audit every conflict/SIMOPS change.
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+Loading: Show skeleton cards and conflict table.
+Empty: If no conflicts: “No conflicts detected. Run conflict check before activation.”
+Error: Show retry button and clear error message.
+14
+
+---PAGE---
+
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Conflicts / SIMOPS tab is complete only when:
+✓ Conflict summary loads from API
+✓ Run conflict check works
+✓ Same equipment conflicts detected
+✓ Same area conflicts detected
+✓ Incompatible permit type conflicts detected
+✓ Hot Work + Confined Space conflicts detected
+✓ Hot Work + Line Breaking conflicts detected
+✓ SIMOPS review works
+✓ Conflict override request works
+✓ Override approval/rejection works with signature
+✓ Conflict matrix rules work
+✓ Permit activation blocked if unresolved high/critical conflict exists
+✓ Permit map conflict markers work
+✓ Notifications are emitted
+✓ Audit logs are created
+✓ Permit history events are created
+✓ Conflict history events are created
+✓ React Query refreshes all affected panels
+✓ No static/mock conflict data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+15

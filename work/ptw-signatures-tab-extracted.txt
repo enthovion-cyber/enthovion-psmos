@@ -1,0 +1,491 @@
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Signatures tab fully.
+Context: The PTW Create Permit wizard, Permit Detail Page, Isolation / LOTO tab, Gas Test tab, Workforce
+tab, Shift Handover tab, and Conflicts / SIMOPS tab exist or are in progress. Now make the Signatures tab
+real, database-driven, permission-controlled, and fully functional.
+Route:
+• /ptw/:id
+• Tab: Signatures
+Do NOT create static demo UI. Do NOT use mock signature records. Do NOT redesign the PTW page. Keep
+the current dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Auth: existing IAM/RBAC
+• Audit: existing audit log
+• Workflow: existing Workflow Engine if available
+• Notification: existing Notification Center
+• Site isolation: company_id and site_id required
+================================================== GOAL
+==================================================
+The Signatures tab must manage all electronic signatures required for PTW lifecycle control.
+It must support:
+• Permit lifecycle signatures
+• Permit-type required signatures
+• Role-based signature requirements
+• Electronic signature confirmation
+• Signature rejection with reason
+• Signature history
+• Signature completion percentage
+• Lifecycle blocking if signatures incomplete
+• Audit log and permit history events
+================================================== SIGNATURES TAB UI
+==================================================
+1
+
+---PAGE---
+
+The tab must show:
+1. Signature Summary Card
+2. Total required signatures
+3. Completed signatures
+4. Pending signatures
+5. Rejected signatures
+6. Signature completion %
+7. Current signature status:
+8. Not Required
+9. Pending
+10. Partially Complete
+11. Complete
+12. Rejected
+13. Expired / Revalidation Required
+14. Lifecycle Blocker Banner Show if permit cannot move forward because:
+15. Required signatures are missing
+16. Current user is not authorized to sign
+17. Signature was rejected
+18. Signature has expired due to permit extension/revalidation
+19. Required role has no assigned user
+20. Required Signatures Table Columns:
+21. Signature Role
+22. Required For
+23. Assigned User / Role
+24. Status
+25. Signed By
+26. Signed At
+27. IP Address
+28. Comment
+29. Actions
+30. Signature Action Dialog When user clicks Sign: Require:
+31. User confirmation
+2
+
+---PAGE---
+
+32. Password re-entry or existing electronic signature confirmation flow
+33. Optional comment
+34. Checkbox: “I confirm I have reviewed the permit and accept responsibility for this approval/
+signature.”
+35. Capture timestamp and IP address
+36. Reject Signature Dialog When permitted user rejects: Require:
+37. Rejection reason
+38. Optional required correction
+39. Comment
+40. Signature History Table Show:
+41. Signature created
+42. Signature requested
+43. Signature completed
+44. Signature rejected
+45. Signature expired
+46. Signature revalidated
+47. User
+48. Timestamp
+49. Before/after status
+================================================== SIGNATURE TYPES
+==================================================
+Support these signature roles:
+General PTW:
+• Permit Holder
+• Permit Issuer
+• Area Authority
+• Performing Authority
+• HSE Reviewer
+• Control Room Operator
+• Closure Authority
+Hot Work:
+• Fire Watch
+• Area Authority
+• HSE Reviewer if high risk
+3
+
+---PAGE---
+
+Confined Space:
+• Entry Supervisor
+• Attendant
+• Gas Tester
+• Rescue Plan Reviewer
+• Area Authority
+Electrical Isolation / LOTO:
+• Isolation Authority
+• Electrical Authorized Person
+• Area Authority
+Excavation:
+• Excavation Competent Person
+• Buried Services Reviewer
+• Area Authority
+Radiography:
+• Radiation Safety Officer
+• Area Authority
+• Control Room Operator
+Working at Height:
+• Fall Protection Competent Person
+• Rescue Plan Reviewer
+• Area Authority
+Line Breaking / Equipment Opening:
+• Operations Representative
+• Maintenance Representative
+• Area Authority
+• Gas Tester if required
+SIMOPS:
+• SIMOPS Coordinator
+• Area Authority
+• Control Room Operator
+Shift Handover:
+• Outgoing Supervisor
+• Incoming Supervisor
+4
+
+---PAGE---
+
+Closure:
+• Permit Holder
+• Area Authority
+• Closure Authority
+================================================== SIGNATURE REQUIREMENT LOGIC
+==================================================
+Backend must generate required signatures based on:
+• Permit type
+• Risk level
+• Site policy
+• Area classification
+• Equipment criticality
+• Isolation required
+• Gas test required
+• Confined space required
+• SIMOPS required
+• Shift handover required
+• Closure required
+Examples:
+• Hot Work requires Permit Issuer, Area Authority, Permit Holder, Fire Watch.
+• Confined Space requires Entry Supervisor, Attendant, Gas Tester, Area Authority.
+• LOTO requires Isolation Authority and Area Authority.
+• High-risk permits require HSE Reviewer.
+• Critical equipment permits may require Operations Manager.
+• Closure requires Permit Holder and Closure Authority.
+Do not hardcode final requirements only in frontend. Backend must calculate and return required
+signatures.
+================================================== SIGNATURE STATUSES
+==================================================
+Signature status:
+• Not Required
+• Pending
+• Signed
+• Rejected
+• Expired
+• Revalidation Required
+• Skipped by Rule
+• Cancelled
+5
+
+---PAGE---
+
+Signature purpose:
+• Submit
+• Approval
+• Issue
+• Activation
+• Handover
+• Extension
+• Suspension
+• Closure
+• Override
+• Revalidation
+================================================== BACKEND DATABASE
+==================================================
+Create/update models:
+permit_signatures permit_signature_requirements permit_signature_history
+permit_signatures fields:
+• id
+• permit_id
+• company_id
+• site_id
+• signature_requirement_id
+• signature_role
+• signature_purpose
+• required_for_status
+• assigned_user_id
+• assigned_role_id
+• assigned_department_id
+• status
+• signed_by
+• signed_at
+• signature_id
+• ip_address
+• user_agent
+• comment
+• rejection_reason
+• correction_required
+• expires_at
+• revalidation_required
+• created_by
+• created_at
+• updated_at
+6
+
+---PAGE---
+
+permit_signature_requirements fields:
+• id
+• company_id
+• site_id
+• permit_type
+• risk_level
+• area_classification
+• equipment_criticality
+• signature_role
+• signature_purpose
+• required_for_status
+• assigned_role_id
+• is_required
+• condition_rule
+• expires_on_extension
+• expires_on_suspension
+• requires_revalidation
+• is_active
+• created_by
+• created_at
+• updated_at
+permit_signature_history fields:
+• id
+• permit_id
+• signature_id
+• company_id
+• site_id
+• event_type
+• description
+• user_id
+• before_value
+• after_value
+• created_at
+================================================== BACKEND APIs
+==================================================
+Create/update:
+• GET /ptw/:id/signatures
+• GET /ptw/:id/signatures/summary
+• POST /ptw/:id/signatures/generate-requirements
+• POST /ptw/:id/signatures/:signatureId/sign
+• POST /ptw/:id/signatures/:signatureId/reject
+• POST /ptw/:id/signatures/:signatureId/revalidate
+7
+
+---PAGE---
+
+• GET /ptw/:id/signatures/history
+Signature requirement configuration:
+• GET /ptw/signature-requirements
+• POST /ptw/signature-requirements
+• PATCH /ptw/signature-requirements/:requirementId
+• DELETE /ptw/signature-requirements/:requirementId
+================================================== BACKEND SERVICES
+==================================================
+Create/fix:
+• ptw-signature.service.ts
+• signature-requirement.service.ts
+• signature-policy.engine.ts
+• signature-lifecycle-blocker.ts
+• electronic-signature.adapter.ts
+Service logic:
+• Calculate required signatures based on permit context.
+• Generate missing signature requirements.
+• Validate current user can sign.
+• Prevent signing on behalf of another user.
+• Require electronic signature confirmation.
+• Store signature metadata.
+• Block lifecycle transitions if required signatures incomplete.
+• Expire/revalidate signatures when permit is extended, suspended, or materially edited.
+• Emit notification events.
+• Write audit logs.
+• Write permit history.
+• Write signature history.
+================================================== BACKEND RULES
+==================================================
+1. Authorization: User can sign only if:
+2. Assigned directly, OR
+3. Has assigned role for that signature, OR
+4. Has explicit permission for that signature role.
+5. No self-approval rule: Permit Holder cannot approve/issue their own permit if site policy prohibits it.
+8
+
+---PAGE---
+
+6. Signature confirmation: Signing requires electronic signature confirmation:
+7. authenticated user
+8. password re-entry or approved e-sign flow
+9. timestamp
+10. IP address
+11. user agent
+12. Lifecycle blocking: Permit cannot:
+13. be issued if issue signatures incomplete
+14. be activated if activation signatures incomplete
+15. be extended if extension signatures incomplete
+16. be closed if closure signatures incomplete
+17. Revalidation: Signatures must become Revalidation Required if:
+18. permit duration is extended
+19. permit risk level changes
+20. permit scope changes materially
+21. gas test failed after signature
+22. isolation plan changes after signature
+23. conflict override changes permit risk
+24. Rejection: Rejecting a required signature:
+25. sets permit review status to blocked
+26. requires reason
+27. notifies permit issuer and permit holder
+28. creates history event
+29. Site isolation: Every query and mutation must enforce company_id and site_id.
+30. Audit/history: Every sign/reject/revalidate/generate requirement action must create:
+31. audit log
+32. permit history event
+33. signature history event
+9
+
+---PAGE---
+
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+• features/ptw/components/tabs/PermitSignaturesTab.tsx
+• features/ptw/components/signatures/SignatureSummaryCard.tsx
+• features/ptw/components/signatures/SignatureBlockerBanner.tsx
+• features/ptw/components/signatures/RequiredSignaturesTable.tsx
+• features/ptw/components/signatures/SignatureActionDialog.tsx
+• features/ptw/components/signatures/RejectSignatureDialog.tsx
+• features/ptw/components/signatures/SignatureHistoryTable.tsx
+• features/ptw/components/signatures/SignatureRequirementsPanel.tsx
+• features/ptw/hooks/usePermitSignatures.ts
+• features/ptw/hooks/usePermitSignatureMutations.ts
+• features/ptw/schemas/signature.schema.ts
+• features/ptw/services/ptw-signature.service.ts
+================================================== FRONTEND BEHAVIOR
+==================================================
+Use React Query.
+Queries:
+• signature list
+• signature summary
+• signature history
+• signature requirements if permitted
+Mutations:
+• generate requirements
+• sign
+• reject
+• revalidate
+• create/update/delete requirement if permitted
+After every mutation: Invalidate/refetch:
+• permit detail
+• signatures tab
+• signature summary
+• lifecycle blockers
+• right summary panel
+• permit history
+• notifications if emitted
+• workflow state if connected
+10
+
+---PAGE---
+
+================================================== FORMS
+==================================================
+Sign Dialog:
+• Confirmation checkbox
+• Password / e-sign confirmation field
+• Comment optional
+Validation:
+• Confirmation checkbox required
+• Password/e-sign confirmation required
+• User must be authorized signer
+Reject Dialog:
+• Rejection reason
+• Correction required
+• Comment
+Validation:
+• Rejection reason required
+• Correction required for lifecycle-blocking signatures
+Requirement Form:
+• Permit type
+• Risk level optional
+• Area classification optional
+• Equipment criticality optional
+• Signature role
+• Signature purpose
+• Required for status
+• Assigned role
+• Required Yes/No
+• Condition rule
+• Expires on extension
+• Requires revalidation
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• ptw.signatures.view
+• ptw.signatures.sign
+11
+
+---PAGE---
+
+• ptw.signatures.reject
+• ptw.signatures.revalidate
+• ptw.signature_requirements.manage
+Rules:
+• Backend must enforce permissions.
+• Frontend hides buttons if permission missing.
+• Only site HSE/admin can manage signature requirements.
+================================================== INTEGRATIONS
+==================================================
+Permit lifecycle:
+• Lifecycle transitions call signature blocker service.
+• Missing signatures block issue/activation/extension/closure.
+Workflow Engine:
+• If workflow engine controls approvals, signatures must sync with workflow approval steps.
+• Do not duplicate approvals.
+• PTW signatures can record field-level e-signatures while Workflow manages formal approval.
+Notification Center: Emit events:
+• ptw.signature.requested
+• ptw.signature.completed
+• ptw.signature.rejected
+• ptw.signature.revalidation_required
+• ptw.signature.pending
+Audit: Audit every signature action.
+Equipment Registry: Signature events appear in linked equipment timeline if permit has equipment.
+================================================== EMPTY / ERROR / LOADING STATES
+==================================================
+Loading: Show skeleton signature cards and table.
+Empty: If no signatures generated: “No signature requirements generated yet. Generate requirements from
+permit context.”
+Error: Show retry button and clear error message.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+12
+
+---PAGE---
+
+Signatures tab is complete only when:
+✓ Signature summary loads from API
+✓ Required signatures generate from permit context
+✓ Signature table loads real data
+✓ Authorized user can sign
+✓ Unauthorized user cannot sign
+✓ Signature requires e-sign confirmation
+✓ Reject signature works with reason
+✓ Revalidation works
+✓ Lifecycle blocked if signatures missing
+✓ Signatures expire/revalidate after material changes
+✓ Signature history works
+✓ Audit logs are created
+✓ Permit history events are created
+✓ Signature history events are created
+✓ Notifications are emitted
+✓ React Query refreshes all affected panels
+✓ No static/mock signature data remains
+Final output: 1. Files created 2. Files modified 3. Database changes 4. Backend APIs added 5. Frontend
+components added 6. Integrations completed 7. Bugs fixed 8. Remaining gaps, if any
+13

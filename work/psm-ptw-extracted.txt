@@ -1,0 +1,435 @@
+pages 9
+
+--- PAGE 1 ---
+
+PSM OS PTW Codex Prompt
+PSM OS - Module 07 Permit to Work (PTW)
+Complete Codex Build Prompt - Phase 1
+Use this PDF as the exact implementation prompt for Codex. Attach the PTW mockup and the master specification file when 
+running Codex.
+Copy/Paste Prompt Starts Here
+Role and Starting Context
+You are the senior full-stack engineer for PSM OS.
+Foundation is complete or available: IAM/RBAC, multi-site data isolation, Equipment Registry, Universal Action Engine, 
+Workflow Engine, Global Search, Notification Center, and Document Control. Now build Module 07 - Permit to Work (PTW).
+Follow the attached master specification, PTW mockup, and existing file structure exactly. Do not redesign the module. Build 
+backend first, then frontend. Use real database/API data. No static/mock data except seed data.
+Technology Stack
+Layer Required Technology
+Backend NestJS + Supabase/PostgreSQL + Redis/BullMQ
+Frontend Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + 
+React Hook Form + Zod + Zustand
+Storage Supabase Storage or S3
+PDF Existing PDF engine / Puppeteer
+Realtime Supabase Realtime or WebSocket
+Offline PWA + Dexie.js IndexedDB + Service Worker
+Mandatory Integrations
+ Equipment Registry: equipment selector, linked records, equipment timeline, equipment open permit counts, equipment risk 
+context.
+ IAM/RBAC: permission checks on every API and every frontend action.
+ Multi-site isolation: every PTW record must include company_id and site_id and respect active site permissions.
+ Workflow Engine: permit approvals must use reusable workflow templates; do not hardcode approval chains.
+ Universal Action Engine: PTW can create linked actions for incomplete isolations, failed gas tests, closeout issues, and 
+safety observations.
+ Notification Center: permit expiry, conflict detection, gas test overdue, approval requests, shift handover, and safety-critical 
+alerts.
+ Document Control/PDF: permit certificate PDF and isolation certificate PDF.
+ Global Search: index permit number, type, equipment tag, area, status, issuer, holder, and contractor.
+Core PTW Feature Groups
+1. Permit Types - Required 9 Types
+Build all nine permit types with type-specific fields, validation, blocking rules, required approvals, and required certificates/forms.
+Permit Type Required Behavior
+Hot Work Welding, grinding, cutting, or any ignition source. Gas test mandatory 
+before activation. Fire watch and extinguishing equipment verification 
+required. LEL threshold must be site-configurable; default should 
+support strict 0% LEL policy for hot work where required, with 
+controlled site override such as <5% only if allowed by site 
+standards.
+Cold Work Mechanical maintenance, inspection, and non-intrusive activities 
+without ignition risk. Lower risk workflow but still requires area 
+authority approval and worksite closeout.
+Confined Space Entry Atmospheric testing mandatory. Rescue plan required before entry. 
+Entrant, attendant, supervisor, communication method, entry/exit log, 
+
+--- PAGE 2 ---
+
+PSM OS PTW Codex Prompt
+and rescue equipment must be tracked.
+Electrical Isolation / LOTO Full lockout/tagout register. Each energy source tracked individually 
+with lock number, lock holder, isolation point, verification, and de-
+isolation.
+Excavation Buried services check mandatory before breaking ground. Requires 
+excavation area, depth, utility clearance, barricade plan, and 
+authorization.
+Radiography Exclusion zone definition, radiation monitoring records, authorized 
+radiography team, warning signs, and restricted access control.
+Working at Height Rescue plan and fall protection system verification before work 
+starts. Harness/lanyard/scaffold status and rescue method must be 
+captured.
+Line Breaking / Equipment Opening Depressurisation, drain-down, flush/purge, contamination risk, and 
+residual energy confirmation required.
+Simultaneous Operations / SIMOPS Detects and flags conflicting concurrent permit types. Requires 
+SIMOPS review and conflict resolution before activation.
+2. Permit Lifecycle
+ Statuses: Draft, Submitted, Approved, Issued, Active, Suspended, Extended, Closed, Cancelled.
+ Draft: permit is being prepared and is not valid for work.
+ Submitted: requester has sent permit for review/approval through Workflow Engine.
+ Approved: required approvals are complete but permit is not yet issued/active.
+ Issued: permit issuer has issued permit to permit holder/performing authority.
+ Active: work is authorized to proceed.
+ Suspended: work is paused because of expiry, gas test overdue, conflict, unsafe condition, shift handover suspension, or 
+manual suspension.
+ Extended: permit validity has been extended with required checks and approvals.
+ Closed: work complete, area safe, de-isolation complete where applicable, personnel accounted for, and closure signed.
+ Cancelled: permit cancelled before completion with reason.
+ Cannot activate until required approvals, isolations, gas tests, workforce acknowledgements, rescue plans, and conflict 
+checks are complete.
+ Cannot close until worksite closeout, de-isolation, final gas test if required, personnel sign-out, and closure verification are 
+complete.
+ Every status change creates audit log and permit history event.
+3. Equipment Integration
+ Equipment Tag selector searches Equipment Registry by tag, name, unit, area, and site.
+ Selecting equipment auto-fills equipment name, unit, area, type, status, criticality, safety-critical flag, fluid service, and 
+hazard class.
+ Critical equipment automatically sets PTW risk to High or requires additional approval per site rules.
+ Parent/child equipment relationships appear inside the permit. Selecting pump may show motor, seal, associated isolation 
+valves, blinds, and related equipment.
+ Isolation points can be pre-populated from Equipment Registry valve/blind/isolation metadata.
+ Existing open PTWs, MOCs, actions, inspections, and linked safety records for that equipment must be visible in permit 
+creation screen.
+ Permit must appear in Equipment Registry Linked Records tab, Equipment Timeline, and Equipment Overview open permit 
+count.
+4. Isolation Management / LOTO
+ LOTO register: each energy source listed with energy type, source description, isolation point, lock number, lock holder, 
+applied by, verified by, timestamp, and status.
+ Valve isolation list: each valve tag, required position open/closed, normal position, locked state, confirmation checkbox, 
+confirmer, and timestamp.
+ Spectacle blind/spade register: blind number, location, installed by, confirmed by second person, install timestamp, and 
+removal timestamp.
+ Multi-energy types: electrical, mechanical, pneumatic, hydraulic, thermal, chemical, gravitational, stored pressure, and other 
+configurable energy types.
+ Permit cannot activate until all required isolation points are confirmed. This must be a hard system block.
+ De-isolation workflow must systematically reverse isolation points before equipment return to service.
+ Isolation certificate PDF must be printable for physical posting on equipment during work.
+ Every isolation confirmation requires electronic signature or user identity plus timestamp and audit log.
+
+--- PAGE 3 ---
+
+PSM OS PTW Codex Prompt
+5. Gas Testing
+ Gas testing must support O2, LEL, H2S, CO, and custom gases such as SO2, Cl2, NH3, HF, VOC, benzene, or site-
+specific gases.
+ O2 required range: default 19.5% to 23.5%, site-configurable.
+ LEL threshold must be configurable by site, permit type, area, and fluid service. Confined space default may be <10% LEL. 
+Hot work default should support stricter 0% LEL policy where required; site override can allow <5% only if site standard 
+permits.
+ H2S thresholds must be configurable; seed standard reference values such as TLV 1 ppm and IDLH 50 ppm as default 
+guidance.
+ CO thresholds must be configurable; seed standard reference values such as TLV 25 ppm and IDLH 1200 ppm as default 
+guidance.
+ Tester identity and gas instrument calibration date must be recorded with every reading.
+ Periodic re-test interval must be configurable by permit type/site/area.
+ Permit auto-suspends if required gas retest becomes overdue.
+ Gas readings must store timestamp, tester, instrument, GPS if available, permit status at time of reading, and pass/fail 
+outcome.
+ All readings appear in gas test history and trend chart.
+6. Conflict Detection
+ Area conflict: incompatible permits active in same defined area/zone.
+ Equipment conflict: same equipment tag on two simultaneous active permits.
+ Hot work + confined space conflict within configurable radius.
+ Hot work + line breaking conflict in same unit or hazard area.
+ Excavation conflict with buried services or active underground work.
+ Radiography conflict with personnel work in exclusion zone.
+ Use configurable incompatible permit matrix per site, unit, area, and hazard class.
+ Conflict alert must be sent simultaneously to Permit Issuer, Area Authority, Control Room, and affected permit holders.
+ Conflict blocks activation unless Area Authority overrides with written justification.
+ Override must be permanently audit-logged and visible in permit history.
+ Real-time permit map must display active conflicts by area.
+7. Mobile Execution + Offline PWA
+ Use PWA with service worker and Dexie.js IndexedDB.
+ Store active permits locally for offline field access.
+ Allow offline gas test entry, isolation confirmation, workforce sign-in/out, photo upload, and permit comments.
+ QR code scanning must identify equipment without typing tag number.
+ Photo evidence upload from smartphone must store locally until network is available.
+ Performing Authority sign-off must work on mobile at job site.
+ GPS coordinates must be logged on permit activation and closure.
+ Location check must alert if GPS coordinates do not match stated work area coordinates.
+ Show sync queue status: Pending Sync, Syncing, Synced, Failed Sync.
+ On reconnect, sync offline entries and re-run conflict validation and gas test validity checks.
+8. Shift Handover
+ Active permit summary auto-populates in digital shift handover report. No manual re-entry.
+ Incoming supervisor must acknowledge each active permit before shift handover is complete.
+ Permits expiring within 2 hours highlighted in amber with countdown timer.
+ Show gas test validity, next retest due, isolation validity, open conflicts, and active risk summary.
+ Permit suspension option during handover. Suspended permit requires revalidation before next shift can restart work.
+ Handover acknowledgement is an electronic signature with user, timestamp, IP address, and optional GPS/location.
+ Handover history tab shows previous shift transfers and acknowledgements.
+9. Workforce / Personnel on Permit
+ Track all people working under permit.
+ Fields: worker name, company, contractor company, trade, role, phone/contact, badge ID, time in, time out, and signature.
+ Identify Permit Holder / Performing Authority.
+ Track maximum allowed personnel count.
+
+--- PAGE 4 ---
+
+PSM OS PTW Codex Prompt
+ Require toolbox talk / PTW briefing acknowledgment before activation if configured.
+ Workforce roster becomes emergency accountability list.
+ Permit cannot close until all personnel are signed out or Area Authority overrides with reason.
+10. Permit Extension Management
+ Allow extension before expiry if permissions allow.
+ Extension requires reason, new expiry date/time, current gas test validity, isolation validity, and approver if configured.
+ Configurable maximum extension count and maximum total permit duration per site and permit type.
+ Extension history must show who extended, when, old expiry, new expiry, and reason.
+ Extension must trigger audit log, permit history, and notifications.
+11. Permit Closure Verification
+ Closure checklist must include: work completed, tools removed, housekeeping completed, personnel accounted for, 
+temporary barricades removed, waste removed, equipment safe, area inspected, and de-isolation completed where 
+required.
+ Closure can require photo evidence if site config requires it.
+ Area Authority closure verification required for high risk permits.
+ Permit cannot close if required checklist items are incomplete.
+ Closure certificate or permit package should include closure checklist and signoff.
+12. Permit Templates and Cloning
+ Allow saving a permit as template.
+ Allow cloning previous permit.
+ Support site-specific templates, permit-type templates, and equipment-specific templates.
+ Templates must not copy old gas test readings, approvals, signatures, or history.
+ Templates can pre-fill work description, risk controls, PPE, isolation requirements, workforce roles, and permit type-specific 
+fields.
+13. Permit Dashboard and Control Room View
+ Dashboard cards: Active Permits, Expiring Within 2 Hours, Suspended, Conflicts, Pending Approval, High Risk, Hot Work 
+Today, Confined Space Entries, LOTO Permits.
+ Filters: site, unit, area, permit type, status, risk, contractor, date range, issuer, holder.
+ Control room map shows active permits by area on plant layout/SVG.
+ Permit type colors and risk badges must be visible.
+ Clicking a permit on map opens permit detail.
+ Show active conflicts and expiring permits prominently.
+Database Models
+ permits
+ permit_types
+ permit_equipment
+ permit_isolations
+ permit_gas_tests
+ permit_conflicts
+ permit_workforce
+ permit_handover
+ permit_attachments
+ permit_history
+ permit_signatures
+ permit_extensions
+ permit_templates
+ permit_closure_checklists
+ permit_map_locations
+ permit_gas_thresholds
+ permit_incompatible_matrix
+
+--- PAGE 5 ---
+
+PSM OS PTW Codex Prompt
+Every PTW table must include company_id, site_id, created_by, created_at, updated_at, and audit-relevant fields where 
+applicable.
+Backend Files to Check/Create/Update
+apps/api/src/ptw/ptw.controller.ts
+apps/api/src/ptw/ptw.service.ts
+apps/api/src/ptw/ptw.module.ts
+apps/api/src/ptw/dto/create-permit.dto.ts
+apps/api/src/ptw/dto/update-permit.dto.ts
+apps/api/src/ptw/dto/issue-permit.dto.ts
+apps/api/src/ptw/dto/close-permit.dto.ts
+apps/api/src/ptw/dto/suspend-permit.dto.ts
+apps/api/src/ptw/dto/extend-permit.dto.ts
+apps/api/src/ptw/dto/add-gas-test.dto.ts
+apps/api/src/ptw/dto/add-isolation.dto.ts
+apps/api/src/ptw/dto/confirm-isolation.dto.ts
+apps/api/src/ptw/dto/add-workforce.dto.ts
+apps/api/src/ptw/dto/handover.dto.ts
+apps/api/src/ptw/dto/create-permit-template.dto.ts
+apps/api/src/ptw/dto/closure-checklist.dto.ts
+apps/api/src/ptw/repositories/permit.repository.ts
+apps/api/src/ptw/repositories/isolation.repository.ts
+apps/api/src/ptw/validators/gas-limits.validator.ts
+apps/api/src/ptw/validators/permit-conflict.validator.ts
+apps/api/src/ptw/validators/isolation-complete.validator.ts
+apps/api/src/ptw/validators/closure-complete.validator.ts
+apps/api/src/ptw/policies/issue-permit.policy.ts
+apps/api/src/ptw/policies/close-permit.policy.ts
+apps/api/src/ptw/policies/extend-permit.policy.ts
+apps/api/src/ptw/events/permit-issued.event.ts
+apps/api/src/ptw/events/permit-suspended.event.ts
+apps/api/src/ptw/events/permit-closed.event.ts
+apps/api/src/ptw/events/permit-expiring.event.ts
+apps/api/src/ptw/events/permit-conflict.event.ts
+apps/api/src/ptw/jobs/permit-expiry.job.ts
+apps/api/src/ptw/jobs/gas-test-reminder.job.ts
+apps/api/src/ptw/mappers/permit.mapper.ts
+apps/api/src/ptw/constants/permit-types.ts
+apps/api/src/ptw/constants/permit-status.ts
+apps/api/src/ptw/constants/gas-thresholds.ts
+API Endpoints
+GET /ptw
+GET /ptw/:id
+POST /ptw
+PATCH /ptw/:id
+
+--- PAGE 6 ---
+
+PSM OS PTW Codex Prompt
+DELETE /ptw/:id
+POST /ptw/:id/submit
+POST /ptw/:id/approve
+POST /ptw/:id/issue
+POST /ptw/:id/activate
+POST /ptw/:id/suspend
+POST /ptw/:id/extend
+POST /ptw/:id/close
+POST /ptw/:id/cancel
+POST /ptw/:id/isolation
+PATCH /ptw/:id/isolation/:isolationId/confirm
+POST /ptw/:id/de-isolation
+POST /ptw/:id/gas-tests
+GET /ptw/:id/gas-tests
+POST /ptw/:id/workforce
+PATCH /ptw/:id/workforce/:workerId/sign-in
+PATCH /ptw/:id/workforce/:workerId/sign-out
+POST /ptw/:id/handover
+GET /ptw/:id/conflicts
+POST /ptw/:id/conflicts/:conflictId/override
+POST /ptw/:id/closure-checklist
+GET /ptw/dashboard
+GET /ptw/map
+GET /ptw/expiring
+GET /ptw/active
+GET /ptw/equipment/:equipmentId
+POST /ptw/:id/attachments
+GET /ptw/:id/history
+GET /ptw/:id/certificate
+GET /ptw/:id/isolation-certificate
+POST /ptw/templates
+GET /ptw/templates
+POST /ptw/:id/clone
+POST /ptw/:id/save-template
+Frontend Pages
+/ptw
+/ptw/new
+/ptw/:id
+/ptw/:id/isolation
+/ptw/:id/gas-test
+/ptw/:id/workforce
+/ptw/:id/handover
+/ptw/:id/attachments
+/ptw/:id/signatures
+/ptw/:id/closure
+/ptw/dashboard
+
+--- PAGE 7 ---
+
+PSM OS PTW Codex Prompt
+/ptw/map
+/ptw/templates
+Frontend Components
+PTWDashboard
+ActivePermitsList
+PermitRegister
+PermitCard
+PermitDetail
+PermitHeader
+PermitForm
+PermitLifecycleStepper
+PermitTypeForm
+EquipmentSelector
+IsolationRegister
+DeIsolationPanel
+GasTestPanel
+GasTestTrendChart
+WorkforceOnPermit
+ShiftHandover
+PermitConflicts
+PermitMap
+PermitTimeline
+PermitExpiryWidget
+ActiveRisksList
+PermitClosureChecklist
+PermitTemplates
+PermitCertificate
+IsolationCertificate
+MobilePermitView
+OfflineSyncStatus
+Permissions
+ ptw.view
+ ptw.create
+ ptw.edit
+ ptw.submit
+ ptw.approve
+ ptw.issue
+ ptw.activate
+ ptw.suspend
+ ptw.extend
+ ptw.close
+ ptw.cancel
+ ptw.gas_test.add
+ ptw.isolation.confirm
+ ptw.deisolation.confirm
+ ptw.conflict.override
+ ptw.handover
+
+--- PAGE 8 ---
+
+PSM OS PTW Codex Prompt
+ ptw.workforce.manage
+ ptw.template.manage
+ ptw.export
+ Contractors can only view permits assigned to them.
+ Permit Holder cannot approve own permit.
+ Gas Tester must have gas test permission.
+ Area Authority required for conflict override.
+ Backend must enforce permissions; frontend hiding alone is not enough.
+Audit Log and History Requirements
+ Permit created, submitted, approved, issued, activated, suspended, extended, closed, cancelled.
+ Isolation added, confirmed, removed, or de-isolated.
+ Gas test added, failed, passed, or became overdue.
+ Conflict detected and overridden.
+ Workforce sign-in/sign-out.
+ Handover acknowledged.
+ Attachment uploaded.
+ Permit template created or cloned.
+ Closure checklist completed.
+Acceptance Criteria
+ All 9 permit types work with type-specific fields and validation.
+ Permit lifecycle works end-to-end.
+ Equipment integration works and updates Equipment Registry linked records/timeline.
+ Isolation register and de-isolation workflow work.
+ Gas testing works with site-configurable thresholds.
+ Hot work LEL threshold is configurable and can support 0% policy.
+ Retest overdue auto-suspends permit.
+ Conflict detection and override work with audit logs.
+ Shift handover works with electronic acknowledgement.
+ Workforce roster and personnel accountability work.
+ Permit extensions work with history.
+ Closure verification blocks incomplete closeout.
+ Permit templates and cloning work.
+ Mobile/offline workflow works with sync status.
+ Permit map/control room view works.
+ Permit certificate and isolation certificate generate.
+ Notifications trigger correctly.
+ Workflow Engine is used; no hardcoded approval chain.
+ Action Engine integration works.
+ Global Search indexes PTW records.
+ Permissions work on backend and frontend.
+ Audit logs and permit history work.
+ No static/mock data except seed data.
+Final Output Required from Codex
+1. Files created.
+2. Files modified.
+3. Database changes.
+4. API endpoints added.
+5. Frontend pages/components added.
+6. Integrations completed.
+7. Bugs fixed.
+8. Remaining gaps.
+
+--- PAGE 9 ---
+
+PSM OS PTW Codex Prompt
+9. Confirmation PTW is production-ready.
+Copy/Paste Prompt Ends Here

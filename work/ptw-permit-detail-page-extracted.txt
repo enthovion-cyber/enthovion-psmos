@@ -1,0 +1,694 @@
+PAGES: 17
+
+--- PAGE 1 ---
+
+You are the senior full-stack engineer for PSM OS.
+Task: Build the PTW Permit Detail Page after the Create New Permit wizard.
+Route:
+• /ptw/:id
+Goal: When a user opens a permit, every visible card, tab, lifecycle button, counter, badge, table, side panel,
+and preview must load real API data, save changes to database, and refresh instantly.
+Do NOT create a static demo page. Do NOT use mock cards, fake counters, or hardcoded permit data. Do
+NOT redesign the mockup. Keep the current dark industrial UI style.
+Build backend first, then frontend.
+Tech stack:
+• Backend: NestJS + Prisma/Supabase + PostgreSQL + Redis/BullMQ
+• Frontend: Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query + React Hook Form + Zod
+• Storage: S3/Supabase Storage
+• PDF: existing PDF engine
+• Realtime: Supabase Realtime/WebSocket where available
+PTW Detail Page must be site-aware:
+• Every query must enforce company_id and site_id.
+• User can only open permits from assigned sites.
+• Backend must enforce access, not only frontend.
+================================================== PAGE LAYOUT
+==================================================
+Follow the attached PTW mockup layout:
+Left:
+• PTW sidebar/list
+• Search permits
+• Status filters
+• Active/Pending/Expiring/History tabs
+• Permit cards
+• Pagination
+Center:
+• Permit header
+1
+
+--- PAGE 2 ---
+
+• Lifecycle stepper
+• Action buttons
+• Permit tabs
+• Main tab content cards
+Right:
+• Permit summary
+• Gas retest warning
+• Area map / permit map
+• Compliance / approvals
+• Permit actions
+================================================== MAIN HEADER
+==================================================
+Show real permit data:
+• Permit number
+• Permit title
+• Permit type badge
+• Status badge
+• Risk level badge
+• Equipment tag
+• Area
+• Permit holder
+• Issued by
+• Current lifecycle status
+• Expiry countdown
+Header action buttons:
+• Submit
+• Approve
+• Issue Permit
+• Activate
+• Suspend
+• Extend
+• Close Permit
+• Cancel
+• Download Permit
+• Print Permit
+• Duplicate Permit
+• Create MOC from Permit
+Rules:
+• Only show allowed actions based on status and user permission.
+2
+
+--- PAGE 3 ---
+
+• Backend validates every lifecycle transition.
+• No lifecycle step can be skipped.
+• Every action creates audit log and permit history event.
+• React Query must invalidate/refetch permit detail, dashboard counters, permit list, equipment linked
+records, and notifications.
+================================================== LIFECYCLE STEPPER
+==================================================
+Statuses:
+• Draft
+• Submitted
+• Approved
+• Issued
+• Active
+• Suspended
+• Extended
+• Closed
+• Cancelled
+Stepper must show:
+• Completed steps
+• Current active step
+• Blocked steps
+• Timestamp per completed step
+• User who completed step
+Lifecycle rules:
+• Draft → Submitted
+• Submitted → Approved
+• Approved → Issued
+• Issued → Active
+• Active → Suspended / Extended / Closed
+• Suspended → Active after revalidation
+• Active/Issued → Cancelled if permitted
+• Closed is final
+Hard blocks:
+• Cannot activate if required approvals incomplete.
+• Cannot activate if isolation incomplete.
+• Cannot activate if gas test required but missing/failed.
+• Cannot activate if required workforce briefing incomplete.
+• Cannot activate if unresolved conflict exists.
+• Cannot close if de-isolation incomplete.
+3
+
+--- PAGE 4 ---
+
+• Cannot close if workforce sign-out incomplete.
+• Cannot close without closure verification.
+================================================== REQUIRED TABS
+==================================================
+Create functional tabs:
+1. Details
+2. Isolation
+3. Gas Test
+4. Workforce
+5. Shift Handover
+6. Conflicts
+7. Signatures
+8. History
+9. Attachments
+Each tab must:
+• Load from API
+• Show loading state
+• Show empty state
+• Show error state
+• Allow permitted mutations
+• Save to database
+• Refresh instantly after mutation
+================================================== 1. DETAILS TAB
+==================================================
+Show real permit information:
+Permit Information:
+• Permit number
+• Permit type
+• Permit status
+• Risk level
+• Priority
+• Company
+• Site
+• Department
+• Process unit
+• Area
+• Location description
+• GPS latitude/longitude
+• Planned start
+4
+
+--- PAGE 5 ---
+
+• Planned end
+• Issue date/time
+• Expiry date/time
+• Shift
+• Permit holder
+• Permit issuer
+• Area authority
+• Performing authority
+• Contractor company
+Work Description:
+• Permit title
+• Detailed work description
+• Work method/procedure
+• Tools and equipment required
+• Chemicals/materials used
+• Energy sources involved
+• SOP reference
+• P&ID reference
+• Special instructions
+Equipment Context:
+• Equipment tag
+• Equipment name
+• Equipment type
+• Equipment criticality
+• Parent equipment
+• Child equipment
+• Linked equipment tags
+• Active permits on same equipment
+• Open MOCs/actions linked to equipment
+Type-Specific Requirements: Show fields based on permit type:
+• Hot Work
+• Cold Work
+• Confined Space
+• Electrical Isolation / LOTO
+• Excavation
+• Radiography
+• Working at Height
+• Line Breaking / Equipment Opening
+• SIMOPS
+5
+
+--- PAGE 6 ---
+
+Actions:
+• Edit permit details
+• Save changes
+• Refetch all cards after save
+================================================== 2. ISOLATION TAB
+==================================================
+Build full isolation/LOTO management.
+Show:
+• Isolation required
+• Isolation completion percentage
+• Isolation authority
+• Isolation certificate status
+• De-isolation status
+• Isolation points table
+Isolation point fields:
+• Energy source
+• Energy type
+• Isolation point tag
+• Valve tag / breaker tag
+• Required position
+• Current position
+• Lock number
+• Lock holder
+• Blind/spade number
+• Installed by
+• Confirmed by
+• Confirmed timestamp
+• Verification required
+• Second-person verification
+• Notes
+• Status
+Actions:
+• Add isolation point
+• Edit isolation point
+• Delete isolation point
+• Confirm isolation
+• Verify isolation
+• Start de-isolation
+• Confirm de-isolation
+6
+
+--- PAGE 7 ---
+
+• Generate isolation certificate PDF
+Rules:
+• Permit cannot activate until all required isolations are confirmed.
+• If second-person verification is required, confirmation alone is not enough.
+• De-isolation must be complete before closure.
+• Every confirmation stores user, timestamp, signature, and IP.
+• Every mutation creates permit history and audit log.
+================================================== 3. GAS TEST TAB
+==================================================
+Build full gas testing workflow.
+Show:
+• Gas test required
+• Latest gas readings
+• Pass/fail status
+• Tester
+• Instrument ID
+• Instrument calibration date
+• Last test timestamp
+• Next retest due
+• Retest countdown
+• Gas test history table
+• Gas trend chart if possible
+Gas fields:
+• O2
+• LEL
+• H2S
+• CO
+• SO2
+• Cl2
+• NH3
+• HF
+• Custom gases
+Threshold rules:
+• O2 valid range: 19.5–23.5%.
+• Confined Space LEL default: <10%.
+• Hot Work LEL default: 0% preferred.
+• Hot Work site override may allow up to <5% only if site policy allows.
+• H2S, CO, and custom gases are site-configurable.
+7
+
+--- PAGE 8 ---
+
+• Failed gas test blocks activation.
+• Failed gas test on active permit suspends permit.
+• Retest overdue auto-suspends permit.
+Actions:
+• Add gas test
+• Edit gas test if permitted
+• View gas test history
+• Configure retest interval if permitted
+================================================== 4. WORKFORCE TAB
+==================================================
+Build workforce/personnel on permit.
+Show:
+• Permit holder
+• Performing authority
+• Workers table
+• Contractor company
+• Maximum personnel count
+• Briefing completion
+• Sign-in/sign-out status
+• Emergency accountability list
+Worker fields:
+• Name
+• Company
+• Contractor company
+• Trade
+• Badge ID
+• Contact number
+• Briefing required
+• Briefing completed
+• Sign-in time
+• Sign-out time
+• Emergency contact
+• Status
+Actions:
+• Add worker
+• Edit worker
+• Remove worker
+• Mark briefing completed
+8
+
+--- PAGE 9 ---
+
+• Sign in worker
+• Sign out worker
+Rules:
+• Permit cannot activate if required briefing is incomplete.
+• Permit cannot close if workers are still signed in.
+• Sign-in/out stores user, timestamp, and IP.
+• Every mutation creates permit history and audit log.
+================================================== 5. SHIFT HANDOVER TAB
+==================================================
+Build digital shift handover.
+Show:
+• Active permit summary
+• Current shift
+• Outgoing supervisor
+• Incoming supervisor
+• Handover time
+• Permit status at handover
+• Permit risks
+• Gas test validity
+• Isolation validity
+• Permit expiry countdown
+• Open conflicts
+• Permits expiring within 2 hours
+• Handover checklist
+• Incoming supervisor acknowledgement
+• Handover signature
+• Timestamp
+• IP address
+Checklist:
+• Reviewed work scope
+• Reviewed isolation status
+• Reviewed gas test status
+• Reviewed open conflicts
+• Reviewed expiring permits
+• Accepted responsibility for permit continuation
+Actions:
+• Create handover
+• Acknowledge handover
+9
+
+--- PAGE 10 ---
+
+• Suspend permit during handover
+Rules:
+• Incoming supervisor must acknowledge active permit.
+• Handover acknowledgement is an electronic signature.
+• Handover creates audit log and permit history event.
+================================================== 6. CONFLICTS TAB
+==================================================
+Build conflict detection and override.
+Show conflicts:
+• Same equipment conflict
+• Same area conflict
+• Hot Work + Confined Space conflict
+• Hot Work + Line Breaking conflict
+• SIMOPS conflict
+• Incompatible permit matrix conflict
+• Nearby active permits
+Conflict fields:
+• Conflict type
+• Severity
+• Description
+• Related permit
+• Related equipment
+• Area/unit
+• Detected at
+• Status
+• Override status
+• Override justification
+• Overridden by
+• Override timestamp
+Actions:
+• Run conflict check
+• View related permit
+• Override conflict if permitted
+Rules:
+• Conflict blocks activation unless overridden.
+• Override requires Area Authority permission and written justification.
+10
+
+--- PAGE 11 ---
+
+• Notify Permit Issuer, Area Authority, and Control Room.
+• Override is permanently audit-logged.
+================================================== 7. SIGNATURES TAB
+==================================================
+Build electronic signature workflow.
+Required signatures depend on permit type.
+Possible signatures:
+• Permit Holder
+• Permit Issuer
+• Area Authority
+• Performing Authority
+• Gas Tester
+• Isolation Authority
+• HSE
+• Fire Watch
+• Incoming Supervisor
+• Closure Authority
+Signature fields:
+• Role
+• Required user/role
+• Signed by
+• Status
+• Timestamp
+• IP address
+• Comment
+Actions:
+• Sign
+• Reject signature step if permitted
+• View signature history
+Rules:
+• User must authenticate before signing.
+• Signature cannot be forged by another user.
+• Permit cannot progress if required signatures incomplete.
+• All signatures create audit logs and history events.
+================================================== 8. HISTORY TAB
+==================================================
+11
+
+--- PAGE 12 ---
+
+Show full permit timeline.
+Events:
+• Permit created
+• Details edited
+• Submitted
+• Approved
+• Issued
+• Activated
+• Suspended
+• Extended
+• Closed
+• Cancelled
+• Isolation added
+• Isolation confirmed
+• De-isolation completed
+• Gas test added
+• Gas test failed
+• Gas retest overdue
+• Worker added
+• Worker signed in
+• Worker signed out
+• Conflict detected
+• Conflict overridden
+• Handover completed
+• Signature completed
+• Attachment uploaded
+• Certificate generated
+Each event shows:
+• Date/time
+• User
+• Event type
+• Description
+• Before value
+• After value
+• Related record link
+================================================== 9. ATTACHMENTS TAB
+==================================================
+Support permit files.
+Attachment types:
+• Job Safety Analysis
+12
+
+--- PAGE 13 ---
+
+• Method Statement
+• Rescue Plan
+• Excavation Drawing
+• Radiography Plan
+• Electrical Isolation Drawing
+• P&ID
+• SOP
+• LOTO Photo
+• Gas Test Certificate
+• Worksite Photo
+• Closure Photo
+• Other
+Features:
+• Upload
+• Preview
+• Download
+• Delete
+• Link existing Document Control document
+• Show uploaded by
+• Show uploaded date
+Rules:
+• Confined Space requires Rescue Plan.
+• Excavation may require Excavation Drawing.
+• Radiography requires Radiography Plan.
+• High/Critical risk requires JSA or Method Statement.
+• Upload/delete refreshes instantly.
+• Upload/delete creates audit log and history event.
+================================================== RIGHT SIDE PANEL
+==================================================
+Permit Summary:
+• Active permits count
+• Expiring soon count
+• Suspended count
+• Open conflicts count
+Gas Retest Card:
+• Show next retest due
+• Countdown
+• Overdue warning
+• Auto-suspended indicator
+13
+
+--- PAGE 14 ---
+
+Area Map:
+• Active permit markers
+• Equipment marker
+• Conflict markers
+• Expiring permit markers
+• If SVG map is not available, create data-driven area list placeholder.
+Compliance / Approvals:
+• Approval completion percentage
+• Required signatures status
+• Isolation completion
+• Gas test status
+• Workforce briefing status
+Permit Actions:
+• Download Permit
+• Print Permit
+• Duplicate Permit
+• Create MOC from Permit
+• Generate Isolation Certificate
+================================================== LEFT PERMIT LIST
+==================================================
+Build real sidebar permit register:
+Features:
+• Search
+• Filter by Active
+• Filter by Pending
+• Filter by Expiring
+• Filter by History
+• Filter by permit type
+• Filter by risk
+• Permit cards
+• Pagination
+Each card shows:
+• Permit number
+• Title
+• Area
+• Holder
+• Status
+14
+
+--- PAGE 15 ---
+
+• Permit type
+• Expiry countdown
+Data must come from API.
+================================================== BACKEND REQUIREMENTS
+==================================================
+Create/update APIs:
+• GET /ptw/:id
+• PATCH /ptw/:id
+• GET /ptw/:id/summary
+• GET /ptw/:id/isolation
+• POST /ptw/:id/isolation
+• PATCH /ptw/:id/isolation/:isolationId
+• DELETE /ptw/:id/isolation/:isolationId
+• PATCH /ptw/:id/isolation/:isolationId/confirm
+• PATCH /ptw/:id/isolation/:isolationId/verify
+• POST /ptw/:id/de-isolation
+• GET /ptw/:id/gas-tests
+• POST /ptw/:id/gas-tests
+• PATCH /ptw/:id/gas-tests/:gasTestId
+• GET /ptw/:id/workforce
+• POST /ptw/:id/workforce
+• PATCH /ptw/:id/workforce/:workerId
+• DELETE /ptw/:id/workforce/:workerId
+• POST /ptw/:id/workforce/:workerId/sign-in
+• POST /ptw/:id/workforce/:workerId/sign-out
+• GET /ptw/:id/handover
+• POST /ptw/:id/handover
+• POST /ptw/:id/handover/:handoverId/acknowledge
+• GET /ptw/:id/conflicts
+• POST /ptw/:id/conflicts/check
+• POST /ptw/:id/conflicts/:conflictId/override
+• GET /ptw/:id/signatures
+• POST /ptw/:id/signatures
+• GET /ptw/:id/history
+• GET /ptw/:id/attachments
+• POST /ptw/:id/attachments
+• DELETE /ptw/:id/attachments/:attachmentId
+• POST /ptw/:id/submit
+• POST /ptw/:id/approve
+• POST /ptw/:id/issue
+• POST /ptw/:id/activate
+• POST /ptw/:id/suspend
+• POST /ptw/:id/extend
+• POST /ptw/:id/close
+15
+
+--- PAGE 16 ---
+
+• POST /ptw/:id/cancel
+• GET /ptw/:id/certificate
+• GET /ptw/:id/isolation-certificate
+================================================== FRONTEND FILES
+==================================================
+Create/fix:
+• app/(app)/ptw/[id]/page.tsx
+• features/ptw/components/PermitDetailPage.tsx
+• features/ptw/components/PermitHeader.tsx
+• features/ptw/components/PermitLifecycleStepper.tsx
+• features/ptw/components/PermitSidebarList.tsx
+• features/ptw/components/PermitRightPanel.tsx
+• features/ptw/components/tabs/PermitDetailsTab.tsx
+• features/ptw/components/tabs/PermitIsolationTab.tsx
+• features/ptw/components/tabs/PermitGasTestTab.tsx
+• features/ptw/components/tabs/PermitWorkforceTab.tsx
+• features/ptw/components/tabs/PermitShiftHandoverTab.tsx
+• features/ptw/components/tabs/PermitConflictsTab.tsx
+• features/ptw/components/tabs/PermitSignaturesTab.tsx
+• features/ptw/components/tabs/PermitHistoryTab.tsx
+• features/ptw/components/tabs/PermitAttachmentsTab.tsx
+• features/ptw/hooks/usePermitDetail.ts
+• features/ptw/hooks/usePermitMutations.ts
+• features/ptw/services/ptw.service.ts
+• features/ptw/schemas/permit-detail.schema.ts
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Permit Detail Page is complete only when:
+✓ /ptw/:id loads real permit data
+✓ Header shows real data
+✓ Lifecycle stepper works
+✓ Action buttons work based on status/permission
+✓ Details tab works
+✓ Isolation tab works
+✓ Gas Test tab works
+16
+
+--- PAGE 17 ---
+
+✓ Workforce tab works
+✓ Shift Handover tab works
+✓ Conflicts tab works
+✓ Signatures tab works
+✓ History tab works
+✓ Attachments tab works
+✓ Right summary panel works
+✓ Left permit list works
+✓ All counters are real
+✓ All uploads refresh instantly
+✓ All mutations save to database
+✓ React Query invalidates after every mutation
+✓ Backend validates lifecycle transitions
+✓ Audit logs are created
+✓ Permit history events are created
+✓ No static/mock data remains
+Final output: 1. Files created 2. Files modified 3. Backend changes 4. Frontend changes 5. API endpoints
+added 6. Tabs completed 7. Bugs fixed 8. Remaining gaps, if any
+17

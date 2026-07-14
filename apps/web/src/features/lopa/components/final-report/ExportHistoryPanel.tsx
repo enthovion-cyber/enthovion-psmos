@@ -1,0 +1,3 @@
+import { ExportStatusBadge } from '../shared/ExportStatusBadge';
+import { FinalReportPanel } from './FinalReportPanel';
+export function ExportHistoryPanel({ rows }: { rows:any[] }) { return <FinalReportPanel title="Export History" subtitle="Generation, preview, package, download, and export events."><div className="space-y-2">{rows.map((e:any)=><div key={e.id} className="flex justify-between gap-3 rounded border border-slate-200 p-2 text-xs dark:border-cyan-300/10"><div><b>{e.export_type}</b><div className="text-slate-500">{e.output_format} · {e.requested_at?new Date(e.requested_at).toLocaleString():'-'}</div>{e.error_message?<div className="text-red-500">{e.error_message}</div>:null}</div><ExportStatusBadge status={e.status}/></div>)}</div></FinalReportPanel>; }

@@ -1,0 +1,2 @@
+import { TabPanel } from '../shared/IncidentTabPrimitives';
+export function TimelineSourceReliabilityPanel({ rows }: any) { return <TabPanel title="Timeline Source Reliability Panel"><div className="grid gap-2">{(rows ?? []).map((row: any) => <div key={row.label} className="flex justify-between rounded-lg border border-slate-200 p-2 text-xs dark:border-cyan-300/10"><b>{row.label}</b><span>{row.count}</span></div>)}</div></TabPanel>; }

@@ -1,0 +1,21 @@
+export const adminBulkUserColumns = [
+  'full_name',
+  'work_email',
+  'personal_email',
+  'phone',
+  'employee_id',
+  'job_title',
+  'department',
+  'employer_type',
+  'contractor_company',
+  'company',
+  'sites',
+  'units',
+  'areas',
+  'roles',
+  'module_permissions',
+  'send_invite_to',
+  'generate_password',
+  'force_password_change',
+  'active'
+];

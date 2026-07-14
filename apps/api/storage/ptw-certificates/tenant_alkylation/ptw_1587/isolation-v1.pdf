@@ -1,0 +1,37 @@
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+5 0 obj << /Length 743 >> stream
+BT
+/F1 18 Tf
+72 760 Td
+(PSM OS - Isolation / LOTO Certificate) Tj
+0 -24 Td (Certificate: PTW-1587-ISO-V1) Tj
+0 -24 Td (Permit: PTW-1587) Tj
+0 -24 Td (Title: Welding on P-101A pump casing) Tj
+0 -24 Td (Type: HOT_WORK) Tj
+0 -24 Td (Equipment: P-101A) Tj
+0 -24 Td (Area: Reactor Area) Tj
+0 -24 Td (Isolation authority: user_imran_shah) Tj
+0 -24 Td (Company/Site: company_alkylation / Jubail Industrial City) Tj
+0 -24 Td (QR link: /ptw/ptw_1587) Tj
+0 -24 Td (Version: 1) Tj
+0 -24 Td (Isolation Points:) Tj
+0 -24 Td (Mechanical | XV-101 | XV-101 | Closed | De-Isolated | confirmed user_imran_shah | verified user_imran_shah) Tj
+0 -24 Td (Electrical | MCC-12 | - | Locked Out | Confirmed | confirmed user_imran_shah | verified user_imran_shah) Tj
+ET
+endstream endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer << /Root 1 0 R /Size 6 >>
+startxref
+1105
+%%EOF

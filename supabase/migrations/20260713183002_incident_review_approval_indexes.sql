@@ -1,0 +1,12 @@
+create index if not exists idx_incident_review_approvals_incident on public.incident_review_approvals (tenant_id, incident_id);
+create index if not exists idx_incident_review_approvals_site on public.incident_review_approvals (tenant_id, site_id);
+create index if not exists idx_incident_reviewers_incident on public.incident_reviewers (tenant_id, incident_id);
+create index if not exists idx_incident_reviewers_user on public.incident_reviewers (tenant_id, reviewer_user_id);
+create index if not exists idx_incident_reviewers_status on public.incident_reviewers (tenant_id, incident_id, status);
+create index if not exists idx_incident_review_decisions_incident on public.incident_review_decisions (tenant_id, incident_id, created_at desc);
+create index if not exists idx_incident_review_decisions_reviewer on public.incident_review_decisions (tenant_id, reviewer_id);
+create index if not exists idx_incident_review_blockers_incident on public.incident_review_blockers (tenant_id, incident_id, status, blocking);
+create index if not exists idx_incident_review_blockers_owner on public.incident_review_blockers (tenant_id, owner_id);
+create index if not exists idx_incident_change_requests_incident on public.incident_change_requests (tenant_id, incident_id, status);
+create index if not exists idx_incident_change_requests_owner on public.incident_change_requests (tenant_id, owner_id);
+create index if not exists idx_incidents_review_approval_status on public.incidents (tenant_id, review_approval_status, closure_status);

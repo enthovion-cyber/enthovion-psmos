@@ -1,0 +1,1037 @@
+--- page 1 ---
+You are the senior full-stack engineer and process safety product architect for PSM OS.
+Task: Build the Incident / Near Miss / Accident Investigation – Barrier / Safeguard Failure tab.
+Route:
+• /incidents/:id
+Tab:
+• Barrier / Safeguard Failure
+Read the attached PDF/specification carefully before coding. Build this tab exactly according to the PDF.
+After implementation, cross-check the completed work against the PDF line by line and fix every missing
+field, section, card, panel, table, drawer, dialog, API, database model, SQL migration, permission, validation
+rule, workflow rule, state, audit/history hook, chart, infographic, dark/light theme issue, and responsive UI
+issue. Do not miss a single thing.
+Keep the implementation detailed but not unnecessarily oversized. Build only what belongs to this tab.
+================================================== SCOPE
+==================================================
+Work only on:
+• Barrier / Safeguard Failure
+Do not build yet:
+• Corrective / Preventive Actions
+• Linked Records
+• Notifications / Regulatory Reporting
+• Review & Approval
+• Lessons Learned
+• History
+• Final Report / Export
+Use existing modules/data:
+• Incident Dashboard/Register
+• Incident Detail Shell
+• Overview
+• Event Details & Classification
+• Potential Severity / Risk Matrix
+• People / Injury / Exposure
+• Asset / Equipment / Chemical
+• Timeline
+1
+--- page 2 ---
+• Evidence / Attachments
+• Immediate Actions
+• Investigation Team
+• Root Cause Analysis
+• Equipment Registry
+• Chemical/SDS
+• Document Control
+• Mechanical Integrity
+• HAZOP/PHA
+• LOPA/SIL/IPL Registry
+• SIS/SIF records if available
+• Alarm/interlock data if available
+• PTW, MOC, PSSR
+• Universal Action Engine
+• Notification Center
+• Global Search
+• IAM/RBAC
+• Audit Log
+• Incident History
+No mock/static data. Use real backend, real database, real APIs, real permissions, real audit/history, and
+real integrations.
+================================================== IMPORTANT STRUCTURE RULE
+==================================================
+Do not put everything into one big tab file.
+Tab container must be clean only:
+• features/incidents/components/detail/BarrierSafeguardFailureTab.tsx
+Create separate folder:
+• features/incidents/components/barrier-safeguard-failure/
+Shared badges/components:
+• features/incidents/components/shared/
+Also separate:
+• hooks
+• services
+• schemas
+• types
+• SQL migrations
+2
+--- page 3 ---
+No messy single-file implementation.
+================================================== CORE PURPOSE
+==================================================
+This tab must answer:
+• Which barriers, safeguards, controls, IPLs, SIS/SIFs, PSVs, alarms, interlocks, procedures, PPE,
+containment systems, emergency controls, or administrative controls were expected?
+• Which barriers were present, missing, failed, degraded, bypassed, overridden, late, ineffective, or
+not tested?
+• Did the barrier receive a demand?
+• Did it respond correctly?
+• Was it credited as an IPL in LOPA?
+• Was it independent, effective, auditable, and maintained?
+• Was a proof test, inspection, maintenance, or calibration overdue?
+• What failure mode occurred?
+• Was failure active, latent, human, equipment, design, management-system, procedural, or
+maintenance-related?
+• Which RCA root cause does it connect to?
+• Which CAPA / MOC / MI / PSSR / LOPA / HAZOP / SIL follow-up is required?
+• Is barrier analysis ready for review?
+Important rule:
+• Safeguard and IPL are not the same.
+• A safeguard is any control or protection.
+• An IPL is only a credited independent protection layer if it meets independence/effectiveness/
+auditability criteria and is approved in LOPA/company configuration.
+• Do not automatically treat every safeguard as an IPL.
+================================================== REQUIRED SECTIONS
+==================================================
+Build these panels:
+1. Barrier / Safeguard Failure Header
+2. Summary Cards
+3. Barrier Analysis Readiness Panel
+4. Barrier / Safeguard Register
+5. Add/Edit Barrier Drawer
+6. Barrier Demand & Performance Panel
+7. Failure Mode Analysis Panel
+8. IPL / LOPA Credit Check Panel
+9. SIS / SIF / Interlock Panel
+10. PSV / Relief Device Panel
+11. Alarm / Operator Response Panel
+12. Administrative / Procedure / PTW Control Panel
+3
+--- page 4 ---
+13. PPE / Emergency Response Barrier Panel
+14. Bowtie / Barrier Map Visual Panel
+15. Evidence-Mapped Barrier Panel
+16. RCA Linkage Panel
+17. Follow-up Requirements Panel
+18. Barrier Review Panel
+19. Barrier Change History Panel
+20. Barrier Readiness / Missing Data Panel
+21. Loading / Empty / Error / Permission / Restricted / Read-only States
+================================================== 1. HEADER
+==================================================
+Show:
+• Incident number
+• Incident title
+• Incident status
+• Actual severity
+• Potential severity
+• PSM/PSE/API tier
+• Barrier analysis required Yes/No
+• Total barriers/safeguards
+• Failed barriers
+• Degraded barriers
+• Missing barriers
+• Bypassed barriers
+• Credited IPLs failed
+• SIS/SIF involved
+• PSV involved
+• Alarm/interlock involved
+• Follow-ups required
+• Review status
+• Last updated
+Actions:
+• Add Barrier / Safeguard
+• Import from HAZOP/LOPA/IPL Registry
+• Link Evidence
+• Create Follow-up Action
+• Request Review
+• Save Changes
+• Refresh
+Rules:
+• Use real backend values.
+4
+--- page 5 ---
+• Hide unauthorized actions.
+• Disabled actions must show exact reason.
+• Closed incidents are read-only unless reopened.
+• Restricted/confidential data must be redacted.
+================================================== 2. SUMMARY CARDS
+==================================================
+Cards:
+• Barrier analysis required
+• Total safeguards
+• Failed safeguards
+• Missing safeguards
+• Degraded safeguards
+• Bypassed/overridden safeguards
+• Credited IPLs failed
+• SIS/SIF failed or bypassed
+• PSV/relief issue
+• Alarm/operator response issue
+• Procedure/PTW issue
+• PPE/emergency response issue
+• Evidence missing
+• Follow-ups required
+• Review status
+• Ready for CAPA/Review
+Rules:
+• No fake counts.
+• Values come from backend.
+• Cards update Overview and Dashboard/Register.
+================================================== 3. BARRIER ANALYSIS READINESS PANEL
+==================================================
+Backend-generated checklist:
+• Event details complete
+• Asset/equipment/chemical data complete
+• Timeline has incident moment
+• Evidence available
+• RCA causal factors/root causes available
+• Safeguard involvement checked
+• IPL/LOPA relevance checked
+• SIS/SIF/PSV/alarm involvement checked
+• Failed/missing/bypassed barriers captured
+• Required follow-ups generated
+5
+--- page 6 ---
+• Review complete if required
+Missing items must link to related tab/section.
+================================================== 4. BARRIER / SAFEGUARD REGISTER
+==================================================
+Columns:
+• Barrier number
+• Barrier name
+• Barrier type
+• Barrier category
+• Expected function
+• Demand occurred
+• Performance status
+• Failure status
+• Failure mode
+• Credited IPL Yes/No/Not Determined
+• Related equipment
+• Related chemical
+• Related HAZOP/LOPA/SIF/IPL record
+• Evidence count
+• RCA linked
+• Follow-up required
+• Review status
+• Actions
+Barrier types:
+• Physical containment
+• Process control / BPCS
+• Alarm
+• Interlock
+• SIS / SIF
+• PSV / relief device
+• Mechanical protection
+• Procedure / administrative control
+• PTW / isolation / LOTO
+• Operator response
+• PPE
+• Emergency response
+• Detection system
+• Fire/gas system
+• Environmental containment
+• Training / competency control
+• Other
+6
+--- page 7 ---
+Performance status:
+• Worked as intended
+• Failed
+• Degraded
+• Bypassed
+• Overridden
+• Not available
+• Not demanded
+• Late response
+• Missing
+• Not determined
+Actions:
+• View details
+• Edit
+• Link evidence
+• Link RCA
+• Create follow-up
+• Mark failed/degraded/bypassed
+• Import/link registry record
+• Remove/supersede with permission and reason
+================================================== 5. ADD / EDIT BARRIER DRAWER
+==================================================
+Fields:
+• Barrier name
+• Barrier type
+• Category
+• Expected function
+• Related hazard/scenario
+• Related equipment
+• Related chemical
+• Related timeline event
+• Related evidence
+• Related HAZOP/PHA scenario
+• Related LOPA/IPL record
+• Related SIS/SIF record
+• Related PTW/MOC/PSSR/MI record
+• Demand occurred Yes/No/Unknown
+• Response expected
+• Actual response
+• Performance status
+• Failure mode
+• Failure description
+7
+--- page 8 ---
+• Credited IPL Yes/No/Not Determined
+• Independent Yes/No/Not Determined
+• Effective Yes/No/Not Determined
+• Auditable/maintained Yes/No/Not Determined
+• Proof test / inspection status
+• Bypass/override status
+• Follow-up required
+• Notes
+• Change reason
+Rules:
+• Required fields: name, type, expected function, performance status.
+• If failed/degraded/bypassed, failure mode and description are required.
+• If credited IPL = Yes, link to LOPA/IPL record or require reason.
+• Drawer must be responsive and full-screen on mobile.
+• Save creates audit/history.
+================================================== 6. BARRIER DEMAND & PERFORMANCE PANEL
+==================================================
+Fields:
+• Barrier
+• Was demand placed?
+• Demand time
+• Expected response
+• Actual response
+• Response time
+• Response successful Yes/No
+• Partial response Yes/No
+• Late response Yes/No
+• No response Yes/No
+• Detection occurred Yes/No
+• Operator action required Yes/No
+• Evidence links
+• Notes
+Rules:
+• If demand occurred and barrier did not respond, mark failed.
+• If response was late or partial, mark degraded unless overridden by authorized user with reason.
+• Changes update summary/readiness.
+================================================== 7. FAILURE MODE ANALYSIS PANEL
+==================================================
+8
+--- page 9 ---
+Failure mode categories:
+• Design failure
+• Equipment failure
+• Instrument failure
+• Human error
+• Procedure gap
+• Training/competency gap
+• Maintenance/inspection overdue
+• Proof test/calibration overdue
+• Bypass/override
+• Incorrect setpoint
+• Alarm flood / alarm missed
+• Operator response delayed
+• Management system weakness
+• Missing barrier
+• Wrong barrier selected
+• Not independent
+• Not effective
+• Not auditable
+• Other
+Fields:
+• Failure mode
+• Failure mechanism
+• Immediate cause
+• Contributing cause
+• Related RCA item
+• Evidence support
+• Confidence level
+• Notes
+Rules:
+• Failed barriers must have failure mode.
+• Link to RCA where available.
+• Unsupported failure claims show warning.
+================================================== 8. IPL / LOPA CREDIT CHECK PANEL
+==================================================
+Fields:
+• Barrier
+• Credited IPL Yes/No/Not Determined
+• LOPA scenario
+• IPL type
+9
+--- page 10 ---
+• IPL function
+• IPL independence status
+• IPL effectiveness status
+• IPL auditability/maintenance status
+• PFDavg/credit value if available from LOPA
+• Proof test status
+• Last proof test
+• Bypass status
+• Failure impact
+• LOPA review required Yes/No
+• Notes
+Rules:
+• Do not hardcode IPL/PFD values.
+• Pull approved IPL data from LOPA/IPL Registry if available.
+• If credited IPL failed/degraded/bypassed, generate LOPA review follow-up.
+• If IPL status cannot be confirmed, show Not Determined and require review.
+================================================== 9. SIS / SIF / INTERLOCK PANEL
+==================================================
+Fields:
+• SIS/SIF involved
+• SIF tag/name
+• SIF function
+• Demand occurred
+• SIF response
+• Trip/interlock activated
+• Trip setpoint
+• Bypass/override active
+• Bypass authorized Yes/No
+• Proof test status
+• Last proof test
+• SIF failed/degraded/bypassed
+• SIL impact review required
+• Related SIF/SIL record
+• Evidence links
+• Notes
+Rules:
+• Failed or bypassed SIF triggers SIL/functional safety review follow-up.
+• Proof-test overdue triggers MI/SIL follow-up.
+• Bypass without authorization is critical warning.
+10
+--- page 11 ---
+================================================== 10. PSV / RELIEF DEVICE PANEL
+==================================================
+Fields:
+• PSV/relief device involved
+• PSV tag
+• Protected equipment
+• Demand occurred
+• PSV lifted Yes/No/Unknown
+• PSV failed to lift
+• PSV lifted early/late
+• PSV leak/chatter
+• Set pressure
+• Last inspection/test
+• Inspection overdue
+• Relief path clear Yes/No/Unknown
+• Discharge/flare issue
+• MI follow-up required
+• Evidence links
+• Notes
+Rules:
+• PSV issue triggers Mechanical Integrity follow-up.
+• Inspection/test overdue must show warning.
+• Related equipment data must come from Equipment Registry/MI where available.
+================================================== 11. ALARM / OPERATOR RESPONSE PANEL
+==================================================
+Fields:
+• Alarm/interlock involved
+• Alarm tag
+• Alarm priority
+• Alarm activated
+• Alarm acknowledged
+• Operator response required
+• Operator response time
+• Response according to procedure Yes/No/Unknown
+• Alarm missed/suppressed/flooded
+• Interlock bypassed
+• Alarm management follow-up required
+• Evidence links
+• Notes
+11
+--- page 12 ---
+Rules:
+• Alarm/operator issues may trigger procedure/training/alarm-management follow-up.
+• Link to timeline and evidence.
+• Changes create audit/history.
+================================================== 12. ADMINISTRATIVE / PROCEDURE / PTW
+CONTROL PANEL ==================================================
+Fields:
+• Procedure required
+• Procedure followed
+• Procedure available
+• Procedure current
+• PTW required
+• PTW issued
+• PTW complied with
+• Isolation/LOTO required
+• Isolation completed
+• MOC required
+• MOC completed
+• PSSR required
+• PSSR completed
+• Control failed/missing
+• Evidence links
+• Notes
+Rules:
+• Use PTW/MOC/PSSR/Document Control integrations where available.
+• Missing or outdated procedure creates follow-up.
+• PTW/MOC/PSSR gaps create follow-up/action.
+================================================== 13. PPE / EMERGENCY RESPONSE BARRIER
+PANEL ==================================================
+Fields:
+• PPE required
+• PPE used
+• PPE adequate
+• PPE failed
+• Emergency response required
+• Emergency response activated
+• Emergency response effective
+• Fire/gas detection involved
+• Evacuation/shelter-in-place involved
+12
+--- page 13 ---
+• Decontamination involved
+• Evidence links
+• Notes
+Rules:
+• Align with People/Injury/Exposure and Immediate Actions tabs.
+• PPE/emergency response failure creates follow-up.
+================================================== 14. BOWTIE / BARRIER MAP VISUAL PANEL
+==================================================
+Build a clean visual barrier map.
+Must show:
+• Hazard / top event
+• Preventive barriers
+• Mitigative barriers
+• Failed barriers
+• Degraded barriers
+• Missing barriers
+• Bypassed barriers
+• Worked barriers
+• Evidence markers
+• RCA markers
+• Follow-up markers
+Rules:
+• Use real backend data only.
+• Desktop: visual bowtie/barrier map.
+• Mobile: stacked barrier cards.
+• Dark/light theme must be polished.
+• Clicking a barrier opens detail drawer.
+================================================== 15. EVIDENCE-MAPPED BARRIER PANEL
+==================================================
+Fields:
+• Barrier
+• Evidence
+• Evidence type
+• Evidence status
+• Evidence strength
+• Missing evidence
+• Disputed evidence
+13
+--- page 14 ---
+• Action
+Actions:
+• Link evidence
+• Open evidence
+• Request evidence
+• Mark insufficient
+Rules:
+• Use Evidence/Attachments records.
+• Restricted evidence must be redacted.
+• Mapping/unmapping creates audit/history.
+================================================== 16. RCA LINKAGE PANEL
+==================================================
+Fields:
+• Barrier failure
+• Linked RCA causal factor
+• Linked root cause
+• Link type
+• Evidence support
+• CAPA required
+• Notes
+Actions:
+• Link RCA item
+• Create RCA item if permission allows
+• Open RCA item
+• Unlink with reason
+Rules:
+• Failed barriers should link to RCA unless not required with reason.
+• RCA link changes create audit/history.
+================================================== 17. FOLLOW-UP REQUIREMENTS PANEL
+==================================================
+Backend-generated follow-ups:
+• LOPA review
+• SIL/SIF review
+• Mechanical Integrity inspection
+• PSV test/inspection
+14
+--- page 15 ---
+• Alarm management review
+• Procedure review
+• PTW review
+• MOC review
+• PSSR/restart approval
+• Training/competency action
+• Maintenance/work order
+• CAPA action
+• HAZOP/PHA review
+• Emergency response review
+Fields:
+• Follow-up type
+• Required Yes/No
+• Reason
+• Source rule
+• Linked action
+• Status
+Rules:
+• Use Universal Action Engine for actions.
+• Do not create duplicate action system.
+• Backend generates follow-ups.
+• Follow-ups update Overview and later CAPA tab.
+================================================== 18. BARRIER REVIEW PANEL
+==================================================
+Fields:
+• Review required
+• Reviewer
+• Due date
+• Review status
+• Review comments
+• Approved by
+• Approved at
+• Rejection reason
+• Rework required
+Actions:
+• Request review
+• Approve
+• Reject
+• Reopen
+15
+--- page 16 ---
+• Create action
+Rules:
+• Approval requires readiness checks passed.
+• Review decisions require permission and comment.
+• Audit/history required.
+================================================== 19. CHANGE HISTORY PANEL
+==================================================
+Show read-only history:
+• Changed field
+• Previous value
+• New value
+• Changed by
+• Changed at
+• Reason
+• Related barrier
+• Audit reference
+Rules:
+• Use incident history/audit data.
+• Redact restricted values.
+• No fake history.
+================================================== 20. READINESS / MISSING DATA PANEL
+==================================================
+Backend-generated checklist:
+• Barrier analysis required decision complete
+• All expected barriers checked
+• Failed/missing/bypassed barriers captured
+• Credited IPL status checked
+• SIS/SIF/PSV/alarm involvement checked
+• Failure modes captured
+• Evidence linked
+• RCA links completed where required
+• Follow-ups generated
+• Review complete if required
+• Ready for CAPA / Review
+Missing items must link to section.
+16
+--- page 17 ---
+================================================== BACKEND DATABASE / SQL
+==================================================
+Create separate SQL migration files:
+• supabase/migrations/<timestamp>_incident_barrier_safeguard_tables.sql
+• supabase/migrations/<timestamp>_incident_barrier_safeguard_rls_policies.sql
+• supabase/migrations/<timestamp>_incident_barrier_safeguard_indexes.sql
+• supabase/migrations/<timestamp>_incident_barrier_safeguard_constraints.sql
+Add/fix tables:
+incident_barrier_analysis
+• id
+• company_id
+• site_id
+• incident_id
+• analysis_required
+• required_reason
+• status
+• review_status
+• ready_for_capa
+• created_by
+• updated_by
+• created_at
+• updated_at
+incident_barriers
+• id
+• company_id
+• site_id
+• incident_id
+• barrier_number
+• barrier_name
+• barrier_type
+• category
+• expected_function
+• related_hazard
+• demand_occurred
+• demand_at
+• expected_response
+• actual_response
+• performance_status
+• failure_status
+• failure_mode
+17
+--- page 18 ---
+• failure_description
+• credited_ipl
+• lopa_record_id
+• ipl_record_id
+• sif_record_id
+• equipment_id
+• chemical_id
+• timeline_event_id
+• evidence_ids_json
+• rca_item_ids_json
+• followup_required
+• review_status
+• notes
+• created_by
+• updated_by
+• created_at
+• updated_at
+• deleted_at
+incident_barrier_followups
+• id
+• company_id
+• site_id
+• incident_id
+• barrier_id
+• followup_type
+• required
+• reason
+• source_rule
+• universal_action_id
+• status
+• created_by
+• updated_by
+• created_at
+• updated_at
+incident_barrier_reviews
+• id
+• company_id
+• site_id
+• incident_id
+• status
+• reviewer_id
+• due_date
+• comments
+• approved_by
+18
+--- page 19 ---
+• approved_at
+• rejected_by
+• rejected_at
+• rejection_reason
+• rework_required
+• created_by
+• updated_by
+• created_at
+• updated_at
+Also update/use:
+• incident_history_events
+SQL rules:
+• Include indexes, foreign keys, constraints, RLS/company-site isolation.
+• Include audit/history triggers if project pattern uses DB triggers.
+• Include rollback/down migration if current project supports it.
+• Do not put all SQL in one large file.
+================================================== BACKEND APIs
+==================================================
+Add/fix:
+• GET /incidents/:id/barriers
+• GET /incidents/:id/barriers/summary
+• GET /incidents/:id/barriers/readiness
+• GET /incidents/:id/barriers/register
+• POST /incidents/:id/barriers
+• GET /incidents/:id/barriers/:barrierId
+• PATCH /incidents/:id/barriers/:barrierId
+• DELETE /incidents/:id/barriers/:barrierId
+• POST /incidents/:id/barriers/import-from-lopa
+• POST /incidents/:id/barriers/import-from-hazop
+• POST /incidents/:id/barriers/:barrierId/link-evidence
+• POST /incidents/:id/barriers/:barrierId/link-rca
+• GET /incidents/:id/barriers/demand-performance
+• GET /incidents/:id/barriers/failure-modes
+• GET /incidents/:id/barriers/ipl-lopa-check
+• GET /incidents/:id/barriers/sis-sif
+• GET /incidents/:id/barriers/psv-relief
+• GET /incidents/:id/barriers/alarm-response
+• GET /incidents/:id/barriers/admin-controls
+• GET /incidents/:id/barriers/ppe-emergency
+• GET /incidents/:id/barriers/bowtie-map
+19
+--- page 20 ---
+• GET /incidents/:id/barriers/evidence-mapping
+• GET /incidents/:id/barriers/rca-linkage
+• GET /incidents/:id/barriers/followups
+• POST /incidents/:id/barriers/followups/create-action
+• GET /incidents/:id/barriers/review
+• POST /incidents/:id/barriers/request-review
+• POST /incidents/:id/barriers/approve-review
+• POST /incidents/:id/barriers/reject-review
+• GET /incidents/:id/barriers/history
+• GET /incidents/:id/barriers/context
+Lookups:
+• GET /incidents/:id/lookups/barrier-types
+• GET /incidents/:id/lookups/evidence
+• GET /incidents/:id/lookups/rca-items
+• GET /incidents/:id/lookups/equipment
+• GET /incidents/:id/lookups/chemicals
+• GET /incidents/:id/lookups/hazop
+• GET /incidents/:id/lookups/lopa
+• GET /incidents/:id/lookups/ipls
+• GET /incidents/:id/lookups/sifs
+• GET /incidents/:id/lookups/ptw
+• GET /incidents/:id/lookups/moc
+• GET /incidents/:id/lookups/pssr
+API rules:
+• Enforce company_id/site_id.
+• Enforce permissions.
+• Enforce restricted/confidential redaction.
+• Backend generates summary, readiness, follow-ups, blockers.
+• Every mutation creates audit log and incident history.
+• Errors must be safe and user-readable.
+================================================== BACKEND SERVICES
+==================================================
+Create/update:
+• incident-barrier-safeguard.service.ts
+• incident-barrier-summary.service.ts
+• incident-barrier-register.service.ts
+• incident-barrier-demand-performance.service.ts
+• incident-barrier-failure-mode.service.ts
+• incident-barrier-ipl-lopa.service.ts
+• incident-barrier-sis-sif.service.ts
+20
+--- page 21 ---
+• incident-barrier-psv.service.ts
+• incident-barrier-alarm-response.service.ts
+• incident-barrier-admin-control.service.ts
+• incident-barrier-evidence-mapping.service.ts
+• incident-barrier-rca-linkage.service.ts
+• incident-barrier-followup.service.ts
+• incident-barrier-review.service.ts
+• incident-barrier-history.service.ts
+• incident-barrier-readiness.service.ts
+• incident-hazop-lopa-integration.service.ts
+• incident-universal-action-integration.service.ts
+• incident-permission.service.ts
+• incident-history.service.ts
+• incident-audit-log-integration.service.ts
+• incident-notification.service.ts
+• incident-global-search.service.ts
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Tab:
+• features/incidents/components/detail/BarrierSafeguardFailureTab.tsx
+Components:
+• features/incidents/components/barrier-safeguard-failure/
+BarrierSafeguardHeader.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BarrierSummaryCards.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BarrierAnalysisReadinessPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BarrierSafeguardRegister.tsx
+• features/incidents/components/barrier-safeguard-failure/
+AddEditBarrierDrawer.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BarrierDemandPerformancePanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+FailureModeAnalysisPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+IplLopaCreditCheckPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+SisSifInterlockPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+PsvReliefDevicePanel.tsx
+21
+--- page 22 ---
+• features/incidents/components/barrier-safeguard-failure/
+AlarmOperatorResponsePanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+AdministrativeProcedurePtwPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+PpeEmergencyResponseBarrierPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BowtieBarrierMapPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+EvidenceMappedBarrierPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/RcaLinkagePanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+FollowupRequirementsPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/BarrierReviewPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BarrierChangeHistoryPanel.tsx
+• features/incidents/components/barrier-safeguard-failure/
+BarrierReadinessPanel.tsx
+Shared:
+• features/incidents/components/shared/BarrierTypeBadge.tsx
+• features/incidents/components/shared/BarrierPerformanceBadge.tsx
+• features/incidents/components/shared/BarrierFailureBadge.tsx
+• features/incidents/components/shared/IplCreditBadge.tsx
+• features/incidents/components/shared/SifStatusBadge.tsx
+• features/incidents/components/shared/PsvStatusBadge.tsx
+• features/incidents/components/shared/ReviewStatusBadge.tsx
+• features/incidents/components/shared/ReadinessBadge.tsx
+Hooks:
+• features/incidents/hooks/useIncidentBarriers.ts
+• features/incidents/hooks/useIncidentBarrierSummary.ts
+• features/incidents/hooks/useIncidentBarrierReadiness.ts
+• features/incidents/hooks/useIncidentBarrierRegister.ts
+• features/incidents/hooks/useIncidentBarrierFollowups.ts
+• features/incidents/hooks/useIncidentBarrierReview.ts
+Services:
+• features/incidents/services/incident-barriers.service.ts
+• features/incidents/services/incident-barrier-followups.service.ts
+• features/incidents/services/incident-barrier-review.service.ts
+• features/incidents/services/incident-barrier-lookups.service.ts
+22
+--- page 23 ---
+Schemas:
+• features/incidents/schemas/incident-barrier.schema.ts
+• features/incidents/schemas/incident-barrier-followup.schema.ts
+• features/incidents/schemas/incident-barrier-review.schema.ts
+Types:
+• features/incidents/types/incident-barrier.types.ts
+• features/incidents/types/incident-barrier-followup.types.ts
+• features/incidents/types/incident-barrier-readiness.types.ts
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• incidents.barriers.view
+• incidents.barriers.edit
+• incidents.barriers.delete
+• incidents.barriers.import
+• incidents.barriers.evidence.map
+• incidents.barriers.rca.link
+• incidents.barriers.followups.create
+• incidents.barriers.review.request
+• incidents.barriers.review.approve
+• incidents.barriers.review.reject
+• incidents.barriers.ipl.view
+• incidents.barriers.sis_sif.view
+• incidents.barriers.override
+• incidents.history.view
+• incidents.restricted.view
+• incidents.confidential.view
+Rules:
+• Backend enforces all permissions.
+• Frontend hides unauthorized controls.
+• Disabled controls show exact reason.
+• Overrides require permission and reason.
+================================================== REQUIRED STATES
+==================================================
+Implement:
+• Loading
+23
+--- page 24 ---
+• Empty
+• Error
+• Permission denied
+• Restricted/redacted
+• Read-only closed
+• Saving
+• Save failed
+• Barrier analysis not required
+• Barrier analysis required but not started
+• Missing expected barriers
+• Failed barrier warning
+• Bypassed barrier warning
+• Credited IPL failed warning
+• SIS/SIF failed warning
+• PSV issue warning
+• Alarm/operator response issue
+• Evidence missing
+• RCA link missing
+• Follow-up required
+• Review requested
+• Review approved
+• Review rejected
+• Mobile responsive state
+================================================== UI REQUIREMENTS
+==================================================
+• Nice, clean, professional enterprise UI.
+• Use cards, badges, tables, drawers, warning banners, bowtie/barrier-map visual, evidence mapping,
+readiness checklist, and mini summaries.
+• All UI must use real backend data only.
+• No mock/static data.
+• Dark/light theme must be polished.
+• Desktop: clean multi-column layout.
+• Tablet/mobile: stacked cards and full-screen drawers.
+• Every disabled button must show exact reason.
+• Every panel must be easy to edit/debug because it is separated into its own file.
+================================================== TESTING
+==================================================
+Add tests for:
+• Fetch barrier tab
+• Summary cards
+• Add/edit/delete barrier
+• Import from HAZOP/LOPA/IPL
+• Link evidence
+24
+--- page 25 ---
+• Link RCA
+• Generate follow-ups
+• Create Universal Action
+• Request/approve/reject review
+• Generate readiness
+• Enforce permissions
+• Enforce company_id/site_id isolation
+• Redact restricted/confidential data
+• Create audit log
+• Create incident history event
+• Update Overview/Register
+• Dark/light UI
+• Responsive layout
+================================================== ACCEPTANCE CRITERIA
+==================================================
+Complete only when:
+✓ Barrier / Safeguard Failure tab exists
+✓ Uses real backend data only
+✓ Components are separated in correct folders
+✓ SQL migrations are separated
+✓ Barrier register works
+✓ Add/Edit Barrier drawer works
+✓ Barrier demand/performance works
+✓ Failure mode analysis works
+✓ IPL/LOPA credit check works
+✓ SIS/SIF/interlock panel works
+✓ PSV/relief panel works
+✓ Alarm/operator response panel works
+✓ Administrative/PTW/procedure controls work
+✓ PPE/emergency response barriers work
+25
+--- page 26 ---
+✓ Bowtie/barrier-map visual works
+✓ Evidence mapping works
+✓ RCA linkage works
+✓ Follow-up generation works
+✓ Review/readiness works
+✓ Overview and Dashboard/Register update after changes
+✓ Permissions work
+✓ company_id/site_id isolation works
+✓ Audit/history works
+✓ Dark/light theme works
+✓ Responsive desktop/tablet/mobile layout works
+✓ No mock/static data remains
+Final output: 1. PDF/spec reviewed 2. PDF cross-check completed 3. Files reviewed 4. Files modified/created
+5. SQL migrations separated 6. DB models added/fixed 7. APIs added/fixed 8. Backend services added/fixed
+9. Frontend components separated 10. Barrier/Safeguard tab completed 11. HAZOP/LOPA/IPL/SIF
+integrations connected 12. Follow-up logic connected 13. Permissions connected 14. Audit/history
+connected 15. Overview/Register updates connected 16. Dark/light responsive UI completed 17. Tests
+added/fixed 18. Remaining gaps, if any
+26

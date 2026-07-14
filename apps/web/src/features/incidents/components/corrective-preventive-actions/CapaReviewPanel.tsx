@@ -1,0 +1,3 @@
+import { buttonSecondary } from '../shared/IncidentTabPrimitives';
+import { CapaSimplePanel } from './CapaPanelPrimitives';
+export function CapaReviewPanel({ review, onRequest, onApprove, onReject }: any) { return <div className="grid gap-3"><CapaSimplePanel title="CAPA Review Panel" data={{ status: review?.status, rows: review ? [review] : [] }} empty="No CAPA review request exists." /><div className="flex flex-wrap gap-2"><button className={buttonSecondary} onClick={onRequest}>Request Review</button><button className={buttonSecondary} onClick={onApprove}>Approve</button><button className={buttonSecondary} onClick={onReject}>Reject</button></div></div>; }

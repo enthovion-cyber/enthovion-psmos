@@ -1,0 +1,4 @@
+export function SilRiskCalculationSnapshotPanel({ calculation }: { calculation: any }) {
+  const rows = [['Status', calculation?.calculation_status], ['Version', calculation?.calculation_version], ['Mitigated Frequency', calculation?.mitigated_event_frequency], ['Tolerable Frequency', calculation?.tolerable_frequency], ['Required Additional RRF', calculation?.required_additional_rrf], ['Combined IPL PFDavg', calculation?.combined_ipl_pfdavg], ['Risk Criteria', calculation?.meets_risk_criteria ? 'Met' : 'Gap open']];
+  return <section className="rounded-xl border border-cyan-300/10 bg-[#071525] p-4"><h3 className="font-bold text-white">Risk Calculation Snapshot</h3><div className="mt-3 grid grid-cols-2 gap-3 text-xs">{rows.map(([label, value]) => <div key={label}><div className="text-slate-500">{label}</div><div className="mt-1 font-semibold text-slate-200">{value == null ? 'Unavailable' : String(value)}</div></div>)}</div></section>;
+}

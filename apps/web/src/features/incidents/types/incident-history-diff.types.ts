@@ -1,0 +1,1 @@
+export type IncidentHistoryDiff = { available: boolean; eventId?: string; changedBy?: string; changedAt?: string; reason?: string; rows: Array<{ fieldName: string; previousValue: any; newValue: any }> };
