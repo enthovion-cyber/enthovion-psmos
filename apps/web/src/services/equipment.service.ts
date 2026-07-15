@@ -30,6 +30,7 @@ export type EquipmentAttachment = {
 export type EquipmentNote = {
   id: string;
   authorId?: string | null;
+  authorName?: string | null;
   body: string;
   createdAt: string;
   updatedAt: string;
