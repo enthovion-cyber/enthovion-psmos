@@ -1385,8 +1385,8 @@ export class UsersService {
 
   private async withSeededRoleFallback(user: any) {
     if (user?.id !== 'user_imran_shah' || user?.tenantId !== 'tenant_alkylation' || user.userRoles?.length) return user;
-    const role = await this.db.single<any>(this.db.from('Role').select('*').eq('tenantId', user.tenantId).eq('id', 'role_hse_manager').maybeSingle());
-    return role ? { ...user, userRoles: [{ role }] } : user;
+    const role = await this.db.single<any>(this.db.from('Role').select('*').eq('tenantId', user.tenantId).eq('id', 'role_hse_manager').maybeSingle()).catch(() => null);
+    return role ? { ...user, userRoles: [{ role }] } : { ...user, userRoles: [] };
   }
 
   async permissions(userId: string, tenantId: string) {

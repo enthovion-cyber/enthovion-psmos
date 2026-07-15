@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { SiteGuard } from '../common/guards/site.guard';
 import { PermissionKeys } from '../permissions/constants/permission-keys';
-import { FoundationEntityDto } from './dto/foundation-entity.dto';
+import { FoundationEntityDto, SwitchCompanyDto, SwitchSiteDto } from './dto/foundation-entity.dto';
 import { RlsHealthCheckService } from './rls-health-check.service';
 import { SessionContextRefreshService } from './session-context-refresh.service';
 import { TenantsService } from './tenants.service';
@@ -49,25 +49,25 @@ export class WorkspaceController {
 
   @Post('auth/me/switch-company')
   @Permissions(PermissionKeys.TenantSwitchCompany)
-  switchCompany(@CurrentUser() user: RequestUser, @Body() dto: FoundationEntityDto, @Req() req: RequestLike) {
-    return this.tenants.switchCompany(user, dto.companyId ?? '', this.requestMeta(req));
+  switchCompany(@CurrentUser() user: RequestUser, @Body() dto: SwitchCompanyDto, @Req() req: RequestLike) {
+    return this.tenants.switchCompany(user, dto.companyId, this.requestMeta(req));
   }
 
   @Post('auth/me/select-workspace')
   @Permissions(PermissionKeys.TenantSwitchCompany)
-  selectWorkspace(@CurrentUser() user: RequestUser, @Body() dto: FoundationEntityDto, @Req() req: RequestLike) {
-    return this.tenants.switchCompany(user, dto.companyId ?? '', this.requestMeta(req));
+  selectWorkspace(@CurrentUser() user: RequestUser, @Body() dto: SwitchCompanyDto, @Req() req: RequestLike) {
+    return this.tenants.switchCompany(user, dto.companyId, this.requestMeta(req));
   }
 
   @Post('auth/me/switch-site')
   @Permissions(PermissionKeys.TenantSwitchSite)
-  switchSite(@CurrentUser() user: RequestUser, @Body() dto: FoundationEntityDto, @Req() req: RequestLike) {
+  switchSite(@CurrentUser() user: RequestUser, @Body() dto: SwitchSiteDto, @Req() req: RequestLike) {
     return this.tenants.switchSite(user, dto.siteId ?? null, this.requestMeta(req));
   }
 
   @Post('auth/me/select-site')
   @Permissions(PermissionKeys.TenantSwitchSite)
-  selectSite(@CurrentUser() user: RequestUser, @Body() dto: FoundationEntityDto, @Req() req: RequestLike) {
+  selectSite(@CurrentUser() user: RequestUser, @Body() dto: SwitchSiteDto, @Req() req: RequestLike) {
     return this.tenants.switchSite(user, dto.siteId ?? null, this.requestMeta(req));
   }
 

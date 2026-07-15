@@ -5,7 +5,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    const body = exception instanceof HttpException ? exception.getResponse() : 'Internal server error';
+    const internalMessage = exception instanceof Error ? exception.message : 'Internal server error';
+    const isProduction = process.env.NODE_ENV === 'production';
+    const body = exception instanceof HttpException ? exception.getResponse() : isProduction ? 'Internal server error' : internalMessage;
     if (!(exception instanceof HttpException)) {
       console.error(exception);
     }

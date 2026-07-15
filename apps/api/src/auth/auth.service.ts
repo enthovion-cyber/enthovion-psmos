@@ -35,7 +35,11 @@ export class AuthService {
       await this.securityEvents.record({ tenantId: user.tenantId, userId: user.id, email: normalizedEmail, provider: 'password', eventType: 'DEACTIVATED_USER_LOGIN_BLOCKED', success: false, failureReason: 'Account disabled', ipAddress: meta?.ipAddress, userAgent: meta?.userAgent });
       throw new ForbiddenException('Your account is disabled. Contact your company admin.');
     }
-    const valid = await compare(password, user.passwordHash);
+    if (!user.passwordHash || typeof user.passwordHash !== 'string') {
+      await this.securityEvents.record({ tenantId: user.tenantId, userId: user.id, email: normalizedEmail, provider: 'password', eventType: 'LOGIN_FAILED', success: false, failureReason: 'Password login is not configured for this account', ipAddress: meta?.ipAddress, userAgent: meta?.userAgent });
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+    const valid = await compare(password, user.passwordHash).catch(() => false);
     if (!valid) {
       await this.securityEvents.record({ tenantId: user.tenantId, userId: user.id, email: normalizedEmail, provider: 'password', eventType: 'LOGIN_FAILED', success: false, failureReason: 'Invalid credentials', ipAddress: meta?.ipAddress, userAgent: meta?.userAgent });
       throw new UnauthorizedException('Invalid email or password.');

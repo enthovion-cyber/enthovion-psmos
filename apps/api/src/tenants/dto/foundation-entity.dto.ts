@@ -148,3 +148,14 @@ export class FoundationEntityDto {
   @IsString()
   reason?: string;
 }
+
+export class SwitchCompanyDto {
+  @IsString()
+  companyId!: string;
+}
+
+export class SwitchSiteDto {
+  @IsOptional()
+  @IsString()
+  siteId?: string | null;
+}
