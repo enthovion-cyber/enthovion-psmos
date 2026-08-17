@@ -1,0 +1,6 @@
+import { PsiCard, PsiProgress } from '../shared/PsiUi';
+import type { ElectricalCheck } from '../types/electrical-classification.types';
+
+export function ElectricalCompletenessPanel({ checks, score }: { checks: ElectricalCheck[]; score?: number | null | undefined }) {
+  return <PsiCard title="Completeness / Missing Data" subtitle="Backend-generated readiness covering release source, area details, ventilation, drawings, Ex requirements, PTW controls, rating checks, review, MOC/PSSR blockers, and required evidence."><PsiProgress value={score ?? 0} /><div className="mt-4 grid gap-2">{checks.length ? checks.map((check) => <div key={check.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><div className="flex flex-wrap justify-between gap-2"><p className="font-semibold">{check.check_title}</p><span className={check.status === 'Pass' ? 'text-success' : check.severity === 'Critical' ? 'text-danger' : 'text-warning'}>{check.status}</span></div><p className="text-sm text-[var(--psm-muted)]">{check.message || 'No message supplied.'}</p>{check.pssr_blocker ? <p className="mt-1 text-sm font-semibold text-danger">PSSR blocker</p> : null}</div>) : <p className="text-sm text-[var(--psm-muted)]">Completeness has not been run yet.</p>}</div></PsiCard>;
+}

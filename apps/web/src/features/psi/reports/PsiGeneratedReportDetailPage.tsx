@@ -1,0 +1,1 @@
+export { PsiGeneratedReportDetailPage } from './PsiReportsPanels';

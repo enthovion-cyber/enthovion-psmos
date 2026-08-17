@@ -1,0 +1,1 @@
+export { RegulatoryModuleMappingStatusBadge } from './RegulatoryObligationBadges';

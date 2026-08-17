@@ -1,0 +1,61 @@
+export type ChecklistRow = Record<string, any> & {
+  id: string;
+  checklist_code: string;
+  checklist_title: string;
+  template_type: string;
+  audit_type: string;
+  criticality: string;
+  checklist_status: string;
+  readiness_health: string;
+  version: string;
+  current_version: boolean;
+  ready_for_execution: boolean;
+  sections_count: number;
+  items_count: number;
+  standards_count: number;
+  modules_count: number;
+  mandatory_items: number;
+  safety_critical_items: number;
+};
+export type ChecklistRegister = {
+  rows: ChecklistRow[];
+  total: number;
+  page: number;
+  limit: number;
+  summary: Record<string, number>;
+};
+export type ChecklistDetail = {
+  template: ChecklistRow;
+  scope: Record<string, any>[];
+  standards: Record<string, any>[];
+  modules: Record<string, any>[];
+  sections: Record<string, any>[];
+  items: Record<string, any>[];
+  assignments: Record<string, any>[];
+  versions: Record<string, any>[];
+  reviews: Record<string, any>[];
+  readiness: Record<string, any> | null;
+  history: Record<string, any>[];
+};
+export type ChecklistDashboard = {
+  summary: Record<string, number>;
+  byStatus: Array<{ label: string; value: number }>;
+  bySite: Array<{ label: string; value: number }>;
+  byAuditType: Array<{ label: string; value: number }>;
+  byProgram: Array<{ label: string; value: number }>;
+  configurationGaps: ChecklistRow[];
+  pendingReview: ChecklistRow[];
+  reviewOverdue: ChecklistRow[];
+  recent: ChecklistRow[];
+  safetyCriticalPreview: ChecklistRow[];
+  plansMissingChecklist: Record<string, any>[];
+};
+export type ChecklistContext = {
+  programs: Record<string, any>[];
+  plans: Record<string, any>[];
+  sites: Record<string, any>[];
+  units: Record<string, any>[];
+  areas: Record<string, any>[];
+  users: Record<string, any>[];
+  lookups: Record<string, string[]>;
+};

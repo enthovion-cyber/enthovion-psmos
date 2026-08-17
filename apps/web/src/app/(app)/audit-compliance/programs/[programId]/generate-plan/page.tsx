@@ -1,0 +1,1 @@
+import { AuditPlanGenerateFromProgramPage } from '@/features/audit/plans/AuditPlanGenerateFromProgramPage'; export default function Page({params}:{params:{programId:string}}){return <AuditPlanGenerateFromProgramPage programId={params.programId}/>}

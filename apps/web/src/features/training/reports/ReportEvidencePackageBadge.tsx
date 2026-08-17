@@ -1,0 +1,1 @@
+export { ReportEvidencePackageBadge } from './shared';

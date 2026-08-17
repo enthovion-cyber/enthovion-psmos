@@ -1,0 +1,5 @@
+import { AuditEmptyState } from "../shared/AuditUi";
+export function AuditScoringRuleTable({ rows }: { rows: Record<string, any>[] }) {
+  if (!rows.length) return <AuditEmptyState title="No scoring rules" message="Active models require at least one backend scoring rule before activation." />;
+  return <div className="overflow-x-auto"><table className="min-w-[900px] w-full text-left text-sm"><thead className="border-b border-[var(--psm-line)] text-xs uppercase text-[var(--psm-muted)]"><tr>{["Order","Code","Title","Type","Applies To","Penalty","Cap","Active"].map((h) => <th key={h} className="px-3 py-3">{h}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-b border-[var(--psm-line)]"><td className="px-3 py-3">{row.rule_order}</td><td className="px-3 py-3">{row.rule_code}</td><td className="px-3 py-3">{row.rule_title}</td><td className="px-3 py-3">{row.rule_type}</td><td className="px-3 py-3">{row.applies_to}</td><td className="px-3 py-3">{row.penalty ?? "-"}</td><td className="px-3 py-3">{row.cap_score ?? "-"}</td><td className="px-3 py-3">{row.active ? "Yes" : "No"}</td></tr>)}</tbody></table></div>;
+}

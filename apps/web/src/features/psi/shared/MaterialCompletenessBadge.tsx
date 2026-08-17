@@ -1,0 +1,2 @@
+export { MaterialCompletenessBadge } from './MaterialCompatibilityBadges';
+

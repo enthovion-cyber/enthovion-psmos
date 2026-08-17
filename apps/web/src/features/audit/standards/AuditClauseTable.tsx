@@ -1,0 +1,7 @@
+import Link from "next/link";
+import { AuditEmptyState } from "../shared/AuditUi";
+import { AuditCriticalityBadge } from "../components/shared/AuditCriticalityBadge";
+export function AuditClauseTable({ rows }: { rows: Record<string, any>[] }) {
+  if (!rows.length) return <AuditEmptyState title="No clauses configured" message="Add clauses/obligations to standards to build coverage and traceability." />;
+  return <div className="overflow-x-auto rounded-xl border border-[var(--psm-line)]"><table className="min-w-full divide-y divide-[var(--psm-line)] text-sm"><thead className="bg-[var(--psm-surface-2)]"><tr>{["Clause", "Title", "Category", "Mandatory", "Evidence expectation", "Audit expectation", "Module", "Criticality"].map((head) => <th key={head} className="px-3 py-2 text-left font-semibold text-[var(--psm-muted)]">{head}</th>)}</tr></thead><tbody className="divide-y divide-[var(--psm-line)]">{rows.map((row) => <tr key={row.id}><td className="px-3 py-2"><Link className="font-semibold text-primary" href={`/audit-compliance/standards-mapping/clauses/${row.id}`}>{row.clause_code}</Link></td><td className="px-3 py-2">{row.clause_title}</td><td className="px-3 py-2">{row.requirement_category ?? "—"}</td><td className="px-3 py-2">{row.mandatory ? "Yes" : "No"}</td><td className="px-3 py-2">{row.evidence_expectation ?? "—"}</td><td className="px-3 py-2">{row.audit_expectation ?? "—"}</td><td className="px-3 py-2">{row.linked_module ?? "—"}</td><td className="px-3 py-2"><AuditCriticalityBadge value={row.criticality} /></td></tr>)}</tbody></table></div>;
+}

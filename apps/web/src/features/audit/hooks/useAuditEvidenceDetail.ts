@@ -1,0 +1,1 @@
+export { useAuditEvidenceDetail } from "./useAuditEvidence";

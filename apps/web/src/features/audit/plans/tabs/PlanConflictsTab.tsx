@@ -1,0 +1,1 @@
+import type { AuditPlanDetail } from '../../types/audit-plan.types'; import { AuditPlanConflictPanel } from '../AuditPlanConflictPanel'; export function PlanConflictsTab({detail}:{detail:AuditPlanDetail}){return <AuditPlanConflictPanel rows={detail.conflicts}/>}

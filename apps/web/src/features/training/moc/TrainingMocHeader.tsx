@@ -1,0 +1,5 @@
+import { TrainingButton } from '../shared/TrainingUi';
+
+export function TrainingMocHeader({ title = 'MOC Training Requirements', subtitle = 'Training impact, assignments, evidence, readiness, blockers and waivers tied to Management of Change.' }: { title?: string; subtitle?: string }) {
+  return <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wide text-primary">Training & Competency</p><h1 className="mt-1 text-2xl font-bold text-[var(--psm-fg)]">{title}</h1><p className="mt-2 max-w-4xl text-sm text-[var(--psm-muted)]">{subtitle}</p></div><div className="flex flex-wrap gap-2"><TrainingButton href="/training-competency/moc-training-requirements/new">New Requirement</TrainingButton><TrainingButton href="/training-competency/moc-training-requirements/impact-checks" variant="secondary">Impact Checks</TrainingButton><TrainingButton href="/training-competency/moc-training-requirements/settings" variant="secondary">Settings</TrainingButton></div></header>;
+}

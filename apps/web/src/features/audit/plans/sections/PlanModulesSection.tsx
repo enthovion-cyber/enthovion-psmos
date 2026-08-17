@@ -1,0 +1,1 @@
+import { AuditCard } from '../../shared/AuditUi'; export function PlanModulesSection() { return <AuditCard title="Modules Covered" subtitle="Copied from the selected program and editable after draft creation."><p className="text-sm text-[var(--psm-muted)]">Coverage level, rationale, evidence source, required status and source snapshot are preserved.</p></AuditCard>; }

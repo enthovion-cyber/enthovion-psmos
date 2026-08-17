@@ -1,0 +1,7 @@
+import Link from 'next/link';
+import { MocRequiredBadge, PssrBlockerBadge, SafeguardCompletenessBadge, SafeguardConflictBadge, SafeguardCriticalityBadge, SafeguardTestingStatusBadge, SafeguardTypeBadge } from '../shared/SafeguardBadges';
+import type { SafeguardRow } from '../types/safeguard.types';
+
+export function SafeguardMobileCards({ rows }: { rows: SafeguardRow[] }) {
+  return <div className="space-y-3 lg:hidden">{rows.map((row) => <article key={row.id} className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4"><div className="flex items-start justify-between gap-3"><div><Link className="font-semibold text-primary" href={`/process-safety-information/safeguards/${row.id}`}>{row.safeguard_tag || row.safeguard_title}</Link><p className="text-sm text-[var(--psm-muted)]">{row.unit_id} / {row.equipment_id || 'Unit safeguard'}</p></div><SafeguardCriticalityBadge value={row.criticality} /></div><div className="mt-3 flex flex-wrap gap-2"><SafeguardTypeBadge value={row.safeguard_type} /><SafeguardTestingStatusBadge value={row.testing_status} /><SafeguardCompletenessBadge value={row.completeness_status} score={row.completeness_score} /><SafeguardConflictBadge value={row.conflict_status} /><MocRequiredBadge value={row.moc_update_required} /><PssrBlockerBadge value={row.pssr_blocker} /></div><p className="mt-3 text-sm">{row.hazardLinks?.[0]?.scenario_title ?? 'No hazard/scenario linked yet.'}</p></article>)}</div>;
+}

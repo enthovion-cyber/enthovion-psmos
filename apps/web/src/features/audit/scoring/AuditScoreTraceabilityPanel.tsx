@@ -1,0 +1,2 @@
+import { AuditCard } from "../shared/AuditUi";
+export function AuditScoreTraceabilityPanel({ traceability }: { traceability: Record<string, any> }) { return <AuditCard title="Score Traceability" subtitle="Source record trace, input records, methodology snapshot, rule results, and components."><pre className="max-h-[640px] overflow-auto rounded-lg bg-[var(--psm-surface-2)] p-3 text-xs">{JSON.stringify(traceability ?? {}, null, 2)}</pre></AuditCard>; }

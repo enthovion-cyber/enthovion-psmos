@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { SiteGuard } from '../common/guards/site.guard';
 import { PermissionKeys } from '../permissions/constants/permission-keys';
+import { SupabaseService } from '../database/supabase.service';
 import { ActionCommentDto } from './dto/action-comment.dto';
 import { ActionEvidenceDto } from './dto/action-evidence.dto';
 import { ActionFilterDto } from './dto/action-filter.dto';
@@ -20,7 +21,7 @@ import { ActionsService } from './actions.service';
 @UseGuards(JwtAuthGuard, SiteGuard, PermissionsGuard)
 @Controller('actions')
 export class ActionsController {
-  constructor(private readonly actions: ActionsService) {}
+  constructor(private readonly actions: ActionsService, private readonly db: SupabaseService) {}
 
   @Get()
   @Permissions(PermissionKeys.ActionsRead)
@@ -50,6 +51,30 @@ export class ActionsController {
   @Permissions(PermissionKeys.ActionsEdit)
   runEscalations(@CurrentUser() user: RequestUser) {
     return this.actions.runEscalations(user.tenantId, user.id);
+  }
+
+  @Get(':id/regulatory-links')
+  @Permissions('regulatory.action.view')
+  async regulatoryLinks(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    let query = this.db.from('regulatory_action_links').select('*').eq('company_id', user.tenantId).eq('universal_action_id', id).is('archived_at', null);
+    if (!user.corporateView && user.siteIds.length) query = query.in('site_id', user.siteIds);
+    const rows = await this.db.many<any>(query.order('updated_at', { ascending: false }));
+    return { rows, total: rows.length };
+  }
+
+  @Get(':id/regulatory-source')
+  @Permissions('regulatory.action.view')
+  async regulatorySource(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    const links = await this.regulatoryLinks(user, id);
+    return { actionId: id, sources: links.rows.map((row: any) => ({ id: row.id, sourceType: row.source_type, sourceSnapshot: row.source_snapshot_json, readinessStatus: row.closure_readiness_status })) };
+  }
+
+  @Get(':id/regulatory-readiness')
+  @Permissions('regulatory.action.closure_readiness.view')
+  async regulatoryReadiness(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    const links = await this.regulatoryLinks(user, id);
+    const blockers = links.rows.flatMap((row: any) => row.blockers_json ?? []);
+    return { actionId: id, totalLinks: links.total, status: blockers.length ? 'Blocked' : links.total ? 'Ready for Gap Closure' : 'No Regulatory Link', blockers };
   }
 
   @Get(':id')

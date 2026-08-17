@@ -1,0 +1,1 @@
+export { IplQualificationBadge } from './SafeguardBadges';

@@ -1,0 +1,2 @@
+import { TrainingCard } from '../../shared/TrainingUi';
+export function ProfileScopeTab({ rows }: { rows: Record<string, any>[] }) { return <TrainingCard title="Scope / Applicability">{rows.length ? <div className="grid gap-3 md:grid-cols-2">{rows.map((row) => <pre key={row.id} className="overflow-auto rounded-lg bg-[var(--psm-surface-2)] p-3 text-xs">{JSON.stringify(row, null, 2)}</pre>)}</div> : <p className="text-sm text-[var(--psm-muted)]">No explicit scope rows; backend default company/site scope applies.</p>}</TrainingCard>; }

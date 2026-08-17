@@ -1,0 +1,1 @@
+export { OutOfSyncRegisterPage } from './PsiIntegrationPanels';

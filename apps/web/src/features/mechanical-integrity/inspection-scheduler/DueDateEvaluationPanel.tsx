@@ -1,0 +1,3 @@
+export function DueDateEvaluationPanel({ rows }: { rows: Array<Record<string, unknown>> }) {
+  return <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4"><h2 className="font-bold text-[var(--psm-text)]">Due Date Evaluations</h2><div className="mt-3 space-y-2">{rows.length ? rows.map((row) => <div key={String(row.id)} className="rounded-lg border border-[var(--psm-line)] p-3 text-sm text-[var(--psm-text)]">{String(row.evaluation_time ?? '')}: {String(row.final_next_due_date ?? 'No due date')} - {String(row.final_due_basis ?? row.scheduler_error ?? '')}</div>) : <div className="text-sm text-[var(--psm-muted)]">No evaluations yet.</div>}</div></div>;
+}

@@ -1,0 +1,53 @@
+-- Mechanical Integrity Phase 1 - core equipment foundation tables.
+
+create table if not exists public.mi_equipment (
+  id text primary key default gen_random_uuid()::text,
+  tenant_id text not null,
+  company_id text not null,
+  site_id text not null,
+  department_id text null,
+  unit_id text null,
+  area_id text null,
+  parent_equipment_id text null,
+  equipment_tag text not null,
+  equipment_name text not null,
+  description text null,
+  equipment_type_id text null,
+  equipment_type_key text not null,
+  equipment_category text null,
+  equipment_system text null,
+  manufacturer text null,
+  model text null,
+  serial_number text null,
+  asset_number text null,
+  installation_date date null,
+  commissioning_date date null,
+  status text not null default 'Draft',
+  owner_department_id text null,
+  custodian_user_id text null,
+  created_by text null,
+  updated_by text null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  archived_at timestamptz null,
+  archived_by text null,
+  archive_reason text null,
+  constraint mi_equipment_tag_unique unique (company_id, site_id, equipment_tag)
+);
+
+create table if not exists public.mi_equipment_types (
+  id text primary key default gen_random_uuid()::text,
+  company_id text null,
+  type_key text not null,
+  type_name text not null,
+  category text null,
+  description text null,
+  default_inspection_required boolean not null default false,
+  default_pm_required boolean not null default false,
+  default_calibration_required boolean not null default false,
+  safety_critical_default boolean not null default false,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint mi_equipment_types_unique unique (company_id, type_key)
+);

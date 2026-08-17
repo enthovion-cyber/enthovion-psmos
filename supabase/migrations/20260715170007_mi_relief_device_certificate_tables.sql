@@ -1,0 +1,21 @@
+create table if not exists public.mi_relief_device_certificates (
+  id text primary key default gen_random_uuid()::text,
+  company_id text not null,
+  site_id text not null,
+  relief_device_id text not null references public.mi_relief_devices(id) on delete cascade,
+  test_id text references public.mi_relief_device_tests(id) on delete set null,
+  document_id text,
+  file_id text,
+  certificate_type text,
+  certificate_number text,
+  issued_by text,
+  issued_at date,
+  expiry_date date,
+  status text not null default 'Linked',
+  title text,
+  document_snapshot_json jsonb not null default '{}'::jsonb,
+  linked_by text,
+  linked_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);

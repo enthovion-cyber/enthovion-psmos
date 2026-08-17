@@ -1,0 +1,1 @@
+import { z } from 'zod'; export const auditPlanStandardSchema=z.object({standardName:z.string().min(1),jurisdiction:z.string().optional(),clauseReference:z.string().optional(),applicability:z.string().optional(),mandatory:z.boolean().default(true),evidenceExpectation:z.string().optional(),notes:z.string().optional()});

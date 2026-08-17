@@ -1,0 +1,1 @@
+export const auditProgramScopeFields = ['scope_type', 'site_scope_id', 'unit_id', 'area_id', 'department_id', 'equipment_id', 'process_system', 'worker_role_scope', 'contractor_company_id', 'scope_description', 'exclusions', 'scope_justification'];

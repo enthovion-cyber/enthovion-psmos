@@ -1,0 +1,1 @@
+export const auditProgramFrequencyFields = ['audit_frequency', 'frequency_interval', 'planned_start_month', 'next_planned_audit_date', 'review_frequency', 'next_program_review_due', 'audit_duration_estimate_days', 'grace_period_days', 'notes'];

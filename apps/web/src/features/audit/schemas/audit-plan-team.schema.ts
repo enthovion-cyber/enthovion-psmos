@@ -1,0 +1,1 @@
+import { z } from 'zod'; export const auditPlanTeamSchema=z.object({userId:z.string().min(1),teamRole:z.string().min(1),responsibility:z.string().optional(),required:z.boolean().default(false),qualificationStatus:z.string().optional(),availabilityStatus:z.string().optional(),notes:z.string().optional()});

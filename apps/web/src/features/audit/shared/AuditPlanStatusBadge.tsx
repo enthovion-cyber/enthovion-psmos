@@ -1,0 +1,1 @@
+import { AuditBadge } from './AuditUi'; export function AuditPlanStatusBadge({ value }: { value: string }) { return <AuditBadge tone={['Scheduled','Approved','Ready For Checklist'].includes(value) ? 'good' : ['Cancelled','Archived','Overdue'].includes(value) ? 'danger' : ['Pending Approval','Postponed'].includes(value) ? 'warn' : 'neutral'}>{value}</AuditBadge>; }

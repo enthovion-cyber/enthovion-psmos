@@ -27,6 +27,7 @@ export class SupabaseService implements OnModuleInit {
     return this.client.from(table);
   }
 
+  async single<T>(query: PromiseLike<any>, message?: string): Promise<T>;
   async single<T>(query: PromiseLike<any>, message = 'Record not found') {
     try {
       const { data, error } = await query;

@@ -1,0 +1,2 @@
+export const inspectionSchedulingModes = ['Fixed calendar interval', 'Runtime/hour-based interval foundation', 'Cycle/count-based interval foundation', 'Remaining-life based', 'Half-life rule based', 'Company/site rule based', 'RBI/risk based foundation', 'Manual due date override', 'One-time inspection', 'Event-triggered inspection foundation'];
+export const inspectionFrequencyUnits = ['Days', 'Weeks', 'Months', 'Years', 'Operating hours foundation', 'Cycles foundation', 'Campaigns/batches foundation'];

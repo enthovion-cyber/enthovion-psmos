@@ -1,0 +1,1 @@
+export const trainingMatrixSettingsFields = ['default_expiry_warning_days', 'default_grace_period_days', 'auto_evaluate_on_worker_change', 'auto_evaluate_on_rule_change', 'block_ptw_on_required_training_gap', 'block_moc_on_required_training_gap', 'block_pssr_on_required_training_gap'] as const;

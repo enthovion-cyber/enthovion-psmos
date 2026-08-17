@@ -1,0 +1,2 @@
+export { MaterialConflictBadge } from './MaterialCompatibilityBadges';
+

@@ -1,0 +1,1 @@
+import { AuditBadge } from './AuditUi'; export function AuditScheduleStatusBadge({ value }: { value: string }) { return <AuditBadge tone={value === 'Overdue' ? 'danger' : ['Due Soon','Due Today'].includes(value) ? 'warn' : ['Upcoming','Scheduled'].includes(value) ? 'good' : 'neutral'}>{value}</AuditBadge>; }

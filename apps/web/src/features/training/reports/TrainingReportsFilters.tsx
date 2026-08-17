@@ -1,0 +1,1 @@
+export { TrainingReportsFilters } from './shared';

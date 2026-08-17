@@ -1,0 +1,1 @@
+export const inspectionScopeBooleanFields = ['internalInspectionRequired', 'externalInspectionRequired', 'onlineInspectionAllowed', 'shutdownRequired', 'entryRequired', 'confinedSpaceRequired', 'isolationRequired', 'ptwRequired', 'lotoRequired', 'ndtRequired', 'scaffoldingRequired', 'insulationRemovalRequired', 'cleaningRequired'];

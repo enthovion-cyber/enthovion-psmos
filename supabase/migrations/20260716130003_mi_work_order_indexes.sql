@@ -1,0 +1,14 @@
+create index if not exists mi_work_orders_company_site_idx on public.mi_work_orders(company_id, site_id);
+create index if not exists mi_work_orders_equipment_idx on public.mi_work_orders(company_id, site_id, equipment_id);
+create index if not exists mi_work_orders_status_idx on public.mi_work_orders(company_id, site_id, status);
+create index if not exists mi_work_orders_due_idx on public.mi_work_orders(company_id, site_id, due_date);
+create index if not exists mi_work_orders_safety_idx on public.mi_work_orders(company_id, site_id, safety_critical_work, psm_critical_work);
+create index if not exists mi_work_orders_source_idx on public.mi_work_orders(company_id, site_id, source_module, source_record_id);
+create index if not exists mi_work_order_tasks_work_order_idx on public.mi_work_order_tasks(work_order_id, sort_order);
+create index if not exists mi_work_order_parts_work_order_idx on public.mi_work_order_parts(work_order_id);
+create index if not exists mi_work_order_execution_logs_work_order_idx on public.mi_work_order_execution_logs(work_order_id, logged_at desc);
+create index if not exists mi_work_order_verifications_work_order_idx on public.mi_work_order_verifications(work_order_id, created_at desc);
+create index if not exists mi_work_order_linked_records_work_order_idx on public.mi_work_order_linked_records(work_order_id);
+create index if not exists mi_work_order_action_links_work_order_idx on public.mi_work_order_action_links(work_order_id);
+create index if not exists mi_work_order_approvals_work_order_idx on public.mi_work_order_approvals(work_order_id, acted_at desc);
+create index if not exists mi_work_order_history_events_work_order_idx on public.mi_work_order_history_events(work_order_id, created_at desc);

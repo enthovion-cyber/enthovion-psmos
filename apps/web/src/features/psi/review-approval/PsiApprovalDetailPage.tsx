@@ -1,0 +1,1 @@
+export { PsiApprovalDetailPage } from './PsiReviewApprovalPanels';

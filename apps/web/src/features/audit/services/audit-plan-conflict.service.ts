@@ -1,0 +1,2 @@
+import { get, post } from './audit-api';
+export const auditPlanConflictService = { get: (id: string) => get<Record<string, any>[]>(`/audit-compliance/plans/${id}/conflicts`), detect: (id: string) => post<Record<string, any>[]>(`/audit-compliance/plans/${id}/conflicts/detect`), resolve: (id: string, conflictId: string, reason: string) => post(`/audit-compliance/plans/${id}/conflicts/${conflictId}/resolve`, { reason }), override: (id: string, conflictId: string, reason: string) => post(`/audit-compliance/plans/${id}/conflicts/${conflictId}/override`, { reason }) };

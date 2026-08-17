@@ -1,0 +1,2 @@
+import { TrainingCard } from '../shared/TrainingUi';
+export function ProfileAssignmentDialog() { return <TrainingCard title="Assign Profile Dialog" subtitle="Uses backend assignment API and worker/profile scope validation."><p className="text-sm text-[var(--psm-muted)]">Select Worker, Competency Profile, Site/unit/area scope, assignment reason/source, effective date, expiry/review date, primary profile, status, and notes. Mutations are backend-audited and trigger competency evaluation.</p></TrainingCard>; }

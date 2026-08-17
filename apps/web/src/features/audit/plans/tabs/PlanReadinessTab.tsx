@@ -1,0 +1,1 @@
+import type { AuditPlanDetail } from '../../types/audit-plan.types'; import { AuditPlanReadinessPanel } from '../AuditPlanReadinessPanel'; export function PlanReadinessTab({detail}:{detail:AuditPlanDetail}){return <AuditPlanReadinessPanel checks={detail.readinessChecks}/>}

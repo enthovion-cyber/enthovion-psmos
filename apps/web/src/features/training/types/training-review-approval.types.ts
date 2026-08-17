@@ -1,0 +1,34 @@
+export type TrainingApprovalRow = Record<string, any>;
+export type TrainingApprovalPaged<T = TrainingApprovalRow> = { rows: T[]; total: number; page: number; limit: number; lastUpdated?: string };
+export type TrainingApprovalDashboard = {
+  header?: { title?: string; subtitle?: string; lastUpdated?: string };
+  summary?: Record<string, any>;
+  inboxPreview?: TrainingApprovalRow[];
+  overduePreview?: TrainingApprovalRow[];
+  pendingByModule?: Array<{ label: string; count: number }>;
+  overdueByReviewer?: Array<{ label: string; count: number }>;
+  safetyCriticalPending?: TrainingApprovalRow[];
+  waiverApprovals?: TrainingApprovalRow[];
+  ptwAuthorizationApprovals?: TrainingApprovalRow[];
+  staleApprovalPackages?: TrainingApprovalRow[];
+  validationFailurePreview?: TrainingApprovalRow[];
+  recentApprovals?: TrainingApprovalRow[];
+  recentRejectionsReturns?: TrainingApprovalRow[];
+  approvalWorkloadByRole?: Array<{ label: string; count: number }>;
+  slaPerformance?: Array<{ label: string; count: number }>;
+  rulesPreview?: TrainingApprovalRow[];
+  escalationsPreview?: TrainingApprovalRow[];
+};
+export type TrainingApprovalPackageDetail = {
+  request: TrainingApprovalRow;
+  stages: TrainingApprovalRow[];
+  participants: TrainingApprovalRow[];
+  decisions: TrainingApprovalRow[];
+  comments: TrainingApprovalRow[];
+  validations: TrainingApprovalRow[];
+  evidence: TrainingApprovalRow[];
+  esignatures: TrainingApprovalRow[];
+  escalations: TrainingApprovalRow[];
+  history: TrainingApprovalRow[];
+  actions?: Array<{ key: string; label: string; enabled: boolean; disabledReason?: string | null }>;
+};

@@ -1,0 +1,1 @@
+export { PsiReportFilesPanel } from './PsiReportsPanels';

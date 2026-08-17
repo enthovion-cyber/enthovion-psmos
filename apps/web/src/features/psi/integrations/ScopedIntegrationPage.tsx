@@ -1,0 +1,1 @@
+export { ScopedIntegrationPage } from './PsiIntegrationPanels';

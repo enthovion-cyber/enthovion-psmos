@@ -1,0 +1,2 @@
+export { CompatibilityRatingBadge } from './MaterialCompatibilityBadges';
+

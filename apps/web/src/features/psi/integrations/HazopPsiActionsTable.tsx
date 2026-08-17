@@ -1,0 +1,1 @@
+export { HazopPsiActionsTable } from './PsiIntegrationPanels';

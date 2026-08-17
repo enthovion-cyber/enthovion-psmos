@@ -1,0 +1,1 @@
+import { z } from 'zod'; export const auditPlanModuleSchema=z.object({moduleKey:z.string().min(1),moduleName:z.string().min(1),coverageLevel:z.string().min(1),coverageReason:z.string().optional(),evidenceSource:z.string().optional(),required:z.boolean().default(true),notes:z.string().optional()});

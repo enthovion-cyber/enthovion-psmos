@@ -1,0 +1,33 @@
+import { get, patch, post, remove } from "./audit-api";
+import type { AuditScoreRegister, AuditScoreRunDetail, AuditScoringContext, AuditScoringDashboard } from "../types/audit-scoring.types";
+
+export const auditScoringService = {
+  dashboard: (params?: Record<string, unknown>) => get<AuditScoringDashboard>("/audit-compliance/scoring/dashboard", params),
+  register: (params?: Record<string, unknown>) => get<AuditScoreRegister>("/audit-compliance/scoring", params),
+  runs: (params?: Record<string, unknown>) => get<AuditScoreRegister>("/audit-compliance/scoring/runs", params),
+  context: () => get<AuditScoringContext>("/audit-compliance/scoring/context"),
+  settings: (siteId?: string) => get<Record<string, any>>("/audit-compliance/scoring/settings", siteId ? { siteId } : undefined),
+  updateSettings: (payload: Record<string, unknown>) => patch<Record<string, any>>("/audit-compliance/scoring/settings", payload),
+  createRun: (payload: Record<string, unknown>) => post<AuditScoreRunDetail>("/audit-compliance/scoring/runs", payload),
+  detail: (runId: string) => get<AuditScoreRunDetail>(`/audit-compliance/scoring/runs/${runId}`),
+  recalculate: (runId: string) => post<AuditScoreRunDetail>(`/audit-compliance/scoring/runs/${runId}/recalculate`),
+  transition: (runId: string, action: "verify" | "lock" | "unlock" | "archive", payload?: Record<string, unknown>) => post<AuditScoreRunDetail>(`/audit-compliance/scoring/runs/${runId}/${action}`, payload),
+  inputSnapshot: (runId: string) => get<Record<string, any>>(`/audit-compliance/scoring/runs/${runId}/input-snapshot`),
+  results: (runId: string) => get<Record<string, any>>(`/audit-compliance/scoring/runs/${runId}/results`),
+  explainability: (runId: string) => get<Record<string, any>>(`/audit-compliance/scoring/runs/${runId}/explainability`),
+  traceability: (runId: string) => get<Record<string, any>>(`/audit-compliance/scoring/runs/${runId}/traceability`),
+  history: (params?: Record<string, unknown>) => get<AuditScoreRegister>("/audit-compliance/scoring/history", params),
+  models: (params?: Record<string, unknown>) => get<AuditScoreRegister>("/audit-compliance/scoring/models", params),
+  modelDetail: (modelId: string) => get<Record<string, any>>(`/audit-compliance/scoring/models/${modelId}`),
+  saveModel: (payload: Record<string, unknown>, id?: string) => id ? patch<Record<string, any>>(`/audit-compliance/scoring/models/${id}`, payload) : post<Record<string, any>>("/audit-compliance/scoring/models", payload),
+  modelTransition: (id: string, action: "activate" | "create-version" | "archive", payload?: Record<string, unknown>) => post<Record<string, any>>(`/audit-compliance/scoring/models/${id}/${action}`, payload),
+  rules: (modelId: string) => get<AuditScoreRegister>(`/audit-compliance/scoring/models/${modelId}/rules`),
+  saveRule: (modelId: string, payload: Record<string, unknown>, ruleId?: string) => ruleId ? patch<AuditScoreRegister>(`/audit-compliance/scoring/models/${modelId}/rules/${ruleId}`, payload) : post<AuditScoreRegister>(`/audit-compliance/scoring/models/${modelId}/rules`, payload),
+  removeRule: (modelId: string, ruleId: string, reason: string) => remove<AuditScoreRegister>(`/audit-compliance/scoring/models/${modelId}/rules/${ruleId}`, { reason }),
+  adjustments: (runId: string) => get<AuditScoreRegister>(`/audit-compliance/scoring/runs/${runId}/adjustments`),
+  createAdjustment: (runId: string, payload: Record<string, unknown>) => post<AuditScoreRunDetail>(`/audit-compliance/scoring/runs/${runId}/adjustments`, payload),
+  adjustmentTransition: (runId: string, adjustmentId: string, action: "approve" | "reject" | "remove", payload?: Record<string, unknown>) => post<AuditScoreRunDetail>(`/audit-compliance/scoring/runs/${runId}/adjustments/${adjustmentId}/${action}`, payload),
+  source: (path: string, params?: Record<string, unknown>) => get<AuditScoreRegister>(`/audit-compliance/${path}/scoring`, params),
+  sourceRun: (path: string, payload?: Record<string, unknown>) => post<AuditScoreRunDetail>(`/audit-compliance/${path}/scoring/run`, payload),
+  impact: (path: string) => get<Record<string, any>>(`/audit-compliance/${path}/scoring-impact`),
+};

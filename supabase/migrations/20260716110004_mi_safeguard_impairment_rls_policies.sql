@@ -1,0 +1,28 @@
+alter table public.mi_safeguard_impairments enable row level security;
+alter table public.mi_safeguard_impairment_approvals enable row level security;
+alter table public.mi_safeguard_impairment_extensions enable row level security;
+alter table public.mi_safeguard_impairment_restorations enable row level security;
+alter table public.mi_safeguard_impairment_linked_records enable row level security;
+alter table public.mi_safeguard_impairment_notifications enable row level security;
+alter table public.mi_safeguard_impairment_history_events enable row level security;
+alter table public.mi_safeguard_impairment_import_jobs enable row level security;
+alter table public.mi_safeguard_impairment_import_rows enable row level security;
+
+drop policy if exists "service_role_all_mi_safeguard_impairments" on public.mi_safeguard_impairments;
+create policy "service_role_all_mi_safeguard_impairments" on public.mi_safeguard_impairments for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_approvals" on public.mi_safeguard_impairment_approvals;
+create policy "service_role_all_mi_safeguard_impairment_approvals" on public.mi_safeguard_impairment_approvals for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_extensions" on public.mi_safeguard_impairment_extensions;
+create policy "service_role_all_mi_safeguard_impairment_extensions" on public.mi_safeguard_impairment_extensions for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_restorations" on public.mi_safeguard_impairment_restorations;
+create policy "service_role_all_mi_safeguard_impairment_restorations" on public.mi_safeguard_impairment_restorations for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_linked_records" on public.mi_safeguard_impairment_linked_records;
+create policy "service_role_all_mi_safeguard_impairment_linked_records" on public.mi_safeguard_impairment_linked_records for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_notifications" on public.mi_safeguard_impairment_notifications;
+create policy "service_role_all_mi_safeguard_impairment_notifications" on public.mi_safeguard_impairment_notifications for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_history_events" on public.mi_safeguard_impairment_history_events;
+create policy "service_role_all_mi_safeguard_impairment_history_events" on public.mi_safeguard_impairment_history_events for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_import_jobs" on public.mi_safeguard_impairment_import_jobs;
+create policy "service_role_all_mi_safeguard_impairment_import_jobs" on public.mi_safeguard_impairment_import_jobs for all to service_role using (true) with check (true);
+drop policy if exists "service_role_all_mi_safeguard_impairment_import_rows" on public.mi_safeguard_impairment_import_rows;
+create policy "service_role_all_mi_safeguard_impairment_import_rows" on public.mi_safeguard_impairment_import_rows for all to service_role using (true) with check (true);

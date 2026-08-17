@@ -1,0 +1,8 @@
+import { SdsStatusBadge } from '../../shared/SdsStatusBadge';
+import { PsiCard, PsiEmptyState } from '../../shared/PsiUi';
+import type { PsiChemicalDetail } from '../../types/psi-chemical.types';
+
+export function ChemicalSdsTab({ detail }: { detail: PsiChemicalDetail }) {
+  return <PsiCard title="SDS Records" subtitle="Linked SDS Library / Document Control records and waiver status.">{detail.sdsLinks.length ? <div className="space-y-3">{detail.sdsLinks.map((link) => <div key={link.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{link.sds_id ?? link.document_id ?? 'SDS waiver / manual reference'}</p><SdsStatusBadge status={link.sds_status} /></div><dl className="mt-3 grid gap-2 text-sm md:grid-cols-4"><Item label="Version" value={link.sds_version} /><Item label="Issue date" value={link.sds_issue_date} /><Item label="Expiry/review" value={link.sds_expiry_date} /><Item label="Supplier" value={link.supplier_name} /><Item label="Manufacturer" value={link.manufacturer_name} /><Item label="Language" value={link.language} /><Item label="Jurisdiction" value={link.jurisdiction} /><Item label="Waiver reason" value={link.waiver_reason} /></dl></div>)}</div> : <PsiEmptyState title="SDS missing" message="No active SDS link or approved waiver exists. Missing SDS affects PSI completeness and may become a PSSR blocker for high-hazard chemicals." />}</PsiCard>;
+}
+function Item({ label, value }: { label: string; value?: unknown }) { return <div><dt className="text-[var(--psm-muted)]">{label}</dt><dd>{String(value ?? '-')}</dd></div>; }

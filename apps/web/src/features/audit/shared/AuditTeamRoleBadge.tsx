@@ -1,0 +1,1 @@
+import { AuditBadge } from './AuditUi'; export function AuditTeamRoleBadge({ value }: { value: string }) { return <AuditBadge tone={value === 'Lead Auditor' ? 'info' : 'neutral'}>{value}</AuditBadge>; }

@@ -57,6 +57,8 @@ const iconByModule: Record<string, LucideIcon> = {
   hazop: ShieldAlert,
   lopa: Shield,
   incidents: AlertTriangle,
+  mechanical_integrity: Wrench,
+  psi: FileCheck2,
   equipment: ShieldCheck,
   documents: FileText,
   actions: Gauge,
@@ -72,6 +74,7 @@ const iconByModule: Record<string, LucideIcon> = {
   area: ClipboardList,
   workflows: GitBranch,
   training: GraduationCap,
+  regulatory: FileCheck2,
   audit: FileCheck2,
   reports: FileCheck2,
   signature: FileCheck2

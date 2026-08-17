@@ -1,0 +1,3 @@
+import { TrainingMetricCard } from '../shared/TrainingUi';
+const workerCards = [['Total Evaluations','totalEvaluations'],['Competent','competent','good'],['Missing Evidence','missingEvidence','danger'],['Pending Verification','pendingVerification','warn'],['Open Gaps','openGaps','danger'],['PTW Blockers','ptwBlockers','danger'],['MOC Blockers','mocBlockers','danger'],['PSSR Blockers','pssrBlockers','danger']] as const;
+export function WorkerCompetencySummaryCards({ summary = {} }: { summary?: Record<string, any> }) { return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{workerCards.map(([label, key, tone]) => <TrainingMetricCard key={key} label={label} value={summary[key] ?? 0} tone={(tone as any) ?? 'neutral'} />)}</div>; }

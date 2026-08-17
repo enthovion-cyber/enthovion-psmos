@@ -1,0 +1,1 @@
+export { useMocPsiImpact } from './usePsiIntegrations';

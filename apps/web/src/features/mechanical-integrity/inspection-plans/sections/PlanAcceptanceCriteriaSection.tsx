@@ -1,0 +1,12 @@
+import type { PlanSectionProps } from '../../types/inspection-plan.types';
+
+export function PlanAcceptanceCriteriaSection({ value, onChange }: PlanSectionProps) {
+  const add = () => onChange({ acceptanceCriteria: [...value.acceptanceCriteria, { criterionType: 'Minimum acceptable thickness', criterionKey: '', operator: '>=', valueNumeric: '', unit: 'mm' }] });
+  const update = (index: number, patch: Record<string, unknown>) => onChange({ acceptanceCriteria: value.acceptanceCriteria.map((item, i) => i === index ? { ...item, ...patch } : item) });
+  return (
+    <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4">
+      <div className="flex items-center justify-between"><h2 className="font-bold text-[var(--psm-text)]">Acceptance Criteria</h2><button type="button" onClick={add} className="rounded-lg border border-[var(--psm-line)] px-3 py-1.5 text-sm font-semibold text-[var(--psm-text)]">Add criterion</button></div>
+      <div className="mt-3 space-y-3">{value.acceptanceCriteria.map((item, index) => <div key={index} className="grid gap-2 rounded-lg border border-[var(--psm-line)] p-3 md:grid-cols-5"><input value={String(item.criterionType ?? '')} onChange={(e) => update(index, { criterionType: e.target.value })} placeholder="Criterion type" className="rounded border border-[var(--psm-line)] bg-transparent px-2 py-1 text-[var(--psm-text)]" /><input value={String(item.criterionKey ?? '')} onChange={(e) => update(index, { criterionKey: e.target.value })} placeholder="Criterion key" className="rounded border border-[var(--psm-line)] bg-transparent px-2 py-1 text-[var(--psm-text)]" /><input value={String(item.operator ?? '')} onChange={(e) => update(index, { operator: e.target.value })} placeholder="Operator" className="rounded border border-[var(--psm-line)] bg-transparent px-2 py-1 text-[var(--psm-text)]" /><input value={String(item.valueNumeric ?? item.valueText ?? '')} onChange={(e) => update(index, { valueNumeric: e.target.value })} placeholder="Value" className="rounded border border-[var(--psm-line)] bg-transparent px-2 py-1 text-[var(--psm-text)]" /><label className="flex items-center gap-2 text-sm text-[var(--psm-text)]"><input type="checkbox" checked={!!item.createDeficiencyOnFail} onChange={(e) => update(index, { createDeficiencyOnFail: e.target.checked })} /> Create deficiency</label></div>)}</div>
+    </section>
+  );
+}

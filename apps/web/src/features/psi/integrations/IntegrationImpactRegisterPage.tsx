@@ -1,0 +1,1 @@
+export { IntegrationImpactRegisterPage } from './PsiIntegrationPanels';

@@ -1,0 +1,6 @@
+import { MocTrainingReadinessStatusBadge } from '../../shared/MocTrainingReadinessStatusBadge';
+import { RowsPanel, SimpleTable, valueText } from '../MocTrainingPanelPrimitives';
+
+export function MocTrainingReadinessTab({ rows = [] }: { rows?: any[] | undefined }) {
+  return <RowsPanel title="Readiness Checks" subtitle="Backend readiness for MOC implementation, startup and closure blocking." rows={rows} emptyTitle="No readiness checks" emptyMessage="Run readiness to generate implementation, closure and startup blocker state.">{(items) => <SimpleTable rows={items} columns={[{ key: 'readiness_status', label: 'Readiness', render: (row) => <MocTrainingReadinessStatusBadge status={row.readiness_status} /> }, { key: 'implementation_ready', label: 'Implementation Ready', render: (row) => valueText(row.implementation_ready) }, { key: 'closure_ready', label: 'Closure Ready', render: (row) => valueText(row.closure_ready) }, { key: 'startup_ready', label: 'Startup Ready', render: (row) => valueText(row.startup_ready) }, { key: 'blockers_json', label: 'Blockers', render: (row) => Array.isArray(row.blockers_json) ? row.blockers_json.length : valueText(row.blockers_json) }, { key: 'evaluated_at', label: 'Evaluated' }]} />}</RowsPanel>;
+}

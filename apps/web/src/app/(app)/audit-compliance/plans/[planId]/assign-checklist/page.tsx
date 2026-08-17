@@ -1,0 +1,1 @@
+import{AuditChecklistAssignToPlanPage}from'@/features/audit/checklists/AuditChecklistAssignToPlanPage';export default function Page({params}:{params:{planId:string}}){return<AuditChecklistAssignToPlanPage planId={params.planId}/>}

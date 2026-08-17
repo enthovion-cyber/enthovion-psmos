@@ -1,0 +1,1 @@
+import { AuditPlanDetailPage } from '@/features/audit/plans/AuditPlanDetailPage'; export default function Page({params}:{params:{planId:string}}){return <AuditPlanDetailPage planId={params.planId} tab="program-link"/>}

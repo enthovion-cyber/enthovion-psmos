@@ -1,0 +1,5 @@
+import { AuditCard, AuditEmptyState } from "../shared/AuditUi";
+import { AuditReportReadinessBadge } from "../shared/AuditReportReadinessBadge";
+export function AuditReportValidationPanel({ readiness, validation }: { readiness: { status: string; blockers: Array<{ title: string; message: string; severity: string }> }; validation: Record<string, unknown>[] }) {
+  return <AuditCard title="Report Readiness / Blockers Panel" subtitle="Backend-generated checks block lock/export when required."><div className="mb-3"><AuditReportReadinessBadge status={readiness.status} /></div>{readiness.blockers.length ? <ul className="space-y-2 text-sm">{readiness.blockers.map((b) => <li key={b.title} className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3"><b>{b.title}</b><p>{b.message}</p></li>)}</ul> : validation.length ? <pre className="max-h-72 overflow-auto rounded-lg bg-[var(--psm-surface-2)] p-4 text-xs">{JSON.stringify(validation, null, 2)}</pre> : <AuditEmptyState title="No blockers" message="No backend validation blockers are visible." />}</AuditCard>;
+}

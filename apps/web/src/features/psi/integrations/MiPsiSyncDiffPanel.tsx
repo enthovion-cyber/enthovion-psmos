@@ -1,0 +1,1 @@
+export { MiPsiSyncDiffPanel } from './PsiIntegrationPanels';

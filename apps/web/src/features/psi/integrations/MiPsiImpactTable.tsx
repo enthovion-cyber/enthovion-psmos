@@ -1,0 +1,1 @@
+export { MiPsiImpactTable } from './PsiIntegrationPanels';

@@ -1,0 +1,1 @@
+export { ConfidentialityBadge } from './shared';

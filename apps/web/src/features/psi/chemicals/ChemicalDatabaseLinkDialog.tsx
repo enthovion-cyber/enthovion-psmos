@@ -1,0 +1,2 @@
+import { PsiCard } from '../shared/PsiUi';
+export function ChemicalDatabaseLinkDialog() { return <PsiCard title="Chemical Database Link" subtitle="Search and sync are backed by /search-chemical-database and sync-from-chemical-database APIs."><p className="text-sm text-[var(--psm-muted)]">Use the edit form Chemical Database record ID field or integration search API to link a canonical chemical snapshot without silently overwriting approved PSI values.</p></PsiCard>; }

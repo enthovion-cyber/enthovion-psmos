@@ -1,0 +1,1 @@
+export const trainingMatrixBuilderSteps = ['Training Requirement', 'Who It Applies To', 'Where It Applies', 'When It Is Required', 'Evidence / Verification', 'Blocking / Safety Impact', 'Review & Activate'] as const;

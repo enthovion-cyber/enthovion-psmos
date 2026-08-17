@@ -1,0 +1,1 @@
+import{AuditQuestionBankFormPage}from'@/features/audit/checklists/question-bank/AuditQuestionBankFormPage';export default function Page({params}:{params:{questionId:string}}){return<AuditQuestionBankFormPage id={params.questionId}/>}

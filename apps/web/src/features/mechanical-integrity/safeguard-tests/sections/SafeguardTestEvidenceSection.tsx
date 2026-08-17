@@ -1,0 +1,4 @@
+import { CheckboxField, FormSection, TextArea, TextField } from '../../sif/sections/section-fields';
+export function SafeguardTestEvidenceSection({ value, onChange }: { value: any; onChange: (patch: any) => void }) {
+  return <FormSection title="Evidence / Documents"><TextField label="Procedure document ID" value={value.procedureDocumentId ?? value.procedure_document_id} onChange={(procedureDocumentId) => onChange({ procedureDocumentId })} /><TextField label="Evidence document ID" value={value.evidenceDocumentId ?? value.evidence_document_id} onChange={(evidenceDocumentId) => onChange({ evidenceDocumentId })} /><CheckboxField label="Evidence complete" checked={value.evidenceComplete ?? value.evidence_complete} onChange={(evidenceComplete) => onChange({ evidenceComplete })} /><TextArea label="Evidence notes" value={value.evidenceNotes ?? value.evidence_notes} onChange={(evidenceNotes) => onChange({ evidenceNotes })} /></FormSection>;
+}

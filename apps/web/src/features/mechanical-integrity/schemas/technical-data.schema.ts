@@ -1,0 +1,1 @@
+export const technicalDataRequiredSections = ['identification', 'designData', 'operatingData', 'materialsCorrosion', 'processFluidChemical', 'geometryDimensions', 'codeStandardRating', 'reliefProtectionData', 'drawingsReferences', 'safetyCriticalAttributes'];

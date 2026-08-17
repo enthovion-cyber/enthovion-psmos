@@ -1,0 +1,1 @@
+export { SafeguardConflictBadge } from './SafeguardBadges';

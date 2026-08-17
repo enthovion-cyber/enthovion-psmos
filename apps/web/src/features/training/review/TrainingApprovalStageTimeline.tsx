@@ -1,0 +1,5 @@
+import { TrainingCard } from '../shared/TrainingUi';
+import { TrainingApprovalStageStatusBadge } from '../shared/TrainingApprovalStageStatusBadge';
+export function TrainingApprovalStageTimeline({ rows }: { rows?: any[] | undefined }) {
+  return <TrainingCard title="Review Stages" subtitle="Single, role-based, sequential, parallel, quorum, conditional and escalation stages."><div className="space-y-3">{rows?.length ? rows.map((row) => <div key={row.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><div className="flex flex-wrap justify-between gap-2"><div><p className="font-semibold">{row.stage_order}. {row.stage_name}</p><p className="text-xs text-[var(--psm-muted)]">{row.stage_type} / {row.reviewer_role ?? row.reviewer_user_id ?? 'Reviewer not assigned'} / SLA {row.sla_hours ?? '-'}h</p></div><TrainingApprovalStageStatusBadge value={row.stage_status} /></div></div>) : <p className="text-sm text-[var(--psm-muted)]">No review stages were returned by the backend.</p>}</div></TrainingCard>;
+}

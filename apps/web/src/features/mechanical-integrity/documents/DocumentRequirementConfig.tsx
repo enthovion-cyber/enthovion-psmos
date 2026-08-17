@@ -1,0 +1,16 @@
+'use client';
+
+import { useState } from 'react';
+import { useDocumentRequirementMutations, useDocumentRequirements } from '../hooks/useDocumentRequirements';
+import { ActionButton, PrimaryButton, SectionCard, cardValue } from '../safeguards/SafeguardUiPrimitives';
+
+export function DocumentRequirementConfig() {
+  const query = useDocumentRequirements();
+  const mutations = useDocumentRequirementMutations();
+  const [form, setForm] = useState({ requirementName: '', requirementScope: 'Equipment', documentType: '', readinessImpact: true, startupBlockerIfMissing: false, expiryRequired: false });
+  const update = (key: string, value: unknown) => setForm((current) => ({ ...current, [key]: value } as typeof form));
+  return <SectionCard title="Document Requirement Config" description="Company/site configurable rules for required MI evidence and readiness blockers." actions={<PrimaryButton disabled={!form.requirementName || !form.documentType || mutations.create.isPending} title={!form.requirementName || !form.documentType ? 'Requirement name and document type are required.' : undefined} onClick={() => mutations.create.mutate(form)}>{mutations.create.isPending ? 'Saving...' : 'Add Requirement'}</PrimaryButton>}>
+    <div className="mb-4 grid gap-3 md:grid-cols-3"><input className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 py-2 text-sm" placeholder="Requirement name" value={form.requirementName} onChange={(event) => update('requirementName', event.target.value)} /><input className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 py-2 text-sm" placeholder="Document type" value={form.documentType} onChange={(event) => update('documentType', event.target.value)} /><select className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 py-2 text-sm" value={form.requirementScope} onChange={(event) => update('requirementScope', event.target.value)}><option>Equipment</option><option>Module</option><option>Record</option><option>Startup/PSSR</option></select><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.readinessImpact} onChange={(event) => update('readinessImpact', event.target.checked)} /> Readiness impact</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.startupBlockerIfMissing} onChange={(event) => update('startupBlockerIfMissing', event.target.checked)} /> Startup blocker if missing</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.expiryRequired} onChange={(event) => update('expiryRequired', event.target.checked)} /> Expiry required</label></div>
+    {query.data?.length ? <div className="space-y-2">{query.data.slice(0, 10).map((row) => <div key={String(row.id)} className="flex flex-col gap-2 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-sm md:flex-row md:items-center md:justify-between"><div><strong>{cardValue(row.requirement_name)}</strong><p className="text-xs text-[var(--psm-muted)]">{cardValue(row.document_type)} | {cardValue(row.requirement_scope)}</p></div><ActionButton onClick={() => mutations.evaluate.mutate({})}>Evaluate</ActionButton></div>)}</div> : <p className="text-sm text-[var(--psm-muted)]">No document requirement rules configured yet.</p>}
+  </SectionCard>;
+}

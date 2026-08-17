@@ -1,0 +1,2 @@
+import { RegulatoryCard, RegulatoryField, regulatoryInputClass } from '../../shared/RegulatoryUi';
+export function ApplicabilityJurisdictionSection({ values, set }: { values: Record<string, any>; set: (key: string, value: string) => void }) { return <RegulatoryCard title="2. Select Jurisdiction"><RegulatoryField label="Jurisdiction ID"><input className={regulatoryInputClass()} value={values.jurisdictionId ?? ''} onChange={(e) => set('jurisdictionId', e.target.value)} /></RegulatoryField></RegulatoryCard>; }

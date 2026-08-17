@@ -1,0 +1,18 @@
+create unique index if not exists mi_sifs_company_site_tag_uidx on public.mi_sifs(company_id, site_id, lower(sif_tag));
+create unique index if not exists mi_sif_readiness_sif_uidx on public.mi_sif_readiness(sif_id);
+create index if not exists mi_sifs_company_site_idx on public.mi_sifs(company_id, site_id);
+create index if not exists mi_sifs_status_idx on public.mi_sifs(status);
+create index if not exists mi_sifs_safety_critical_idx on public.mi_sifs(safety_critical);
+create index if not exists mi_sifs_psm_critical_idx on public.mi_sifs(psm_critical);
+create index if not exists mi_sif_protection_scope_equipment_idx on public.mi_sif_protection_scope(protected_equipment_id);
+create index if not exists mi_sif_lopa_sil_links_lopa_idx on public.mi_sif_lopa_sil_links(lopa_scenario_id);
+create index if not exists mi_sif_devices_sif_idx on public.mi_sif_devices(sif_id);
+create index if not exists mi_sif_test_requirements_due_idx on public.mi_sif_test_requirements(next_test_due_date);
+create unique index if not exists mi_interlocks_company_site_tag_uidx on public.mi_interlocks(company_id, site_id, lower(interlock_tag));
+create index if not exists mi_interlocks_company_site_idx on public.mi_interlocks(company_id, site_id);
+create unique index if not exists mi_critical_alarms_company_site_tag_uidx on public.mi_critical_alarms(company_id, site_id, lower(alarm_tag));
+create index if not exists mi_critical_alarms_company_site_idx on public.mi_critical_alarms(company_id, site_id);
+create index if not exists mi_safeguard_tests_company_site_idx on public.mi_safeguard_tests(company_id, site_id);
+create index if not exists mi_safeguard_tests_final_result_idx on public.mi_safeguard_tests(final_result);
+create index if not exists mi_safeguard_occurrences_company_site_status_idx on public.mi_safeguard_occurrences(company_id, site_id, status);
+create index if not exists mi_safeguard_history_events_company_site_created_idx on public.mi_safeguard_history_events(company_id, site_id, created_at desc);

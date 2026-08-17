@@ -1,0 +1,1 @@
+export { TrainingPackageTypeBadge } from './shared';

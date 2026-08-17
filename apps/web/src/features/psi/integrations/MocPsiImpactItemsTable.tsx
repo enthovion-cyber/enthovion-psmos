@@ -1,0 +1,1 @@
+export { MocPsiImpactItemsTable } from './PsiIntegrationPanels';

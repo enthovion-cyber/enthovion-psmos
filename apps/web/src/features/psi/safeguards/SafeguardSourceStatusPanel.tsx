@@ -1,0 +1,9 @@
+import { PsiCard, PsiEmptyState } from '../shared/PsiUi';
+import { SafeguardSourceStatusBadge, SafeguardTestingStatusBadge, SafeguardImpairmentBadge } from '../shared/SafeguardBadges';
+
+export function SafeguardSourceStatusPanel({ sourceLinks, syncEvents }: { sourceLinks: Array<Record<string, any>>; syncEvents: Array<Record<string, any>> }) {
+  return <PsiCard title="Source Status / Sync Foundation" subtitle="Compare-only and pull-source-status foundation. Source modules remain lifecycle owners; PSI never silently overwrites them.">
+    {!sourceLinks.length ? <PsiEmptyState title="No source module linked" message="Link SIS/SIF, interlock, alarm, PSV, relief, procedure, PTW/LOTO, MI, HAZOP, LOPA, MOC, PSSR, training, or a manual placeholder." /> : <div className="grid gap-3 md:grid-cols-2">{sourceLinks.map((link) => <article key={link.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><p className="font-semibold">{link.linked_record_tag_title ?? link.linked_module}</p><div className="mt-2 flex flex-wrap gap-2"><SafeguardSourceStatusBadge value={link.source_status} /><SafeguardTestingStatusBadge value={link.source_test_status} /><SafeguardImpairmentBadge value={link.source_bypass_impairment_status} /></div><p className="mt-2 text-xs text-[var(--psm-muted)]">Verified {link.source_last_verified_date ?? 'not verified'} / Next due {link.source_next_due_date ?? 'not returned'}</p></article>)}</div>}
+    {syncEvents.length ? <div className="mt-4 space-y-2">{syncEvents.slice(0, 4).map((event) => <p key={event.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-2 text-sm">{event.sync_direction}: {event.status} at {event.synced_at ? new Date(event.synced_at).toLocaleString() : 'unknown time'}</p>)}</div> : null}
+  </PsiCard>;
+}

@@ -1,0 +1,2 @@
+import { auditFindingService } from "./audit-finding.service";
+export const auditFindingEvidenceService = { list: (id: string) => auditFindingService.section(id, "evidence"), add: (id: string, payload: Record<string, unknown>) => auditFindingService.addSection(id, "evidence", payload), remove: (id: string, evidenceId: string, reason: string) => auditFindingService.removeSection(id, "evidence", evidenceId, reason) };

@@ -1,0 +1,1 @@
+import{AuditChecklistDetailPage}from'@/features/audit/checklists/AuditChecklistDetailPage';export default function Page({params}:{params:{checklistId:string}}){return<AuditChecklistDetailPage id={params.checklistId} tab="modules"/>}

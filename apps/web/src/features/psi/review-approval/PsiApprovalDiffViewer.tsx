@@ -1,0 +1,1 @@
+export { PsiApprovalDiffViewer } from './PsiReviewApprovalPanels';

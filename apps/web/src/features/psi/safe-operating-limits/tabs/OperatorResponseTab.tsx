@@ -1,0 +1,6 @@
+import { PsiCard, PsiEmptyState } from '../../shared/PsiUi';
+import type { SafeOperatingLimitDetail } from '../../types/safe-operating-limit.types';
+
+export function OperatorResponseTab({ detail }: { detail: SafeOperatingLimitDetail }) {
+  return <PsiCard title="Operator Response" subtitle="Required response, response time, escalation, shutdown, emergency, SOP, PPE, and training foundation.">{!detail.operatorResponses.length ? <PsiEmptyState title="Missing operator response" message="Critical SOL records require operator response instructions." /> : <div className="space-y-3">{detail.operatorResponses.map((row) => <article key={String(row.id)} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><h3 className="font-semibold">{String(row.required_operator_action)}</h3><dl className="mt-3 grid gap-2 text-sm md:grid-cols-3">{['response_time_requirement','initial_action','follow_up_action','escalation_requirement','shutdown_requirement','emergency_response_requirement','required_notification','related_sop_document_id','required_ppe','training_requirement_foundation','notes'].map((key) => <div key={key}><dt className="text-[var(--psm-muted)]">{key.replaceAll('_', ' ')}</dt><dd>{String(row[key] ?? '-')}</dd></div>)}</dl></article>)}</div>}</PsiCard>;
+}

@@ -1,0 +1,1 @@
+export { TrainingReportStatusBadge } from './shared';

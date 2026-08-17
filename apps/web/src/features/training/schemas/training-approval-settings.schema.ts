@@ -1,0 +1,1 @@
+export const trainingApprovalSettingsBooleanFields = ['require_approval_for_safety_critical_profiles', 'require_approval_for_required_training', 'require_esign_for_safety_critical_approval', 'stale_approval_blocks_decision'];

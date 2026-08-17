@@ -1,0 +1,1 @@
+export { ApprovalStaleBadge } from './PsiReviewBadges';

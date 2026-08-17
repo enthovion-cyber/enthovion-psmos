@@ -1,0 +1,1 @@
+export { PsiReportTemplateRegistryPage } from './PsiReportsPanels';

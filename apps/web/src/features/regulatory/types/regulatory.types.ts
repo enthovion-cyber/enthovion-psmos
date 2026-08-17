@@ -1,0 +1,152 @@
+export type RegulatoryItem = {
+  id: string;
+  requirement_code?: string | null;
+  requirement_title?: string | null;
+  source_type?: string | null;
+  source_reference_number?: string | null;
+  short_summary?: string | null;
+  full_reference_url?: string | null;
+  version?: string | null;
+  effective_date?: string | null;
+  expiry_date?: string | null;
+  register_status?: string | null;
+  applicability_status?: string | null;
+  compliance_status?: string | null;
+  review_status?: string | null;
+  criticality?: string | null;
+  category?: string | null;
+  topic?: string | null;
+  related_psm_element?: string | null;
+  related_module?: string | null;
+  risk_basis?: string | null;
+  regulatory_impact?: string | null;
+  safety_impact?: string | null;
+  environmental_impact?: string | null;
+  business_impact?: string | null;
+  jurisdiction_level?: string | null;
+  country?: string | null;
+  state_province?: string | null;
+  city_municipality?: string | null;
+  industrial_zone?: string | null;
+  authority_name?: string | null;
+  language?: string | null;
+  site_id?: string | null;
+  department_id?: string | null;
+  unit_id?: string | null;
+  area_id?: string | null;
+  equipment_id?: string | null;
+  process_system?: string | null;
+  chemical_substance?: string | null;
+  activity_operation?: string | null;
+  owner_user_id?: string | null;
+  compliance_owner_user_id?: string | null;
+  site_owner_user_id?: string | null;
+  reviewer_user_id?: string | null;
+  review_frequency?: string | null;
+  next_review_date?: string | null;
+  last_review_date?: string | null;
+  status_rationale?: string | null;
+  applicability_rationale?: string | null;
+  evidence_summary_foundation?: string | null;
+  gap_summary_foundation?: string | null;
+  action_required?: boolean | null;
+  notes?: string | null;
+  linked_audit_count?: number | null;
+  linked_evidence_count?: number | null;
+  linked_action_count?: number | null;
+  locked?: boolean | null;
+  readOnly?: boolean | null;
+  readOnlyReason?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  owner?: RegulatoryUser | null;
+  complianceOwner?: RegulatoryUser | null;
+  siteOwner?: RegulatoryUser | null;
+  reviewer?: RegulatoryUser | null;
+};
+
+export type RegulatoryUser = {
+  id: string;
+  displayName?: string | null;
+  email?: string | null;
+  title?: string | null;
+  department?: string | null;
+  status?: string | null;
+};
+
+export type RegulatoryDashboard = {
+  header?: { title?: string; subtitle?: string; generatedAt?: string };
+  summary?: Record<string, number>;
+  complianceStatusOverview?: RegulatoryBreakdown[];
+  byJurisdiction?: RegulatoryBreakdown[];
+  bySite?: RegulatoryBreakdown[];
+  byUnit?: RegulatoryBreakdown[];
+  byCategory?: RegulatoryBreakdown[];
+  bySourceType?: RegulatoryBreakdown[];
+  byCriticality?: RegulatoryBreakdown[];
+  reviewDueSoon?: RegulatoryItem[];
+  effectiveSoon?: RegulatoryItem[];
+  missingOwnerPreview?: RegulatoryItem[];
+  missingApplicabilityPreview?: RegulatoryItem[];
+  missingEvidencePreview?: RegulatoryItem[];
+  highRiskPreview?: RegulatoryItem[];
+  psmCriticalPreview?: RegulatoryItem[];
+  environmentalCriticalPreview?: RegulatoryItem[];
+  auditLinkedPreview?: RegulatoryItem[];
+  recentChanges?: RegulatoryItem[];
+  recentlyAdded?: RegulatoryItem[];
+  recentlyUpdated?: RegulatoryItem[];
+  readinessSummary?: { status?: string; blockers?: Array<{ key: string; label: string; count: number }> };
+};
+
+export type RegulatoryBreakdown = { label: string; count: number };
+
+export type RegulatoryRegister = {
+  rows: RegulatoryItem[];
+  allRows?: RegulatoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore?: boolean;
+  summary?: Record<string, number>;
+};
+
+export type RegulatoryHistoryEvent = {
+  id: string;
+  event_type: string;
+  event_title: string;
+  event_description?: string | null;
+  regulatory_item_id?: string | null;
+  actor_user_id?: string | null;
+  source_module?: string | null;
+  source_record_id?: string | null;
+  before_value_json?: unknown;
+  after_value_json?: unknown;
+  created_at?: string | null;
+};
+
+export type RegulatoryDetail = {
+  item: RegulatoryItem;
+  overviewCards?: Record<string, unknown>;
+  jurisdictions?: { rows: Array<Record<string, unknown>> };
+  scopes?: { rows: Array<Record<string, unknown>> };
+  links?: { rows: Array<Record<string, unknown>>; summary?: Record<string, number> };
+  review?: { rows: Array<Record<string, unknown>>; placeholder?: string };
+  historyPreview?: RegulatoryHistoryEvent[];
+  readOnly?: boolean;
+  readOnlyReason?: string | null;
+  placeholder?: string;
+};
+
+export type RegulatoryLookups = {
+  sourceTypes: string[];
+  categories: string[];
+  jurisdictionLevels: string[];
+  criticalityLevels: string[];
+  registerStatuses: string[];
+  applicabilityStatuses: string[];
+  complianceStatuses: string[];
+  reviewStatuses: string[];
+  reviewFrequencies: string[];
+  linkModules: string[];
+};

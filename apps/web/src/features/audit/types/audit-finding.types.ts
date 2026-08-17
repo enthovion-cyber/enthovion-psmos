@@ -1,0 +1,135 @@
+export type AuditFindingRow = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  unit_id?: string | null;
+  area_id?: string | null;
+  equipment_id?: string | null;
+  program_id?: string | null;
+  plan_id?: string | null;
+  execution_id?: string | null;
+  checklist_id?: string | null;
+  finding_code: string;
+  finding_title: string;
+  finding_description?: string | null;
+  finding_type: string;
+  finding_status: string;
+  review_status?: string | null;
+  capa_readiness_status: string;
+  evidence_status: string;
+  duplicate_repeat_status: string;
+  severity?: string | null;
+  priority?: string | null;
+  risk_potential?: string | null;
+  criticality: string;
+  safety_critical: boolean;
+  regulatory_critical: boolean;
+  psm_critical: boolean;
+  immediate_concern: boolean;
+  stop_work_recommended: boolean;
+  repeat_finding: boolean;
+  recurrence_category?: string | null;
+  owner_user_id?: string | null;
+  reviewer_user_id?: string | null;
+  due_date?: string | null;
+  due_date_basis?: string | null;
+  capa_required: boolean;
+  capa_required_reason?: string | null;
+  suggested_corrective_action?: string | null;
+  suggested_preventive_action?: string | null;
+  classification_rationale?: string | null;
+  ready_for_capa: boolean;
+  capa_record_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  confirmed_at?: string | null;
+  archived_at?: string | null;
+  overdue?: boolean;
+  owner?: { id: string; name?: string | null; email?: string | null; role?: string | null; department?: string | null } | null;
+};
+
+export type AuditFindingSummary = {
+  total: number;
+  open: number;
+  draft: number;
+  underReview: number;
+  confirmed: number;
+  rejected: number;
+  needsMoreInformation: number;
+  readyForCapa: number;
+  awaitingOwner: number;
+  overdue: number;
+  safetyCritical: number;
+  regulatoryCritical: number;
+  psmCritical: number;
+  highPriority: number;
+  repeatFindings: number;
+  fromFieldAudit: number;
+  missingEvidence: number;
+  withCapaFoundation: number;
+  recentlyCreated: number;
+  recentlyConfirmed: number;
+};
+
+export type AuditFindingRegister = {
+  rows: AuditFindingRow[];
+  total: number;
+  page: number;
+  limit: number;
+  summary: AuditFindingSummary;
+};
+
+export type AuditFindingDetail = {
+  finding: AuditFindingRow;
+  sources: Record<string, any>[];
+  standards: Record<string, any>[];
+  modules: Record<string, any>[];
+  evidence: Record<string, any>[];
+  ownership: Record<string, any>[];
+  review: Record<string, any>[];
+  duplicates: Record<string, any>[];
+  capa: Record<string, any>[];
+  transitions: Record<string, any>[];
+  history: Record<string, any>[];
+  readiness: {
+    status: string;
+    blockers: string[];
+    warnings: string[];
+    evidenceStatus: string;
+    capaReadinessStatus: string;
+    readyForCapa: boolean;
+    missingData: string[];
+  };
+};
+
+export type AuditFindingDashboard = {
+  summary: AuditFindingSummary;
+  bySite: { key: string; label: string; count: number }[];
+  byModule: { key: string; label: string; count: number }[];
+  byStatus: { key: string; label: string; count: number }[];
+  bySeverity: { key: string; label: string; count: number }[];
+  byType: { key: string; label: string; count: number }[];
+  byOwner: { key: string; label: string; count: number }[];
+  overdue: AuditFindingRow[];
+  safetyCritical: AuditFindingRow[];
+  regulatoryCritical: AuditFindingRow[];
+  psmCritical: AuditFindingRow[];
+  repeatFindings: AuditFindingRow[];
+  awaitingOwner: AuditFindingRow[];
+  readyForCapa: AuditFindingRow[];
+  recent: AuditFindingRow[];
+  requiringReview: AuditFindingRow[];
+};
+
+export type AuditFindingContext = {
+  sites: Record<string, any>[];
+  units: Record<string, any>[];
+  areas: Record<string, any>[];
+  users: Record<string, any>[];
+  programs: Record<string, any>[];
+  plans: Record<string, any>[];
+  executions: Record<string, any>[];
+  checklists: Record<string, any>[];
+  settings: Record<string, any>;
+  lookups: Record<string, string[] | Record<string, string>[]>;
+};

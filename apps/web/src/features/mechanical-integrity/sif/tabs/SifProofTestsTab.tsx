@@ -1,0 +1,4 @@
+import { KeyValueGrid, SectionCard } from '../../safeguards/SafeguardUiPrimitives';
+export function SifProofTestsTab({ testRequirements }: { sifId: string; testRequirements?: any[] }) {
+  return <SectionCard title="Proof Test Requirements" description="Backend scheduler inputs and required testing rules."><div className="grid gap-3">{(testRequirements ?? []).map((row) => <KeyValueGrid key={row.id} items={[['Test type', row.test_type], ['Interval', `${row.interval_value ?? ''} ${row.interval_unit ?? ''}`], ['Next due', row.next_test_due_date], ['Due status', row.due_status], ['Shutdown required', row.shutdown_required], ['Bypass required', row.bypass_required]]} />)}{!testRequirements?.length ? <p className="text-sm text-[var(--psm-muted)]">No proof-test requirements returned by backend.</p> : null}</div></SectionCard>;
+}

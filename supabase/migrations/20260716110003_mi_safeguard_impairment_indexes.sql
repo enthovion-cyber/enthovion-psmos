@@ -1,0 +1,12 @@
+create unique index if not exists mi_safeguard_impairments_company_site_record_uidx on public.mi_safeguard_impairments(company_id, site_id, lower(record_number));
+create index if not exists mi_safeguard_impairments_company_site_status_idx on public.mi_safeguard_impairments(company_id, site_id, status);
+create index if not exists mi_safeguard_impairments_equipment_idx on public.mi_safeguard_impairments(equipment_id);
+create index if not exists mi_safeguard_impairments_safeguard_idx on public.mi_safeguard_impairments(safeguard_type, safeguard_id);
+create index if not exists mi_safeguard_impairments_expiry_idx on public.mi_safeguard_impairments(expiry_time);
+create index if not exists mi_safeguard_impairments_active_idx on public.mi_safeguard_impairments(company_id, site_id, safeguard_type, safeguard_id) where status in ('Approved','Active','Expiring Soon','Expired','Extension Requested','Extension Approved','Pending Restoration');
+create index if not exists mi_safeguard_impairment_approvals_impairment_idx on public.mi_safeguard_impairment_approvals(impairment_id);
+create index if not exists mi_safeguard_impairment_extensions_impairment_idx on public.mi_safeguard_impairment_extensions(impairment_id);
+create index if not exists mi_safeguard_impairment_restorations_impairment_idx on public.mi_safeguard_impairment_restorations(impairment_id);
+create index if not exists mi_safeguard_impairment_linked_records_impairment_idx on public.mi_safeguard_impairment_linked_records(impairment_id);
+create index if not exists mi_safeguard_impairment_notifications_impairment_idx on public.mi_safeguard_impairment_notifications(impairment_id);
+create index if not exists mi_safeguard_impairment_history_impairment_created_idx on public.mi_safeguard_impairment_history_events(impairment_id, created_at desc);

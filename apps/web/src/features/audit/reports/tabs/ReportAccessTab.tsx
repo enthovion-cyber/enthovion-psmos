@@ -1,0 +1,2 @@
+import { RowsPanel } from "../AuditReportPanels";
+export function ReportAccessTab({ access, downloads }: { access: Record<string, unknown>[]; downloads: Record<string, unknown>[] }) { return <div className="grid gap-5 xl:grid-cols-2"><RowsPanel title="Access Events" rows={access} empty="No preview/access events are logged." /><RowsPanel title="Download Events" rows={downloads} empty="No download events are logged." /></div>; }

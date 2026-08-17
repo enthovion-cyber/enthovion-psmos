@@ -1,0 +1,2 @@
+import { TrainingCard } from '../shared/TrainingUi';
+export function CompetencyEvidenceDrilldown() { return <TrainingCard title="Evidence Drill-down"><p className="text-sm text-[var(--psm-muted)]">Evidence is resolved from Training Records, Certifications, Assessments, SOP acknowledgements, Document Control, LMS import, or manual verification when those source records exist. Missing sources show Missing Evidence.</p></TrainingCard>; }

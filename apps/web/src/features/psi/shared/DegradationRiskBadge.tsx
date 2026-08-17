@@ -1,0 +1,2 @@
+export { DegradationRiskBadge } from './MaterialCompatibilityBadges';
+

@@ -1,0 +1,1 @@
+import { AuditBadge } from './AuditUi'; export function AuditPlanReadinessBadge({ value }: { value: string }) { return <AuditBadge tone={value === 'Ready For Checklist' || value === 'Complete' ? 'good' : value === 'Conflict Detected' ? 'danger' : 'warn'}>{value}</AuditBadge>; }

@@ -1,0 +1,10 @@
+import { CompetencyGapSeverityBadge } from '../shared/CompetencyGapSeverityBadge';
+import { CompetencyGapStatusBadge } from '../shared/CompetencyGapStatusBadge';
+import { MOCCompetencyBlockerBadge } from '../shared/MOCCompetencyBlockerBadge';
+import { PSSRCompetencyBlockerBadge } from '../shared/PSSRCompetencyBlockerBadge';
+import { PTWCriticalCompetencyBadge } from '../shared/PTWCriticalCompetencyBadge';
+
+export function CompetencyGapTable({ rows, compact }: { rows: Record<string, any>[]; compact?: boolean }) {
+  if (!rows.length) return <p className="text-sm text-[var(--psm-muted)]">No competency gaps in this backend-filtered view.</p>;
+  return <div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead className="text-xs uppercase text-[var(--psm-muted)]"><tr>{['Gap','Worker','Profile','Type','Severity','Status','Required Evidence','PTW','MOC','PSSR','Due','Owner'].slice(0, compact ? 6 : 12).map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t border-[var(--psm-line)]"><td className="px-3 py-3 font-semibold">{row.gap_title}</td><td className="px-3 py-3">{row.worker_id ?? 'Worker missing'}</td><td className="px-3 py-3">{row.profile_id ?? 'Profile missing'}</td><td className="px-3 py-3">{row.gap_type}</td><td className="px-3 py-3"><CompetencyGapSeverityBadge value={row.gap_severity} /></td><td className="px-3 py-3"><CompetencyGapStatusBadge value={row.gap_status} /></td>{!compact ? <><td className="px-3 py-3">{row.required_evidence ?? 'Missing Evidence'}</td><td className="px-3 py-3"><PTWCriticalCompetencyBadge value={row.ptw_blocker} /></td><td className="px-3 py-3"><MOCCompetencyBlockerBadge value={row.moc_blocker} /></td><td className="px-3 py-3"><PSSRCompetencyBlockerBadge value={row.pssr_blocker} /></td><td className="px-3 py-3">{row.due_date ?? 'Not set'}</td><td className="px-3 py-3">{row.owner_user_id ?? 'Unassigned'}</td></> : null}</tr>)}</tbody></table></div>;
+}

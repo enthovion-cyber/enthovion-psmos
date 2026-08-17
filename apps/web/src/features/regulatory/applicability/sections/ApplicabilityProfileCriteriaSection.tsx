@@ -1,0 +1,2 @@
+import { RegulatoryCard, RegulatoryField, regulatoryInputClass } from '../../shared/RegulatoryUi';
+export function ApplicabilityProfileCriteriaSection({ values, set }: { values: Record<string, any>; set: (key: string, value: string) => void }) { return <RegulatoryCard title="4. Applicability Profile / Criteria"><RegulatoryField label="Profile ID"><input className={regulatoryInputClass()} value={values.profileId ?? ''} onChange={(e) => set('profileId', e.target.value)} /></RegulatoryField></RegulatoryCard>; }

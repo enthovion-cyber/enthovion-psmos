@@ -1,0 +1,9 @@
+import { PsiCard } from '../shared/PsiUi';
+import { RatingSuitabilityBadge } from '../components/shared/RatingSuitabilityBadge';
+import type { InstalledEquipmentRating } from '../types/electrical-classification.types';
+
+export function ElectricalRatingCheckPanel({ items }: { items: InstalledEquipmentRating[] }) {
+  const mismatch = items.filter((item) => item.suitability_result === 'Mismatch').length;
+  const missing = items.filter((item) => item.suitability_result === 'Missing Rating Data' || !item.installed_ex_marking).length;
+  return <PsiCard title="Installed Equipment / Rating Check" subtitle="Backend compares installed Ex markings, groups, T-class, EPL/protection method, IP/certification, and required area classification basis."><div className="grid gap-3 md:grid-cols-3"><div className="rounded-lg bg-[var(--psm-surface-2)] p-3"><p className="text-xs uppercase text-[var(--psm-muted)]">Installed items</p><p className="text-2xl font-bold">{items.length}</p></div><div className="rounded-lg bg-danger/10 p-3 text-danger"><p className="text-xs uppercase">Mismatches</p><p className="text-2xl font-bold">{mismatch}</p></div><div className="rounded-lg bg-warning/10 p-3 text-warning"><p className="text-xs uppercase">Missing rating data</p><p className="text-2xl font-bold">{missing}</p></div></div><div className="mt-4 grid gap-2">{items.length ? items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--psm-line)] p-3"><div><p className="font-semibold">{item.tag_number}</p><p className="text-sm text-[var(--psm-muted)]">{item.installed_ex_marking || 'No Ex marking'} / {item.installed_gas_dust_group || 'group missing'} / {item.installed_temperature_class || 'T missing'}</p></div><RatingSuitabilityBadge value={item.suitability_result} /></div>) : <p className="text-sm text-[var(--psm-muted)]">No installed equipment linked for rating evaluation.</p>}</div></PsiCard>;
+}

@@ -1,0 +1,148 @@
+export type SopAckRequirement = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  requirement_code: string;
+  requirement_title: string;
+  description?: string | null;
+  requirement_source: string;
+  owner_user_id?: string | null;
+  reviewer_user_id?: string | null;
+  requirement_status: string;
+  review_status?: string | null;
+  effective_date?: string | null;
+  next_review_due?: string | null;
+  sop_id?: string | null;
+  document_id?: string | null;
+  sop_title?: string | null;
+  document_number?: string | null;
+  required_version?: string | null;
+  revision_number?: string | null;
+  current_version_at_requirement?: string | null;
+  current_version_policy: string;
+  document_status?: string | null;
+  document_owner?: string | null;
+  document_url?: string | null;
+  safety_critical: boolean;
+  psm_critical: boolean;
+  ptw_critical: boolean;
+  moc_critical: boolean;
+  pssr_critical: boolean;
+  blocks_ptw_authorization: boolean;
+  blocks_moc_implementation: boolean;
+  blocks_pssr_startup: boolean;
+  blocks_safety_critical_work: boolean;
+  waiver_allowed: boolean;
+  sync_to_matrix: boolean;
+  sync_to_competency: boolean;
+  sync_status?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SopAckAssignment = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  unit_id?: string | null;
+  area_id?: string | null;
+  worker_id: string;
+  requirement_id: string;
+  sop_id?: string | null;
+  document_id?: string | null;
+  required_version?: string | null;
+  current_version_at_assignment?: string | null;
+  assignment_source: string;
+  required_because?: string | null;
+  due_date?: string | null;
+  expiry_date?: string | null;
+  assignment_status: string;
+  acknowledgement_status: string;
+  verification_status?: string | null;
+  esignature_status?: string | null;
+  assessment_status?: string | null;
+  overdue: boolean;
+  current_version_gap: boolean;
+  runtime_overdue?: boolean;
+  runtime_current_version_gap?: boolean;
+  runtime_status?: string;
+  ptw_blocker: boolean;
+  moc_blocker: boolean;
+  pssr_blocker: boolean;
+  safety_critical_work_blocker: boolean;
+  action_id?: string | null;
+  waiver_id?: string | null;
+  last_notification_sent_at?: string | null;
+  completed_at?: string | null;
+  worker?: Record<string, any> | null;
+  requirement?: SopAckRequirement | null;
+};
+
+export type SopAcknowledgement = {
+  id: string;
+  worker_id: string;
+  assignment_id: string;
+  requirement_id: string;
+  sop_id?: string | null;
+  document_id?: string | null;
+  acknowledged_version: string;
+  current_version_at_acknowledgement?: string | null;
+  declaration_text?: string | null;
+  acknowledgement_method: string;
+  acknowledgement_status: string;
+  acknowledged_by_user_id?: string | null;
+  acknowledged_at?: string | null;
+  esignature_status?: string | null;
+  assessment_status?: string | null;
+  verification_status?: string | null;
+};
+
+export type SopAckDashboard = {
+  header: Record<string, any>;
+  summary: Record<string, number>;
+  bySite: Array<Record<string, any>>;
+  byUnit: Array<Record<string, any>>;
+  byDepartment: Array<Record<string, any>>;
+  byJobRole: Array<Record<string, any>>;
+  pendingPreview: SopAckAssignment[];
+  overduePreview: SopAckAssignment[];
+  reacknowledgementRequired: SopAckAssignment[];
+  safetyCriticalGaps: SopAckAssignment[];
+  blockers: SopAckAssignment[];
+  currentVersionGaps: SopAckAssignment[];
+  recentCompleted: SopAckAssignment[];
+  recentRejected: SopAckAssignment[];
+  recentRevisionImpacts: Array<Record<string, any>>;
+  activeWaivers: Array<Record<string, any>>;
+};
+
+export type SopAckRegister<T> = {
+  rows: T[];
+  allRows?: T[];
+  total: number;
+  page: number;
+  limit: number;
+  summary?: Record<string, number>;
+  filters?: Record<string, string[]>;
+  savedViews?: string[];
+};
+
+export type SopAckRequirementDetail = {
+  requirement: SopAckRequirement;
+  scopes: Array<Record<string, any>>;
+  dueRules: Array<Record<string, any>>;
+  evidenceRules: Array<Record<string, any>>;
+  links: Array<Record<string, any>>;
+  assignments: SopAckAssignment[];
+  history: Array<Record<string, any>>;
+  preview: Record<string, any>;
+};
+
+export type SopAcknowledgementDetail = {
+  acknowledgement: SopAcknowledgement;
+  assignment: SopAckAssignment;
+  requirement: SopAckRequirement;
+  history: Array<Record<string, any>>;
+  waivers: Array<Record<string, any>>;
+};

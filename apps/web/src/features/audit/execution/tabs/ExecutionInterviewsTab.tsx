@@ -1,0 +1,13 @@
+"use client";
+import { useState } from "react";
+import { AuditButton, AuditCard, AuditEmptyState, Field, inputClass } from "../../shared/AuditUi";
+import { useAuditExecutionInterviews } from "../../hooks/useAuditExecutionInterviews";
+import type { AuditExecutionDetail } from "../../types/audit-execution.types";
+
+export function ExecutionInterviewsTab({ detail }: { detail: AuditExecutionDetail }) {
+  const mutations = useAuditExecutionInterviews();
+  const [form, setForm] = useState({ interviewTitle: "", intervieweeName: "", department: "", roleTitle: "", summary: "", followUpRequired: false });
+  const set = (key: string, value: string | boolean) => setForm((current) => ({ ...current, [key]: value }));
+  const save = () => mutations.add.mutate({ executionId: detail.execution.id, payload: form }, { onSuccess: () => setForm({ interviewTitle: "", intervieweeName: "", department: "", roleTitle: "", summary: "", followUpRequired: false }) });
+  return <div className="grid gap-5 xl:grid-cols-[1fr_360px]"><AuditCard title="Interview Register">{detail.interviews.length ? <div className="space-y-2">{detail.interviews.map((row) => <div key={row.id} className="rounded-lg border border-[var(--psm-line)] p-3"><p className="font-semibold text-[var(--psm-fg)]">{row.interview_title}</p><p className="text-sm text-[var(--psm-muted)]">{row.summary ?? "No summary"}</p></div>)}</div> : <AuditEmptyState title="No interviews" message="No backend interview rows were returned for this execution." />}</AuditCard><AuditCard title="Add interview"><div className="space-y-3"><Field label="Title"><input className={inputClass()} value={form.interviewTitle} onChange={(e) => set("interviewTitle", e.target.value)} /></Field><Field label="Interviewee"><input className={inputClass()} value={form.intervieweeName} onChange={(e) => set("intervieweeName", e.target.value)} /></Field><Field label="Department"><input className={inputClass()} value={form.department} onChange={(e) => set("department", e.target.value)} /></Field><Field label="Summary"><textarea className={inputClass()} value={form.summary} onChange={(e) => set("summary", e.target.value)} /></Field><label className="flex gap-2 text-sm text-[var(--psm-fg)]"><input type="checkbox" checked={form.followUpRequired} onChange={(e) => set("followUpRequired", e.target.checked)} /> Follow-up required</label><AuditButton onClick={save} disabled={!form.interviewTitle || mutations.add.isPending} title={!form.interviewTitle ? "Interview title is required." : "Save interview"}>{mutations.add.isPending ? "Saving..." : "Save Interview"}</AuditButton></div></AuditCard></div>;
+}

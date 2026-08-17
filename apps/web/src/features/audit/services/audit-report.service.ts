@@ -1,0 +1,38 @@
+import { get, patch, post, remove } from "./audit-api";
+import type { AuditReportDashboard, AuditReportDetail, AuditReportList } from "../types/audit-report.types";
+
+export const auditReportService = {
+  dashboard: (params?: Record<string, unknown>) => get<AuditReportDashboard>("/audit-compliance/reports/dashboard", params),
+  dashboardSummary: (params?: Record<string, unknown>) => get<AuditReportDashboard["summary"]>("/audit-compliance/reports/dashboard/summary", params),
+  list: (params?: Record<string, unknown>) => get<AuditReportList>("/audit-compliance/reports/register", params),
+  view: (view: string, params?: Record<string, unknown>) => get<AuditReportList>(`/audit-compliance/reports/${view}`, params),
+  detail: (reportId: string) => get<AuditReportDetail>(`/audit-compliance/reports/${reportId}`),
+  section: <T = unknown>(reportId: string, section: string) => get<T>(`/audit-compliance/reports/${reportId}/${section}`),
+  create: (data: Record<string, unknown>) => post<AuditReportDetail>("/audit-compliance/reports", data),
+  generate: (data: Record<string, unknown>) => post<AuditReportDetail>("/audit-compliance/reports/generate", data),
+  preview: (data: Record<string, unknown>) => post<Record<string, unknown>>("/audit-compliance/reports/generate-preview", data),
+  transition: (reportId: string, action: string, data?: Record<string, unknown>) => post<AuditReportDetail>(`/audit-compliance/reports/${reportId}/${action}`, data),
+  update: (reportId: string, data: Record<string, unknown>) => patch<AuditReportDetail>(`/audit-compliance/reports/${reportId}`, data),
+  templates: (params?: Record<string, unknown>) => get<{ rows: Record<string, unknown>[]; total: number }>("/audit-compliance/reports/templates", params),
+  template: (templateId: string) => get<Record<string, unknown>>(`/audit-compliance/reports/templates/${templateId}`),
+  saveTemplate: (data: Record<string, unknown>, templateId?: string) => templateId ? patch<Record<string, unknown>>(`/audit-compliance/reports/templates/${templateId}`, data) : post<Record<string, unknown>>("/audit-compliance/reports/templates", data),
+  templateTransition: (templateId: string, action: string, data?: Record<string, unknown>) => post<Record<string, unknown>>(`/audit-compliance/reports/templates/${templateId}/${action}`, data),
+  jobs: (params?: Record<string, unknown>) => get<{ rows: Record<string, unknown>[]; total: number }>("/audit-compliance/reports/jobs", params),
+  job: (jobId: string) => get<Record<string, unknown>>(`/audit-compliance/reports/jobs/${jobId}`),
+  jobTransition: (jobId: string, action: string, data?: Record<string, unknown>) => post<Record<string, unknown>>(`/audit-compliance/reports/jobs/${jobId}/${action}`, data),
+  packages: (params?: Record<string, unknown>) => get<{ rows: Record<string, unknown>[]; total: number }>("/audit-compliance/reports/packages", params),
+  packageDetail: (packageId: string) => get<{ package: Record<string, unknown>; items: Record<string, unknown>[] }>(`/audit-compliance/reports/packages/${packageId}`),
+  createPackage: (data: Record<string, unknown>) => post<Record<string, unknown>>("/audit-compliance/reports/packages", data),
+  packageTransition: (packageId: string, action: string, data?: Record<string, unknown>) => post<Record<string, unknown>>(`/audit-compliance/reports/packages/${packageId}/${action}`, data),
+  addPackageItem: (packageId: string, kind: "report" | "evidence", data: Record<string, unknown>) => post<Record<string, unknown>>(`/audit-compliance/reports/packages/${packageId}/add-${kind}`, data),
+  removePackageItem: (packageId: string, itemId: string) => remove<Record<string, unknown>>(`/audit-compliance/reports/packages/${packageId}/items/${itemId}`),
+  downloads: (params?: Record<string, unknown>) => get<{ rows: Record<string, unknown>[]; total: number }>("/audit-compliance/reports/downloads", params),
+  accessLog: (params?: Record<string, unknown>) => get<{ rows: Record<string, unknown>[]; total: number }>("/audit-compliance/reports/access-log", params),
+  context: () => get<Record<string, unknown>>("/audit-compliance/reports/context"),
+  lookups: () => Promise.all([
+    get<string[]>("/audit-compliance/lookups/report-types"),
+    get<string[]>("/audit-compliance/lookups/report-statuses"),
+    get<string[]>("/audit-compliance/lookups/report-formats"),
+    get<string[]>("/audit-compliance/lookups/report-intended-audiences"),
+  ]).then(([reportTypes, reportStatuses, reportFormats, intendedAudiences]) => ({ reportTypes, reportStatuses, reportFormats, intendedAudiences })),
+};

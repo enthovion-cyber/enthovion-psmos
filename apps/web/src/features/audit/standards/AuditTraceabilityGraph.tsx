@@ -1,0 +1,5 @@
+import { AuditEmptyState } from "../shared/AuditUi";
+export function AuditTraceabilityGraph({ rows }: { rows: Record<string, any>[] }) {
+  if (!rows.length) return <AuditEmptyState title="No traceability graph" message="Mappings need linked records before the graph can display traceability." />;
+  return <div className="grid gap-4">{rows.map((row) => <div key={row.mappingId ?? JSON.stringify(row)} className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4"><div className="font-semibold text-primary">{row.mappingCode}</div><div className="mt-3 grid gap-2 md:grid-cols-4">{(row.chain ?? []).map((node: Record<string, any>, index: number) => <div key={`${node.id}-${index}`} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><div className="text-xs uppercase tracking-[.16em] text-[var(--psm-muted)]">{node.type}</div><div className="font-semibold">{node.label ?? node.id}</div><div className="text-xs text-[var(--psm-muted)]">{node.title}</div></div>)}</div></div>)}</div>;
+}

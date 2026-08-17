@@ -1,0 +1,1 @@
+export { VerifyIntegrationDialog } from './PsiIntegrationPanels';

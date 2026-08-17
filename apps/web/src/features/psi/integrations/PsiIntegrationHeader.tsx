@@ -1,0 +1,1 @@
+export { PsiIntegrationHeader } from './PsiIntegrationPanels';

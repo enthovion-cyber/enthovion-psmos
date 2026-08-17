@@ -1,0 +1,1 @@
+import { AuditBadge } from './AuditUi'; export function AuditPlanConflictBadge({ value }: { value: string }) { return <AuditBadge tone={value === 'No Conflict' || value === 'Resolved' ? 'good' : value === 'Hard Conflict' ? 'danger' : 'warn'}>{value}</AuditBadge>; }

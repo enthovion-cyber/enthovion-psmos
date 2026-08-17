@@ -1,0 +1,2 @@
+import { TrainingCard } from '../shared/TrainingUi';
+export function CompetencyGapDetailPanel({ gap }: { gap: Record<string, any> }) { return <TrainingCard title="Competency Gap Detail" subtitle="Traceable backend gap lifecycle, source evidence, blockers, waiver/action links, and closure rule."><pre className="max-h-96 overflow-auto rounded-lg bg-[var(--psm-surface-2)] p-3 text-xs">{JSON.stringify(gap, null, 2)}</pre></TrainingCard>; }

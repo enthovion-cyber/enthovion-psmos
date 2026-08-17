@@ -1,0 +1,2 @@
+import { AuditCard } from "../shared/AuditUi";
+export function AuditScoreExplainabilityPanel({ explainability }: { explainability: Record<string, any> }) { return <AuditCard title="Score Explainability" subtitle="Why this score happened: deductions, rules, caps, blockers, original vs adjusted score."><pre className="max-h-[640px] overflow-auto rounded-lg bg-[var(--psm-surface-2)] p-3 text-xs">{JSON.stringify(explainability ?? {}, null, 2)}</pre></AuditCard>; }

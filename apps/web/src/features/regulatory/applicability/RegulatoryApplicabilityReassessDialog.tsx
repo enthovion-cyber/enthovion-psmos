@@ -1,0 +1,2 @@
+import { RegulatoryCard } from '../shared/RegulatoryUi';
+export function RegulatoryApplicabilityReassessDialog() { return <RegulatoryCard title="Reassess Applicability" subtitle="Reassessment preserves stale history and creates a new backend decision event."><p className="text-sm text-[var(--psm-muted)]">Open a stale assessment and create a new decision after reviewing source changes.</p></RegulatoryCard>; }

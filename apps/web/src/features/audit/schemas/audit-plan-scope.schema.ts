@@ -1,0 +1,1 @@
+import { z } from 'zod'; export const auditPlanScopeSchema=z.object({scopeType:z.string().min(1),siteScopeId:z.string().optional(),unitId:z.string().optional(),areaId:z.string().optional(),departmentId:z.string().optional(),scopeDescription:z.string().optional(),exclusions:z.string().optional(),scopeJustification:z.string().optional()});

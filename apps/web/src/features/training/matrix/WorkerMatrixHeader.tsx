@@ -1,0 +1,6 @@
+import { MatrixStatusBadge } from '../shared/MatrixStatusBadge';
+import { TrainingButton } from '../shared/TrainingUi';
+
+export function WorkerMatrixHeader({ worker, summary, onEvaluate }: { worker?: Record<string, any>; summary?: Record<string, any>; onEvaluate?: () => void }) {
+  return <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[.18em] text-primary">Worker Matrix</p><h1 className="mt-2 text-3xl font-bold">{worker?.display_name ?? 'Worker'}</h1><p className="mt-2 text-sm text-[var(--psm-muted)]">{worker?.job_title ?? 'No role'} / {worker?.worker_type ?? 'Worker'} / {worker?.primary_site_id ?? 'No site'}</p><div className="mt-3"><MatrixStatusBadge value={summary?.overall_matrix_status} /></div></div><div className="flex flex-wrap gap-2">{onEvaluate ? <TrainingButton onClick={onEvaluate} title="Run backend evaluation for this worker">Run Worker Evaluation</TrainingButton> : null}<TrainingButton href={`/training-competency/workforce/${worker?.id}`} variant="secondary">Worker Profile</TrainingButton><TrainingButton href={`/training-competency/workforce/${worker?.id}/training-matrix/gaps`} variant="secondary">Worker Gaps</TrainingButton></div></div>;
+}

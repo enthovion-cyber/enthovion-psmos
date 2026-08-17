@@ -1,0 +1,12 @@
+create index if not exists mi_readiness_assessments_company_site_idx on public.mi_readiness_assessments(company_id, site_id);
+create index if not exists mi_readiness_assessments_equipment_idx on public.mi_readiness_assessments(equipment_id, created_at desc);
+create index if not exists mi_readiness_assessments_status_idx on public.mi_readiness_assessments(status, recommended_decision, approved_decision);
+create index if not exists mi_readiness_assessments_startup_idx on public.mi_readiness_assessments(startup_blocked, pssr_impact);
+create index if not exists mi_readiness_blockers_assessment_idx on public.mi_readiness_blockers(assessment_id, blocker_status, severity);
+create index if not exists mi_readiness_blockers_equipment_idx on public.mi_readiness_blockers(equipment_id, blocker_status, startup_blocker);
+create index if not exists mi_readiness_blockers_source_idx on public.mi_readiness_blockers(source_module, source_record_id);
+create index if not exists mi_readiness_restrictions_assessment_idx on public.mi_readiness_restrictions(assessment_id, status, expiry_date);
+create index if not exists mi_readiness_approvals_assessment_idx on public.mi_readiness_approvals(assessment_id, acted_at desc);
+create index if not exists mi_readiness_linked_records_assessment_idx on public.mi_readiness_linked_records(assessment_id, linked_module);
+create index if not exists mi_readiness_history_assessment_idx on public.mi_readiness_history_events(assessment_id, created_at desc);
+create index if not exists mi_readiness_history_equipment_idx on public.mi_readiness_history_events(equipment_id, created_at desc);

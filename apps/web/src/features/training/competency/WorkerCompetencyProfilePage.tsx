@@ -1,0 +1,8 @@
+'use client';
+import { useWorkerCompetencyProfile } from '../hooks/useWorkerCompetencyProfile';
+import { TrainingCard, TrainingErrorState, TrainingLoadingState } from '../shared/TrainingUi';
+import { CompetencyHeader } from './CompetencyHeader';
+import { CompetencyGapTable } from './CompetencyGapTable';
+import { WorkerCompetencyRequirementTable } from './WorkerCompetencyRequirementTable';
+import { WorkerCompetencySummaryCards } from './WorkerCompetencySummaryCards';
+export function WorkerCompetencyProfilePage({ workerId }: { workerId: string }) { const query = useWorkerCompetencyProfile(workerId); if (query.isLoading) return <TrainingLoadingState rows={5} />; if (query.isError) return <TrainingErrorState message={query.error.message} onRetry={() => query.refetch()} />; const data = query.data ?? {}; return <div className="space-y-5"><CompetencyHeader title={`${data.worker?.display_name ?? 'Worker'} Competency Profile`} subtitle="Assigned profiles, backend evaluations, missing evidence, and PTW/MOC/PSSR blockers." /><WorkerCompetencySummaryCards summary={data.summary ?? {}} /><TrainingCard title="Assigned Profiles"><div className="grid gap-2">{(data.assignments ?? []).map((row: Record<string, any>) => <div key={row.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-sm">{row.profile_id} / {row.assignment_status} / {row.assignment_source}</div>)}</div></TrainingCard><TrainingCard title="Requirement-level Evaluations"><WorkerCompetencyRequirementTable rows={data.evaluations ?? []} /></TrainingCard><TrainingCard title="Competency Gaps"><CompetencyGapTable rows={data.gaps ?? []} /></TrainingCard></div>; }

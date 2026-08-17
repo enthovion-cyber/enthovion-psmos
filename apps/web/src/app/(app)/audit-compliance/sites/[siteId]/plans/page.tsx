@@ -1,0 +1,1 @@
+import { AuditPlanRegisterPage } from '@/features/audit/plans/AuditPlanRegisterPage'; export default function Page({params}:{params:{siteId:string}}){return <AuditPlanRegisterPage preset={{siteId:params.siteId}}/>}

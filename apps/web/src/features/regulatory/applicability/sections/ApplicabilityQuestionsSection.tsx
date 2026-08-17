@@ -1,0 +1,2 @@
+import { RegulatoryCard, RegulatoryEmptyState } from '../../shared/RegulatoryUi';
+export function ApplicabilityQuestionsSection() { return <RegulatoryCard title="5. Assessment Questions" subtitle="Questions load from selected real criteria profile."><RegulatoryEmptyState title="No profile criteria loaded" message="Select a profile with criteria, or continue with manual backend decision workflow." /></RegulatoryCard>; }

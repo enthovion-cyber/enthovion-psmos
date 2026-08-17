@@ -1,0 +1,6 @@
+import { AuditBadge, AuditEmptyState } from '../../shared/AuditUi';
+
+export function TrendSourceRecordsTab({ rows }: { rows: Array<Record<string, unknown>> }) {
+  if (!rows.length) return <AuditEmptyState title="No accessible source records" message="The backend returned no source records for this trend run or all source records are outside your scope." />;
+  return <div className="overflow-x-auto rounded-xl border border-[var(--psm-line)]"><table className="min-w-full divide-y divide-[var(--psm-line)] text-sm"><thead className="bg-[var(--psm-surface-2)]"><tr>{['Module', 'Object', 'Record', 'Included', 'Restricted', 'Excluded reason'].map((head) => <th key={head} className="px-3 py-2 text-left font-semibold text-[var(--psm-muted)]">{head}</th>)}</tr></thead><tbody className="divide-y divide-[var(--psm-line)]">{rows.map((row) => <tr key={String(row.id)}><td className="px-3 py-3">{String(row.source_module ?? '-')}</td><td className="px-3 py-3">{String(row.source_object_type ?? '-')}</td><td className="px-3 py-3">{String(row.source_record_id ?? '-')}</td><td className="px-3 py-3">{row.included ? 'Yes' : 'No'}</td><td className="px-3 py-3">{row.restricted ? <AuditBadge tone="danger">Restricted</AuditBadge> : 'No'}</td><td className="px-3 py-3">{String(row.excluded_reason ?? '-')}</td></tr>)}</tbody></table></div>;
+}

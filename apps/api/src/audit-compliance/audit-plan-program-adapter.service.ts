@@ -1,0 +1,2 @@
+import { Injectable } from '@nestjs/common'; import { RequestUser } from '../common/decorators/current-user.decorator'; import { AuditPlanProgramSnapshotService } from './audit-plan-program-snapshot.service';
+@Injectable() export class AuditPlanProgramAdapterService { constructor(private readonly snapshots:AuditPlanProgramSnapshotService){} snapshot(user:RequestUser,programId:string){return this.snapshots.capture(user,programId);} }

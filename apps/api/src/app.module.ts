@@ -29,6 +29,11 @@ import { HazopModule } from './hazop/hazop.module';
 import { LopaModule } from './lopa/lopa.module';
 import { IncidentModule } from './incidents/incident.module';
 import { BillingModule } from './billing/billing.module';
+import { MechanicalIntegrityModule } from './mechanical-integrity/mechanical-integrity.module';
+import { PsiModule } from './psi/psi.module';
+import { TrainingCompetencyModule } from './training-competency/training-competency.module';
+import { AuditComplianceModule } from './audit-compliance/audit-compliance.module';
+import { RegulatoryModule } from './regulatory/regulatory.module';
 
 @Module({
   imports: [
@@ -65,6 +70,11 @@ import { BillingModule } from './billing/billing.module';
     HazopModule,
     LopaModule,
     IncidentModule,
+    MechanicalIntegrityModule,
+    PsiModule,
+    TrainingCompetencyModule,
+    AuditComplianceModule,
+    RegulatoryModule,
     BillingModule,
     SignaturesModule,
     SearchModule

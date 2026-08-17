@@ -1,0 +1,2 @@
+import { Injectable } from '@nestjs/common'; import { RequestUser } from '../common/decorators/current-user.decorator'; import { AuditPlanTenantScopeService } from './audit-plan-tenant-scope.service';
+@Injectable() export class AuditPlanCompanySiteAdapterService { constructor(private readonly scope:AuditPlanTenantScopeService){} validate(user:RequestUser,companyId:string,siteId?:string|null){this.scope.assertCompany(user,companyId);this.scope.assertSite(user,siteId);return true;} }

@@ -1,0 +1,46 @@
+import { get, patch, post } from './training-api';
+import type { SopAckAssignment, SopAckDashboard, SopAcknowledgement, SopAcknowledgementDetail, SopAckRegister, SopAckRequirement, SopAckRequirementDetail } from '../types/sop-acknowledgement.types';
+
+const base = '/training-competency/sop-acknowledgements';
+
+export const sopAckService = {
+  dashboard: (params?: Record<string, unknown>) => get<SopAckDashboard>(`${base}/dashboard`, params),
+  summary: (params?: Record<string, unknown>) => get<Record<string, number>>(`${base}/dashboard/summary`, params),
+  requirements: (params?: Record<string, unknown>) => get<SopAckRegister<SopAckRequirement>>(`${base}/requirements`, params),
+  createRequirement: (payload: Record<string, unknown>) => post<SopAckRequirementDetail>(`${base}/requirements`, payload),
+  requirementDetail: (requirementId: string) => get<SopAckRequirementDetail>(`${base}/requirements/${requirementId}`),
+  updateRequirement: (requirementId: string, payload: Record<string, unknown>) => patch<SopAckRequirementDetail>(`${base}/requirements/${requirementId}`, payload),
+  archiveRequirement: (requirementId: string, payload: Record<string, unknown>) => post<SopAckRequirement>(`${base}/requirements/${requirementId}/archive`, payload),
+  activateRequirement: (requirementId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/requirements/${requirementId}/activate`, payload),
+  previewAffectedWorkers: (requirementId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/requirements/${requirementId}/preview-affected-workers`, payload),
+  generateAssignments: (requirementId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/requirements/${requirementId}/generate-assignments`, payload),
+  evaluateRequirement: (requirementId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/requirements/${requirementId}/evaluate`, payload),
+  assignments: (params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`${base}/assignments`, params),
+  assignmentDetail: (assignmentId: string) => get<Record<string, unknown>>(`${base}/assignments/${assignmentId}`),
+  filtered: (view: string, params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`${base}/${view}`, params),
+  acknowledge: (assignmentId: string, payload: Record<string, unknown>) => post<SopAcknowledgement>(`${base}/assignments/${assignmentId}/acknowledge`, payload),
+  sendReminder: (assignmentId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/assignments/${assignmentId}/send-reminder`, payload),
+  cancelAssignment: (assignmentId: string, payload: Record<string, unknown>) => post<SopAckAssignment>(`${base}/assignments/${assignmentId}/cancel`, payload),
+  requestReacknowledgement: (assignmentId: string, payload?: Record<string, unknown>) => post<SopAckAssignment>(`${base}/assignments/${assignmentId}/request-reacknowledgement`, payload),
+  waiverRequest: (assignmentId: string, payload: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/assignments/${assignmentId}/waiver-request`, payload),
+  acknowledgementDetail: (acknowledgementId: string) => get<SopAcknowledgementDetail>(`${base}/acknowledgements/${acknowledgementId}`),
+  verify: (acknowledgementId: string, payload?: Record<string, unknown>) => post<SopAcknowledgement>(`${base}/acknowledgements/${acknowledgementId}/verify`, payload),
+  reject: (acknowledgementId: string, payload: Record<string, unknown>) => post<SopAcknowledgement>(`${base}/acknowledgements/${acknowledgementId}/reject`, payload),
+  returnForCorrection: (acknowledgementId: string, payload: Record<string, unknown>) => post<SopAcknowledgement>(`${base}/acknowledgements/${acknowledgementId}/return`, payload),
+  reopen: (acknowledgementId: string, payload: Record<string, unknown>) => post<SopAcknowledgement>(`${base}/acknowledgements/${acknowledgementId}/reopen`, payload),
+  revisionImpact: (params?: Record<string, unknown>) => get<Record<string, unknown>>(`${base}/revision-impact`, params),
+  detectRevisionImpact: (payload: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/revision-impact/detect`, payload),
+  waivers: (params?: Record<string, unknown>) => get<SopAckRegister<Record<string, unknown>>>(`${base}/waivers`, params),
+  decideWaiver: (waiverId: string, decision: 'approve' | 'reject' | 'revoke', payload?: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/waivers/${waiverId}/${decision}`, payload),
+  importTemplate: () => get<Record<string, unknown>>(`${base}/import-template`),
+  importRows: (payload: Record<string, unknown>) => post<Record<string, unknown>>(`${base}/import`, payload),
+  exportRows: (params?: Record<string, unknown>) => get<Record<string, unknown>>(`${base}/export`, params),
+  history: (params?: Record<string, unknown>) => get<Record<string, unknown>>(`${base}/history`, params),
+  settings: (params?: Record<string, unknown>) => get<Record<string, unknown>>(`${base}/settings`, params),
+  updateSettings: (payload: Record<string, unknown>) => patch<Record<string, unknown>>(`${base}/settings`, payload),
+  worker: (workerId: string, params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`/training-competency/workforce/${workerId}/sop-acknowledgements`, params),
+  workerPending: (workerId: string, params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`/training-competency/workforce/${workerId}/sop-acknowledgements/pending`, params),
+  scoped: (scope: 'sites' | 'units' | 'areas', id: string, params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`/training-competency/${scope}/${id}/sop-acknowledgements`, params),
+  sop: (sopId: string, params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`/training-competency/sop/${sopId}/acknowledgements`, params),
+  document: (documentId: string, params?: Record<string, unknown>) => get<SopAckRegister<SopAckAssignment>>(`/training-competency/documents/${documentId}/sop-acknowledgements`, params)
+};

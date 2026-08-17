@@ -1,0 +1,30 @@
+-- Mechanical Integrity Phase 4 - backend due-date evaluations.
+
+create table if not exists public.mi_inspection_due_date_evaluations (
+  id text primary key default gen_random_uuid()::text,
+  company_id text not null,
+  site_id text not null,
+  plan_id text not null references public.mi_inspection_plans(id) on delete cascade,
+  equipment_id text not null references public.mi_equipment(id) on delete cascade,
+  scheduler_run_id text null,
+  evaluation_time timestamptz not null default now(),
+  fixed_interval_due_date date null,
+  remaining_life_due_date date null,
+  half_life_due_date date null,
+  rule_based_due_date date null,
+  rbi_due_date date null,
+  manual_override_due_date date null,
+  final_next_due_date date null,
+  final_due_basis text null,
+  governing_cml_id text null,
+  governing_cml_number text null,
+  governing_remaining_life_years numeric null,
+  scheduler_status text not null default 'Not Configured',
+  due_status text not null default 'Not Scheduled',
+  days_until_due integer null,
+  days_overdue integer null,
+  calculation_inputs_json jsonb not null default '{}'::jsonb,
+  calculation_result_json jsonb not null default '{}'::jsonb,
+  scheduler_error text null,
+  created_at timestamptz not null default now()
+);

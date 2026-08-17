@@ -1,0 +1,6 @@
+import { PsiCard, PsiEmptyState } from '../../shared/PsiUi';
+import type { SafeOperatingLimitDetail } from '../../types/safe-operating-limit.types';
+
+export function LimitDocumentsTab({ detail }: { detail: SafeOperatingLimitDetail }) {
+  return <PsiCard title="Documents" subtitle="Document Control links only. Approved document status and revisions are managed outside SOL tables.">{!detail.documents.length ? <PsiEmptyState title="No documents linked" message="Link approved Document Control references for procedures, P&IDs, SRS, HAZOP/LOPA reports, relief calculations, datasheets, and engineering calculations." /> : <div className="space-y-2">{detail.documents.map((row) => <div key={String(row.id)} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><div><p className="font-semibold">{String(row.document_type)}</p><p className="text-sm text-[var(--psm-muted)]">{String(row.document_id)} | {String(row.relationship_type)}</p></div>{row.required ? <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-1 text-xs font-semibold text-warning">Required</span> : null}</div>)}</div>}</PsiCard>;
+}

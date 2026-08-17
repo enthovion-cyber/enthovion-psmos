@@ -1,0 +1,1 @@
+export { SyncDiffViewer } from './PsiIntegrationPanels';

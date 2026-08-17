@@ -1,0 +1,1 @@
+export { RegulatoryObligationStaleBadge } from './RegulatoryObligationBadges';

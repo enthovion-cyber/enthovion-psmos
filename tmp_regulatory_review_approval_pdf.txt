@@ -1,0 +1,1946 @@
+
+
+--- PAGE 1 ---
+You are the senior full-stack engineer, process safety engineer, regulatory review architect, compliance
+approval workflow architect, e-signature integration architect, PSM governance architect, SaaS platform
+architect, backend database architect, security engineer, QA automation lead, and enterprise UI/UX
+designer for Enthovion PSM OS.
+Task: Build Regulatory Register — Phase 8: Review & Approval + E-Signature Foundation.
+This phase comes after:
+1. Regulatory Register — Dashboard + Register Foundation
+2. Jurisdiction Management + Applicability Assessment
+3. Obligations + Requirement Breakdown
+4. Compliance Status + Gap Assessment
+5. Evidence Links + Compliance Evidence Management
+6. Audit Mapping + Compliance Assurance Integration
+7. Actions / CAPA Integration + Compliance Remediation
+Do not rebuild the Regulatory Dashboard, Register Foundation, Jurisdiction Management, Applicability
+Assessment, Obligations, Compliance Status, Evidence Management, Audit Mapping, Actions / CAPA, Audit /
+Compliance Assurance, PTW, MOC, PSSR, HAZOP/PHA, LOPA/SIL, PSI, Mechanical Integrity, Incident
+Investigation, Training & Competency, Document Control, Universal Action Engine, Review & Approval, E-
+Signature, Audit Log, Notification Center, IAM, Admin/User Management, Storage, Billing, Reports / Export,
+or Executive KPI Dashboard.
+This phase must create the Regulatory Review & Approval + E-Signature Foundation layer, including:
+1. Regulatory review dashboard
+2. Regulatory review inbox
+3. My submissions
+4. Approval package register
+5. Regulatory review rule builder foundation
+6. Review package creation for regulatory records
+7. Multi-stage approval workflow foundation
+8. Reviewer assignment and delegation foundation
+9. Validation before submission
+10. Immutable review package snapshot
+11. E-signature foundation through existing E-Signature adapter
+12. Approve / reject / return / request-info / approve-with-conditions workflow
+13. Stale review package detection
+14. Source record locking after approval
+15. Review conditions and condition tracking foundation
+16. Review SLA / overdue / escalation foundation
+17. Regulatory decision history and audit trail
+18. Review-to-compliance-status integration
+19. Review-to-reports/export readiness foundation
+20. Permissions, APIs, database, UI, history, settings, and tests
+1
+
+--- PAGE 2 ---
+Do not duplicate the global Review & Approval system or Universal E-Signature system. Use adapters where
+they exist. If a global Review & Approval system is not fully implemented, build only a regulatory-specific
+foundation that can later migrate into the global workflow engine.
+================================================== PURPOSE
+==================================================
+This phase ensures important regulatory records are formally reviewed, approved, rejected, returned, or
+signed before they are treated as current governance records.
+It must answer:
+• Which regulatory items need review?
+• Which applicability decisions need approval?
+• Which obligations need approval?
+• Which compliance status decisions need approval?
+• Which evidence verification decisions need review?
+• Which audit mappings need verification approval?
+• Which regulatory CAPA / action closure decisions need approval?
+• Which review packages are pending, overdue, approved, rejected, returned, stale, or completed?
+• Who submitted each item?
+• Who reviewed it?
+• Was e-signature required?
+• Was e-signature completed?
+• Which source records are locked after approval?
+• Which approved records became stale because the source changed?
+• Which approvals were conditional?
+• Which conditions remain open?
+• Which reviews are blocking compliance status, reports, or executive KPI readiness?
+• Which review history is audit-ready?
+================================================== CORE FLOW
+==================================================
+Implement this Phase 8 flow:
+txt id="regulatory-review-approval-flow"
+Regulatory source record reaches review trigger
+↓
+Backend validates source readiness, permissions, scope, owner, evidence, gaps,
+actions, mapping, and status
+↓
+User submits regulatory source for review
+↓
+Backend creates immutable review package snapshot
+↓
+Workflow assigns reviewer(s) based on rule, role, site, criticality, source type, or
+2
+
+--- PAGE 3 ---
+manual selection
+↓
+Reviewer reviews source record, evidence, gaps, actions, audit mapping, history, and
+validation results
+↓
+Reviewer approves, approves with conditions, rejects, returns for correction, or
+requests more information
+↓
+E-signature is captured if required
+↓
+Approved source record is locked/current or moved to next workflow stage
+↓
+Rejected/returned records update source status and notify owner
+↓
+Stale detection blocks approval if source changed after submission
+↓
+Review decision updates regulatory readiness, compliance readiness, and future
+report/export readiness
+================================================== ABSOLUTE RULES
+==================================================
+• No mock/static production data.
+• No fake approvals.
+• No fake signatures.
+• No fake reviewer names.
+• No fake compliance approval.
+• Backend must be the source of truth.
+• Frontend must never calculate final review status, approval status, validation readiness, stale status,
+source lock status, e-sign status, or SLA status.
+• Backend must enforce all permissions.
+• Backend must enforce company/site/unit/area/equipment isolation.
+• Backend must enforce RLS policies.
+• Do not trust frontend IDs.
+• Do not duplicate global Review & Approval if it exists.
+• Do not duplicate Universal E-Signature if it exists.
+• Use Review & Approval adapter.
+• Use E-Signature adapter.
+• Every review package must have a valid regulatory source record.
+• Every review package must belong to a company.
+• Site-scoped review packages must have site_id .
+• Every review package must store immutable source snapshot.
+• A source record change after submission must mark review package stale.
+• Stale review packages cannot be approved unless refreshed/resubmitted.
+• Self-approval must be blocked if setting requires separation of duties.
+• Critical regulatory decisions must require elevated reviewer/e-signature if configured.
+• Approval does not equal legal certification.
+3
+
+--- PAGE 4 ---
+• The UI must avoid legal certification wording.
+• Approved/locked records are read-only unless controlled reopen/new-version flow exists.
+• Every decision must create global audit log and regulatory history event.
+• Every e-signature attempt/result must be traceable.
+• Cross-company/cross-site data must never leak.
+• Restricted evidence/action/audit details must not leak.
+• Site switcher must filter all review data.
+• Frontend must hide/disable unauthorized actions and show exact disabled reason.
+================================================== REGULATORY MODULE SIDEBAR STATUS
+==================================================
+Fully implement:
+• Review & Approval Foundation
+Rename sidebar item to Review & Approval only if this phase is fully connected.
+Keep these existing entries working:
+• Dashboard
+• Regulatory Register
+• Add Requirement
+• Jurisdictions
+• Applicability
+• Obligations
+• Compliance Status
+• Evidence
+• Audit Mapping
+• Actions / CAPA
+• Reports / Export Foundation
+• History
+• Settings
+Rules:
+• Sidebar is permission-aware.
+• Active route highlighting works.
+• No broken links.
+• No duplicate items.
+• Mobile sidebar works.
+• Placeholder pages must show safe message only and no fake data.
+================================================== ROUTES
+==================================================
+4
+
+--- PAGE 5 ---
+Main routes:
+• /regulatory/review-approval
+• /regulatory/review-approval/dashboard
+• /regulatory/review-approval/inbox
+• /regulatory/review-approval/my-submissions
+• /regulatory/review-approval/packages
+• /regulatory/review-approval/packages/new
+• /regulatory/review-approval/packages/:approvalId
+• /regulatory/review-approval/packages/:approvalId/overview
+• /regulatory/review-approval/packages/:approvalId/source
+• /regulatory/review-approval/packages/:approvalId/snapshot
+• /regulatory/review-approval/packages/:approvalId/validation
+• /regulatory/review-approval/packages/:approvalId/evidence
+• /regulatory/review-approval/packages/:approvalId/gaps
+• /regulatory/review-approval/packages/:approvalId/actions
+• /regulatory/review-approval/packages/:approvalId/audit-mapping
+• /regulatory/review-approval/packages/:approvalId/stages
+• /regulatory/review-approval/packages/:approvalId/decisions
+• /regulatory/review-approval/packages/:approvalId/e-signatures
+• /regulatory/review-approval/packages/:approvalId/conditions
+• /regulatory/review-approval/packages/:approvalId/history
+• /regulatory/review-approval/rules
+• /regulatory/review-approval/rules/new
+• /regulatory/review-approval/rules/:ruleId
+• /regulatory/review-approval/rules/:ruleId/edit
+• /regulatory/review-approval/pending
+• /regulatory/review-approval/overdue
+• /regulatory/review-approval/returned
+• /regulatory/review-approval/rejected
+• /regulatory/review-approval/approved
+• /regulatory/review-approval/approved-with-conditions
+• /regulatory/review-approval/stale
+• /regulatory/review-approval/escalated
+• /regulatory/review-approval/e-signatures
+• /regulatory/review-approval/validation-failures
+• /regulatory/review-approval/settings
+Source integration routes:
+• /regulatory/:regulationId/review
+• /regulatory/:regulationId/review/submit
+• /regulatory/:regulationId/review/history
+• /regulatory/obligations/:obligationId/review
+• /regulatory/obligations/:obligationId/review/submit
+• /regulatory/applicability/assessments/:assessmentId/review
+5
+
+--- PAGE 6 ---
+• /regulatory/compliance-status/assessments/:assessmentId/review
+• /regulatory/evidence/links/:evidenceLinkId/review
+• /regulatory/evidence/packages/:packageId/review
+• /regulatory/audit-mapping/:mappingId/review
+• /regulatory/actions/links/:actionLinkId/review
+• /regulatory/actions/capa/:capaPackageId/review
+Site/unit filtered routes:
+• /regulatory/sites/:siteId/review-approval
+• /regulatory/units/:unitId/review-approval
+• /regulatory/areas/:areaId/review-approval
+• /regulatory/equipment/:equipmentId/review-approval
+Rules:
+• No route should 404.
+• No route should crash on refresh.
+• Route params must follow existing Next.js App Router pattern.
+• All routes must support loading, empty, error, retry, permission denied, upgrade required, stale
+package, validation failed, e-signature required, locked/read-only, and mobile states.
+• Direct URL access must enforce backend permissions.
+================================================== REVIEW DASHBOARD
+==================================================
+Route:
+• /regulatory/review-approval/dashboard
+Build dashboard with backend aggregation.
+Cards:
+• Total Review Packages
+• Pending My Review
+• My Submissions
+• Pending Review
+• In Review
+• Overdue Reviews
+• Returned For Correction
+• Rejected
+• Approved
+• Approved With Conditions
+• Completed
+• Escalated
+• Stale Packages
+• Validation Failures
+6
+
+--- PAGE 7 ---
+• E-Signatures Pending
+• E-Signatures Completed
+• Conditions Open
+• Conditions Overdue
+• Critical Reviews Pending
+• PSM-Critical Reviews Pending
+• Safety-Critical Reviews Pending
+• Environmental-Critical Reviews Pending
+• Regulatory-Critical Reviews Pending
+• Records Locked After Approval
+• Records Waiting For Review Before Report
+• Recently Approved
+• Recently Returned
+Dashboard sections:
+• Review status by source type
+• Review status by site
+• Review status by unit
+• Review status by owner
+• Review status by reviewer
+• Review status by criticality
+• Pending my review preview
+• Overdue review preview
+• Validation failures preview
+• Stale package preview
+• E-signature pending preview
+• Open conditions preview
+• Recent decisions
+• Review SLA summary
+• Approval bottleneck summary
+Filters:
+• Company
+• Site
+• Unit
+• Area
+• Equipment
+• Source type
+• Source record
+• Regulatory item
+• Obligation
+• Reviewer
+• Submitter
+• Owner
+• Review status
+• Stage status
+7
+
+--- PAGE 8 ---
+• Decision
+• E-sign status
+• Condition status
+• Criticality
+• Due date
+• Submission date
+• Decision date
+• Stale Yes/No
+• Validation status
+Rules:
+• Backend aggregation only.
+• No fake counts.
+• Cards link to filtered review views.
+• Site switcher updates dashboard.
+• Dashboard respects permissions and RLS.
+• If no data, show empty state with “Submit Regulatory Record For Review” CTA if user has permission.
+================================================== REVIEW INBOX
+==================================================
+Route:
+• /regulatory/review-approval/inbox
+Show packages assigned to current user.
+Columns:
+• Package Code
+• Package Title
+• Source Type
+• Source Record
+• Site / Scope
+• Current Stage
+• Review Status
+• Criticality
+• Submitted By
+• Submitted At
+• Due Date
+• SLA Status
+• E-Sign Required
+• Validation Status
+• Stale Status
+• Actions
+8
+
+--- PAGE 9 ---
+Actions:
+• Open Review
+• Approve
+• Approve With Conditions
+• Reject
+• Return For Correction
+• Request More Information
+• Delegate / Reassign Foundation
+• Escalate
+• View Source
+• View Snapshot
+• View Evidence
+• View History
+Rules:
+• Show only assigned reviews.
+• Reviewer cannot act if package is stale.
+• Reviewer cannot act if validation fails unless override permission exists.
+• Reviewer cannot self-approve if separation of duties setting is enabled.
+• E-sign required decisions must trigger e-signature adapter.
+• Decision requires comment when rejecting, returning, requesting info, approving with conditions, or
+overriding validation.
+================================================== MY SUBMISSIONS
+==================================================
+Route:
+• /regulatory/review-approval/my-submissions
+Show packages submitted by current user.
+Columns:
+• Package Code
+• Source Type
+• Source Record
+• Status
+• Current Stage
+• Assigned Reviewer
+• Submitted At
+• Due Date
+• Last Decision
+• Stale Status
+• Actions
+9
+
+--- PAGE 10 ---
+Actions:
+• View
+• Cancel Submission if allowed
+• Refresh Snapshot
+• Resubmit
+• Respond To Request Info
+• View Decision
+• View Conditions
+• View History
+Rules:
+• Submitter cannot edit locked source while package is in review unless returned.
+• Cancel submission requires reason.
+• Refresh snapshot creates history event.
+• Resubmission creates new package version or new stage attempt.
+================================================== REVIEW PACKAGE REGISTER
+==================================================
+Route:
+• /regulatory/review-approval/packages
+Summary cards:
+• Total
+• Draft
+• Submitted
+• Pending
+• In Review
+• Approved
+• Approved With Conditions
+• Returned
+• Rejected
+• Stale
+• Overdue
+• Escalated
+Filters:
+• Search
+• Source type
+• Source record
+• Site
+• Unit
+• Area
+10
+
+--- PAGE 11 ---
+• Reviewer
+• Submitter
+• Status
+• Stage
+• Decision
+• Criticality
+• E-sign required
+• Stale status
+• Validation status
+• Submission date
+• Due date
+• Decision date
+Table columns:
+• Package Code
+• Package Title
+• Source Type
+• Source Record
+• Scope
+• Review Status
+• Current Stage
+• Decision
+• Criticality
+• Submitter
+• Reviewer
+• Due Date
+• E-Sign Status
+• Stale Status
+• Updated At
+• Actions
+Actions:
+• View
+• Submit
+• Cancel
+• Refresh Snapshot
+• Run Validation
+• Mark Stale
+• Archive
+• View History
+Rules:
+• Server-side pagination required.
+• Server-side filtering required.
+• Server-side sorting required.
+11
+
+--- PAGE 12 ---
+• Mobile card layout required.
+• Unauthorized actions hidden/disabled.
+• Disabled actions show exact reason.
+• Locked/completed packages are read-only unless authorized reopen/resubmit flow exists.
+================================================== REVIEW SOURCE TYPES
+==================================================
+Supported regulatory source types:
+• Regulatory Item
+• Regulatory Jurisdiction
+• Regulatory Authority
+• Applicability Assessment
+• Applicability Decision
+• Regulatory Obligation
+• Compliance Assessment
+• Compliance Status Decision
+• Compliance Gap Closure
+• Evidence Requirement
+• Evidence Link
+• Evidence Verification
+• Evidence Package Foundation
+• Audit Mapping
+• Audit Mapping Verification
+• Regulatory Action Link
+• Regulatory CAPA Package
+• Regulatory CAPA Closure
+• Settings Change Foundation
+• Manual Regulatory Review Package
+• Custom
+Review statuses:
+• Draft
+• Submitted
+• Pending Review
+• In Review
+• Approved
+• Approved With Conditions
+• Returned For Correction
+• Rejected
+• Cancelled
+• Escalated
+• Stale
+• Superseded
+• Completed
+• Archived
+12
+
+--- PAGE 13 ---
+Stage statuses:
+• Not Started
+• Pending
+• In Review
+• Approved
+• Approved With Conditions
+• Returned
+• Rejected
+• Skipped
+• Escalated
+• Delegated
+• Stale
+Decision types:
+• Approve
+• Approve With Conditions
+• Reject
+• Return For Correction
+• Request More Information
+• Delegate / Reassign Foundation
+• Escalate
+• Cancel Submission
+• Refresh Snapshot
+• Mark Stale
+• Resubmit
+E-sign statuses:
+• Not Required
+• Required
+• Pending
+• Completed
+• Failed
+• Cancelled
+• Expired
+Validation statuses:
+• Not Run
+• Passed
+• Passed With Warnings
+• Failed
+• Blocked
+• Override Required
+• Stale
+13
+
+--- PAGE 14 ---
+================================================== REVIEW RULE BUILDER FOUNDATION
+==================================================
+Routes:
+• /regulatory/review-approval/rules
+• /regulatory/review-approval/rules/new
+• /regulatory/review-approval/rules/:ruleId/edit
+Rule fields:
+• Rule title
+• Rule code
+• Source type
+• Trigger event
+• Scope
+• Site/unit applicability
+• Criticality applicability
+• Category applicability
+• PSM element applicability
+• Reviewer selection method
+• Required role
+• Required permission
+• Specific reviewer
+• Reviewer group foundation
+• Number of stages
+• Stage definitions
+• E-signature required Yes/No
+• Separation of duties required Yes/No
+• SLA days
+• Escalation rule foundation
+• Auto-lock source after approval Yes/No
+• Auto-mark compliance ready after approval Yes/No foundation
+• Status
+• Notes
+Trigger events:
+• Submit Regulatory Item
+• Submit Applicability Decision
+• Submit Obligation
+• Submit Compliance Status Decision
+• Submit Evidence Verification
+• Submit Audit Mapping Verification
+• Submit Regulatory CAPA Closure
+• Submit Evidence Package
+• Critical Status Change
+• Critical Gap Closure
+14
+
+--- PAGE 15 ---
+• Critical Evidence Verification
+• Manual Submission
+• Custom
+Reviewer selection methods:
+• Source Owner’s Manager Foundation
+• Specific User
+• Role-Based Reviewer
+• Permission-Based Reviewer
+• Site Admin
+• Company Admin
+• Regulatory Manager
+• HSE Manager
+• Process Safety Manager
+• Compliance Manager
+• Legal Reviewer Foundation
+• External Reviewer Foundation
+• Custom
+Rules:
+• Active rule requires at least one stage.
+• Critical records can require elevated reviewer.
+• E-signature required records must use E-Signature adapter.
+• Rule changes create audit/history.
+• Do not create fake reviewer groups.
+• If reviewer cannot be resolved, submission must block or require manual reviewer.
+================================================== REVIEW PACKAGE CREATION
+==================================================
+Routes:
+• /regulatory/review-approval/packages/new
+• source submit routes
+Package creation wizard:
+1. Source Selection
+2. Validation Readiness
+3. Snapshot Preview
+4. Reviewer / Rule Selection
+5. E-Signature Requirements
+6. Submission Summary
+================================================== 1. SOURCE SELECTION
+==================================================
+15
+
+--- PAGE 16 ---
+Fields:
+• Source type
+• Source record
+• Regulatory item
+• Obligation
+• Site / scope
+• Source status
+• Source owner
+• Source criticality
+• Source current review status
+Rules:
+• Source required.
+• Source must be accessible.
+• Source must be same company/site scope.
+• Archived/superseded source cannot be submitted unless historical review setting allows.
+• Locked source cannot be resubmitted unless reopen/version flow exists.
+================================================== 2. VALIDATION READINESS
+==================================================
+Backend validates based on source type.
+Validation examples:
+Regulatory Item:
+• Title exists
+• Source type exists
+• Jurisdiction exists
+• Owner assigned
+• Applicability assessed if required
+• Criticality set
+• Active status rules satisfied
+Applicability Assessment:
+• Scope exists
+• Decision exists
+• Rationale exists
+• Required criteria answered
+• Critical decision review rule satisfied
+Obligation:
+• Parent requirement exists
+16
+
+--- PAGE 17 ---
+• Owner assigned
+• Scope exists
+• Evidence expectation exists if required
+• Module mapping exists if required
+• Due date/frequency exists if required
+Compliance Assessment:
+• Status decision exists
+• Rationale exists
+• Evidence readiness checked
+• Gaps identified
+• Non-compliance has action or waiver if required
+Evidence Link:
+• Source exists
+• Evidence exists
+• Restricted reason exists if restricted
+• Review criteria satisfied
+• No stale evidence unless allowed
+Audit Mapping:
+• Regulatory source exists
+• Audit target exists
+• Mapping rationale exists
+• Coverage readiness calculated
+• No stale mapping unless allowed
+Action / CAPA:
+• Source gap exists
+• Linked action exists
+• Closure readiness calculated
+• Evidence/verification/effectiveness complete if required
+Rules:
+• Validation runs on backend.
+• Failed validation blocks submission unless override permission and reason.
+• Validation results stored in package.
+================================================== 3. SNAPSHOT PREVIEW
+==================================================
+Snapshot includes:
+• Source identity
+17
+
+--- PAGE 18 ---
+• Source status
+• Scope
+• Owner
+• Criticality
+• Applicability
+• Compliance status
+• Evidence summary
+• Gap summary
+• Action summary
+• Audit mapping summary
+• History summary
+• Restricted data placeholders
+• Validation results
+• Source version/hash foundation
+Rules:
+• Snapshot is immutable after submission.
+• Snapshot must not expose restricted data to unauthorized reviewers.
+• Snapshot refresh requires permission and history event.
+================================================== 4. REVIEWER / RULE SELECTION
+==================================================
+Fields:
+• Review rule
+• Reviewer(s)
+• Stage(s)
+• Due date
+• SLA
+• Escalation owner foundation
+• Delegation allowed Yes/No
+• Notes
+Rules:
+• Reviewer must be resolvable.
+• Reviewer must have required permission.
+• Reviewer must be within scope.
+• Self-approval blocked if setting enabled.
+• Manual reviewer override requires permission.
+================================================== 5. E-SIGNATURE REQUIREMENTS
+==================================================
+18
+
+--- PAGE 19 ---
+Fields:
+• E-signature required Yes/No
+• Signature meaning
+• Signature reason
+• E-signature provider/adapter
+• Signer
+• Signature deadline
+• Notes
+Rules:
+• E-signature uses existing adapter.
+• No fake signature.
+• Signature event must link to review decision.
+• Failed signature blocks approval if required.
+================================================== 6. SUBMISSION SUMMARY
+==================================================
+Actions:
+• Save Draft Package
+• Submit For Review
+• Cancel
+• Run Validation Again
+Rules:
+• Submit requires validation pass or override.
+• Submit creates audit/history.
+• Submit triggers notifications.
+• Submit locks source editing if configured.
+================================================== REVIEW PACKAGE DETAIL
+==================================================
+Route:
+• /regulatory/review-approval/packages/:approvalId
+Tabs:
+1. Overview
+2. Source
+3. Snapshot
+4. Validation
+5. Evidence
+19
+
+--- PAGE 20 ---
+6. Gaps
+7. Actions
+8. Audit Mapping
+9. Stages
+10. Decisions
+11. E-Signatures
+12. Conditions
+13. History
+Overview cards:
+• Package code/title
+• Source type
+• Source record
+• Review status
+• Current stage
+• Current reviewer
+• Submitter
+• Submitted at
+• Due date
+• SLA status
+• Criticality
+• Validation status
+• E-sign status
+• Stale status
+• Decision
+• Conditions open
+• Source lock status
+Rules:
+• Tabs are permission-aware.
+• Restricted linked records show safe placeholders.
+• Reviewer actions visible only to assigned/authorized reviewer.
+• Stale banner is obvious.
+• Validation blockers are obvious.
+• Decision buttons require comments where applicable.
+================================================== REVIEW DECISION WORKFLOW
+==================================================
+Decision actions:
+• Approve
+• Approve With Conditions
+• Reject
+• Return For Correction
+• Request More Information
+20
+
+--- PAGE 21 ---
+• Delegate / Reassign Foundation
+• Escalate
+• Cancel Submission
+• Resubmit
+• Refresh Snapshot
+Decision fields:
+• Decision
+• Decision comment
+• Condition details if approving with conditions
+• Return/rejection reason
+• Requested information
+• Delegate/reassign reason
+• E-signature required Yes/No
+• E-signature result
+• Decision timestamp
+• Reviewer
+Rules:
+• Approve requires current stage assignment.
+• Approve blocked if package stale.
+• Approve blocked if validation failed unless override permission.
+• Approve with conditions requires at least one condition.
+• Reject/return/request-info requires reason.
+• Delegate/reassign requires reason.
+• E-signature required approval cannot complete without signature.
+• Decision creates audit/history.
+• Final approval updates source status and locks source if configured.
+================================================== CONDITIONS FOUNDATION
+==================================================
+Conditions are created when approving with conditions.
+Condition fields:
+• Condition title
+• Condition description
+• Owner
+• Due date
+• Status
+• Evidence required foundation
+• Action required foundation
+• Verification required foundation
+• Closure note
+• Notes
+21
+
+--- PAGE 22 ---
+Condition statuses:
+• Open
+• In Progress
+• Evidence Submitted Foundation
+• Completed Foundation
+• Verified Foundation
+• Overdue
+• Waived Foundation
+• Cancelled
+Rules:
+• Condition does not duplicate Action Engine.
+• Condition can create Action foundation if needed.
+• Condition closure requires note.
+• Open condition can block report/export readiness if configured.
+================================================== STALE REVIEW PACKAGE DETECTION
+==================================================
+Review package becomes stale when:
+• Source record changes after submission
+• Source status changes
+• Applicability changes
+• Obligation changes
+• Compliance status changes
+• Evidence changes
+• Evidence review status changes
+• Audit mapping changes
+• Action/CAPA status changes
+• Scope changes
+• Reviewer rule changes materially
+• Source is archived/superseded
+• Snapshot expires if setting configured
+Rules:
+• Backend detects stale status.
+• Stale package cannot be approved.
+• User can refresh snapshot or resubmit.
+• Stale reason must be visible.
+• Stale event creates audit/history.
+================================================== SOURCE LOCKING
+==================================================
+22
+
+--- PAGE 23 ---
+After final approval, source record may be locked.
+Lockable sources:
+• Regulatory Item
+• Applicability Assessment
+• Obligation
+• Compliance Assessment
+• Evidence Link
+• Evidence Package Foundation
+• Audit Mapping
+• Regulatory Action Link
+• Regulatory CAPA Package
+Rules:
+• Locking uses source adapter.
+• Locked source is read-only.
+• Reopen/version flow requires permission and reason.
+• Lock event creates audit/history.
+• Approval does not lock if rule says no.
+================================================== DATABASE TABLES
+==================================================
+Create/fix these tables.
+regulatory_review_packages
+• id
+• company_id
+• site_id nullable
+• department_id nullable
+• unit_id nullable
+• area_id nullable
+• equipment_id nullable
+• package_code nullable
+• package_title
+• source_type
+• source_record_id
+• regulatory_item_id nullable
+• obligation_id nullable
+• applicability_assessment_id nullable
+• compliance_assessment_id nullable
+• evidence_link_id nullable
+• evidence_package_id nullable
+• audit_mapping_id nullable
+23
+
+--- PAGE 24 ---
+• action_link_id nullable
+• capa_package_id nullable
+• source_snapshot_json
+• validation_status
+• validation_summary_json nullable
+• review_status
+• current_stage_id nullable
+• current_reviewer_user_id nullable
+• decision nullable
+• criticality nullable
+• e_signature_required default false
+• e_signature_status nullable
+• stale_status
+• stale_reason nullable
+• source_locked default false
+• source_locked_at nullable
+• review_rule_id nullable
+• submitted_by nullable
+• submitted_at nullable
+• due_date nullable
+• completed_at nullable
+• cancelled_by nullable
+• cancelled_at nullable
+• cancel_reason nullable
+• created_by
+• updated_by
+• created_at
+• updated_at
+• archived_at nullable
+• archived_by nullable
+• archive_reason nullable
+regulatory_review_stages
+• id
+• company_id
+• site_id nullable
+• package_id
+• stage_number
+• stage_title
+• stage_status
+• reviewer_user_id nullable
+• reviewer_role_id nullable
+• required_permission nullable
+• due_date nullable
+• started_at nullable
+• completed_at nullable
+• delegated_to_user_id nullable
+24
+
+--- PAGE 25 ---
+• escalation_status nullable
+• created_at
+• updated_at
+regulatory_review_decisions
+• id
+• company_id
+• site_id nullable
+• package_id
+• stage_id nullable
+• decision
+• decision_comment nullable
+• decision_reason nullable
+• decided_by
+• decided_at
+• e_signature_required default false
+• e_signature_id nullable
+• e_signature_status nullable
+• validation_override default false
+• validation_override_reason nullable
+• created_at
+regulatory_review_conditions
+• id
+• company_id
+• site_id nullable
+• package_id
+• decision_id nullable
+• condition_title
+• condition_description nullable
+• condition_status
+• owner_user_id nullable
+• due_date nullable
+• evidence_required_foundation default false
+• action_required_foundation default false
+• verification_required_foundation default false
+• action_id nullable
+• evidence_link_id nullable
+• closure_note nullable
+• closed_by nullable
+• closed_at nullable
+• created_by
+• created_at
+• updated_at
+25
+
+--- PAGE 26 ---
+regulatory_review_validation_results
+• id
+• company_id
+• site_id nullable
+• package_id
+• validation_key
+• validation_title
+• validation_status
+• validation_message nullable
+• severity
+• blocking default false
+• source_module
+• source_record_id nullable
+• created_at
+regulatory_review_rules
+• id
+• company_id
+• site_id nullable
+• rule_code nullable
+• rule_title
+• source_type
+• trigger_event
+• scope_json nullable
+• applicable_criticalities_json nullable
+• applicable_categories_json nullable
+• applicable_psm_elements_json nullable
+• reviewer_selection_method
+• required_role_id nullable
+• required_permission nullable
+• specific_reviewer_user_id nullable
+• reviewer_group_foundation nullable
+• e_signature_required default false
+• separation_of_duties_required default true
+• sla_days nullable
+• escalation_rule_foundation_json nullable
+• auto_lock_source_after_approval default true
+• auto_mark_compliance_ready_after_approval default false
+• rule_status
+• notes nullable
+• created_by
+• updated_by
+• created_at
+• updated_at
+• archived_at nullable
+• archived_by nullable
+26
+
+--- PAGE 27 ---
+• archive_reason nullable
+regulatory_review_rule_stages
+• id
+• company_id
+• site_id nullable
+• rule_id
+• stage_number
+• stage_title
+• reviewer_selection_method
+• required_role_id nullable
+• required_permission nullable
+• specific_reviewer_user_id nullable
+• e_signature_required default false
+• sla_days nullable
+• escalation_rule_foundation_json nullable
+• created_at
+• updated_at
+regulatory_review_esignature_links
+• id
+• company_id
+• site_id nullable
+• package_id
+• decision_id nullable
+• stage_id nullable
+• e_signature_id
+• signer_user_id
+• signature_status
+• signature_meaning nullable
+• signature_reason nullable
+• signed_at nullable
+• failed_reason nullable
+• created_at
+• updated_at
+regulatory_review_escalations
+• id
+• company_id
+• site_id nullable
+• package_id
+• stage_id nullable
+• escalation_type
+• escalation_status
+• escalation_reason
+27
+
+--- PAGE 28 ---
+• escalated_to_user_id nullable
+• escalated_by nullable
+• escalated_at
+• resolved_by nullable
+• resolved_at nullable
+• resolution_note nullable
+• created_at
+• updated_at
+regulatory_review_staleness_events
+• id
+• company_id
+• site_id nullable
+• package_id
+• stale_trigger_type
+• source_module
+• source_record_id nullable
+• stale_reason
+• detected_at
+• resolved_by nullable
+• resolved_at nullable
+• resolution_note nullable
+• created_at
+regulatory_review_history_events
+• id
+• company_id
+• site_id nullable
+• unit_id nullable
+• area_id nullable
+• equipment_id nullable
+• package_id nullable
+• source_type nullable
+• source_record_id nullable
+• regulatory_item_id nullable
+• obligation_id nullable
+• decision_id nullable
+• condition_id nullable
+• event_type
+• event_title
+• event_description nullable
+• before_value_json nullable
+• after_value_json nullable
+• actor_user_id nullable
+• source_module
+• created_at
+28
+
+--- PAGE 29 ---
+Update regulatory_settings with:
+• require_review_for_active_regulatory_item default false
+• require_review_for_applicability_decision default true
+• require_review_for_critical_applicability_decision default true
+• require_review_for_critical_obligation default true
+• require_review_for_compliance_status_change default true
+• require_review_for_critical_compliance_status default true
+• require_review_for_non_compliance_closure default true
+• require_review_for_evidence_verification default false
+• require_review_for_critical_evidence_verification default true
+• require_review_for_audit_mapping_verification default true
+• require_review_for_regulatory_capa_closure default true
+• require_esign_for_critical_approval default true
+• require_esign_for_compliance_status_approval default true
+• require_separation_of_duties default true
+• block_approval_if_package_stale default true
+• block_approval_if_validation_failed default true
+• auto_lock_source_after_final_approval default true
+• allow_approval_with_conditions default true
+• allow_delegate_review default true
+• allow_review_escalation default true
+• review_due_soon_days integer default 7
+• review_overdue_escalation_days integer default 3
+Indexes:
+• regulatory_review_packages(company_id, site_id, review_status)
+• regulatory_review_packages(company_id, site_id, source_type)
+• regulatory_review_packages(current_reviewer_user_id)
+• regulatory_review_packages(submitted_by)
+• regulatory_review_packages(due_date)
+• regulatory_review_packages(stale_status)
+• regulatory_review_stages(package_id, stage_number)
+• regulatory_review_decisions(package_id, decided_at)
+• regulatory_review_conditions(package_id, condition_status)
+• regulatory_review_validation_results(package_id, validation_status)
+• regulatory_review_rules(company_id, site_id, source_type, rule_status)
+• regulatory_review_esignature_links(package_id, signature_status)
+• regulatory_review_history_events(package_id, created_at)
+RLS:
+• Enable RLS on every new table.
+• User sees only assigned company/site scope.
+• User mutates only with permission.
+• Assigned reviewer sees assigned package.
+29
+
+--- PAGE 30 ---
+• Submitter sees own submissions if within scope.
+• Site-scoped records require site access.
+• Company-wide records require company-level access.
+• Restricted linked evidence/action/audit details require permission.
+• Snapshot must mask restricted data for unauthorized users.
+• Direct API access must still be blocked by guards and RLS.
+================================================== PERMISSIONS
+==================================================
+Create/enforce:
+• regulatory.review.view
+• regulatory.review.dashboard.view
+• regulatory.review.inbox.view
+• regulatory.review.submission.view
+• regulatory.review.package.view
+• regulatory.review.package.create
+• regulatory.review.package.submit
+• regulatory.review.package.cancel
+• regulatory.review.package.resubmit
+• regulatory.review.package.refresh_snapshot
+• regulatory.review.package.mark_stale
+• regulatory.review.package.archive
+• regulatory.review.validation.view
+• regulatory.review.validation.run
+• regulatory.review.decision.approve
+• regulatory.review.decision.approve_with_conditions
+• regulatory.review.decision.reject
+• regulatory.review.decision.return
+• regulatory.review.decision.request_info
+• regulatory.review.decision.override_validation
+• regulatory.review.decision.delegate
+• regulatory.review.decision.escalate
+• regulatory.review.esign.view
+• regulatory.review.esign.sign
+• regulatory.review.condition.view
+• regulatory.review.condition.create
+• regulatory.review.condition.edit
+• regulatory.review.condition.close
+• regulatory.review.rule.view
+• regulatory.review.rule.create
+• regulatory.review.rule.edit
+• regulatory.review.rule.archive
+• regulatory.review.source.lock
+• regulatory.review.source.reopen
+• regulatory.review.history.view
+30
+
+--- PAGE 31 ---
+• regulatory.review.settings.edit
+Rules:
+• Backend enforces every permission.
+• Frontend hides/disables unauthorized actions.
+• Disabled actions show exact reason.
+• Direct API calls are blocked.
+• E-signature requires e-sign permission.
+• Validation override requires elevated permission.
+• Self-approval override requires elevated permission if allowed at all.
+• Settings changes require admin-level permission.
+================================================== BACKEND APIs
+==================================================
+Dashboard/inbox:
+• GET /regulatory/review-approval/dashboard
+• GET /regulatory/review-approval/dashboard/summary
+• GET /regulatory/review-approval/dashboard/by-source-type
+• GET /regulatory/review-approval/dashboard/by-site
+• GET /regulatory/review-approval/dashboard/by-reviewer
+• GET /regulatory/review-approval/dashboard/overdue
+• GET /regulatory/review-approval/dashboard/stale
+• GET /regulatory/review-approval/dashboard/recent
+• GET /regulatory/review-approval/inbox
+• GET /regulatory/review-approval/my-submissions
+• GET /regulatory/review-approval/packages
+Packages:
+• POST /regulatory/review-approval/packages
+• GET /regulatory/review-approval/packages/:approvalId
+• PATCH /regulatory/review-approval/packages/:approvalId
+• POST /regulatory/review-approval/packages/:approvalId/submit
+• POST /regulatory/review-approval/packages/:approvalId/cancel
+• POST /regulatory/review-approval/packages/:approvalId/resubmit
+• POST /regulatory/review-approval/packages/:approvalId/refresh-snapshot
+• POST /regulatory/review-approval/packages/:approvalId/run-validation
+• POST /regulatory/review-approval/packages/:approvalId/mark-stale
+• POST /regulatory/review-approval/packages/:approvalId/archive
+• GET /regulatory/review-approval/packages/:approvalId/overview
+• GET /regulatory/review-approval/packages/:approvalId/source
+• GET /regulatory/review-approval/packages/:approvalId/snapshot
+• GET /regulatory/review-approval/packages/:approvalId/validation
+• GET /regulatory/review-approval/packages/:approvalId/evidence
+31
+
+--- PAGE 32 ---
+• GET /regulatory/review-approval/packages/:approvalId/gaps
+• GET /regulatory/review-approval/packages/:approvalId/actions
+• GET /regulatory/review-approval/packages/:approvalId/audit-mapping
+• GET /regulatory/review-approval/packages/:approvalId/stages
+• GET /regulatory/review-approval/packages/:approvalId/decisions
+• GET /regulatory/review-approval/packages/:approvalId/e-signatures
+• GET /regulatory/review-approval/packages/:approvalId/conditions
+• GET /regulatory/review-approval/packages/:approvalId/history
+Decisions:
+• POST /regulatory/review-approval/packages/:approvalId/approve
+• POST /regulatory/review-approval/packages/:approvalId/approve-with-conditions
+• POST /regulatory/review-approval/packages/:approvalId/reject
+• POST /regulatory/review-approval/packages/:approvalId/return
+• POST /regulatory/review-approval/packages/:approvalId/request-info
+• POST /regulatory/review-approval/packages/:approvalId/delegate
+• POST /regulatory/review-approval/packages/:approvalId/escalate
+• POST /regulatory/review-approval/packages/:approvalId/e-sign
+Conditions:
+• GET /regulatory/review-approval/packages/:approvalId/conditions
+• POST /regulatory/review-approval/packages/:approvalId/conditions
+• PATCH /regulatory/review-approval/packages/:approvalId/conditions/:conditionId
+• POST /regulatory/review-approval/packages/:approvalId/conditions/:conditionId/
+close
+• POST /regulatory/review-approval/packages/:approvalId/conditions/:conditionId/
+create-action-foundation
+Rules:
+• GET /regulatory/review-approval/rules
+• POST /regulatory/review-approval/rules
+• GET /regulatory/review-approval/rules/:ruleId
+• PATCH /regulatory/review-approval/rules/:ruleId
+• POST /regulatory/review-approval/rules/:ruleId/archive
+• POST /regulatory/review-approval/rules/:ruleId/reactivate
+Views:
+• GET /regulatory/review-approval/pending
+• GET /regulatory/review-approval/overdue
+• GET /regulatory/review-approval/returned
+• GET /regulatory/review-approval/rejected
+• GET /regulatory/review-approval/approved
+• GET /regulatory/review-approval/approved-with-conditions
+32
+
+--- PAGE 33 ---
+• GET /regulatory/review-approval/stale
+• GET /regulatory/review-approval/escalated
+• GET /regulatory/review-approval/e-signatures
+• GET /regulatory/review-approval/validation-failures
+Source submit routes:
+• GET /regulatory/:regulationId/review
+• POST /regulatory/:regulationId/review/submit
+• GET /regulatory/:regulationId/review/history
+• GET /regulatory/obligations/:obligationId/review
+• POST /regulatory/obligations/:obligationId/review/submit
+• GET /regulatory/applicability/assessments/:assessmentId/review
+• POST /regulatory/applicability/assessments/:assessmentId/review/submit
+• GET /regulatory/compliance-status/assessments/:assessmentId/review
+• POST /regulatory/compliance-status/assessments/:assessmentId/review/submit
+• GET /regulatory/evidence/links/:evidenceLinkId/review
+• POST /regulatory/evidence/links/:evidenceLinkId/review/submit
+• GET /regulatory/evidence/packages/:packageId/review
+• POST /regulatory/evidence/packages/:packageId/review/submit
+• GET /regulatory/audit-mapping/:mappingId/review
+• POST /regulatory/audit-mapping/:mappingId/review/submit
+• GET /regulatory/actions/links/:actionLinkId/review
+• POST /regulatory/actions/links/:actionLinkId/review/submit
+• GET /regulatory/actions/capa/:capaPackageId/review
+• POST /regulatory/actions/capa/:capaPackageId/review/submit
+Site/unit views:
+• GET /regulatory/sites/:siteId/review-approval
+• GET /regulatory/units/:unitId/review-approval
+• GET /regulatory/areas/:areaId/review-approval
+• GET /regulatory/equipment/:equipmentId/review-approval
+History/settings/lookups:
+• GET /regulatory/review-approval/history
+• GET /regulatory/review-approval/settings
+• PATCH /regulatory/review-approval/settings
+• GET /regulatory/lookups/review-source-types
+• GET /regulatory/lookups/review-statuses
+• GET /regulatory/lookups/review-stage-statuses
+• GET /regulatory/lookups/review-decision-types
+• GET /regulatory/lookups/review-validation-statuses
+33
+
+--- PAGE 34 ---
+• GET /regulatory/lookups/review-esign-statuses
+• GET /regulatory/lookups/review-condition-statuses
+• GET /regulatory/lookups/reviewer-selection-methods
+• GET /regulatory/lookups/review-trigger-events
+================================================== BACKEND SERVICES
+==================================================
+Create/fix:
+• regulatory-review-dashboard.service.ts
+• regulatory-review-inbox.service.ts
+• regulatory-review-package.service.ts
+• regulatory-review-package-create.service.ts
+• regulatory-review-submission.service.ts
+• regulatory-review-snapshot.service.ts
+• regulatory-review-validation.service.ts
+• regulatory-review-stage.service.ts
+• regulatory-review-decision.service.ts
+• regulatory-review-condition.service.ts
+• regulatory-review-rule.service.ts
+• regulatory-review-rule-validation.service.ts
+• regulatory-review-reviewer-resolution.service.ts
+• regulatory-review-esignature.service.ts
+• regulatory-review-source-lock.service.ts
+• regulatory-review-staleness.service.ts
+• regulatory-review-escalation.service.ts
+• regulatory-review-history.service.ts
+• regulatory-review-audit.service.ts
+• regulatory-review-permission.service.ts
+• regulatory-review-tenant-scope.service.ts
+• regulatory-review-settings.service.ts
+• regulatory-review-lookup.service.ts
+Adapters:
+• regulatory-review-global-workflow-adapter.service.ts
+• regulatory-review-esignature-adapter.service.ts
+• regulatory-review-register-item-adapter.service.ts
+• regulatory-review-jurisdiction-adapter.service.ts
+• regulatory-review-applicability-adapter.service.ts
+• regulatory-review-obligation-adapter.service.ts
+• regulatory-review-compliance-adapter.service.ts
+• regulatory-review-evidence-adapter.service.ts
+• regulatory-review-audit-mapping-adapter.service.ts
+• regulatory-review-action-adapter.service.ts
+• regulatory-review-report-adapter.service.ts
+34
+
+--- PAGE 35 ---
+• regulatory-review-notification-adapter.service.ts
+• regulatory-review-global-search-adapter.service.ts
+• regulatory-review-iam-adapter.service.ts
+Rules:
+• Use existing tenant context.
+• Use existing permission guard.
+• Use existing audit log.
+• Use existing Notification Center.
+• Use Review & Approval adapter if available.
+• Use E-Signature adapter if available.
+• Use source adapters for source validation, snapshot, status update, and locking.
+• Use Action Engine only for condition action foundation.
+• Use Reports adapter only for reports readiness foundation.
+• Do not create fake approvals/e-signatures.
+• Use transactions for submit/decision/e-sign/condition/lock/stale/archive.
+• Use safe error responses.
+• Do not use unscoped queries.
+• Do not use unsafe raw SQL.
+• Do not bypass source module services/adapters.
+================================================== FRONTEND FILE STRUCTURE
+==================================================
+Routes:
+• app/(app)/regulatory/review-approval/page.tsx
+• app/(app)/regulatory/review-approval/dashboard/page.tsx
+• app/(app)/regulatory/review-approval/inbox/page.tsx
+• app/(app)/regulatory/review-approval/my-submissions/page.tsx
+• app/(app)/regulatory/review-approval/packages/page.tsx
+• app/(app)/regulatory/review-approval/packages/new/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/overview/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/source/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/snapshot/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/validation/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/evidence/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/gaps/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/actions/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/audit-mapping/
+page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/stages/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/decisions/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/e-signatures/
+page.tsx
+35
+
+--- PAGE 36 ---
+• app/(app)/regulatory/review-approval/packages/[approvalId]/conditions/page.tsx
+• app/(app)/regulatory/review-approval/packages/[approvalId]/history/page.tsx
+• app/(app)/regulatory/review-approval/rules/page.tsx
+• app/(app)/regulatory/review-approval/rules/new/page.tsx
+• app/(app)/regulatory/review-approval/rules/[ruleId]/page.tsx
+• app/(app)/regulatory/review-approval/rules/[ruleId]/edit/page.tsx
+• app/(app)/regulatory/review-approval/pending/page.tsx
+• app/(app)/regulatory/review-approval/overdue/page.tsx
+• app/(app)/regulatory/review-approval/returned/page.tsx
+• app/(app)/regulatory/review-approval/rejected/page.tsx
+• app/(app)/regulatory/review-approval/approved/page.tsx
+• app/(app)/regulatory/review-approval/approved-with-conditions/page.tsx
+• app/(app)/regulatory/review-approval/stale/page.tsx
+• app/(app)/regulatory/review-approval/escalated/page.tsx
+• app/(app)/regulatory/review-approval/e-signatures/page.tsx
+• app/(app)/regulatory/review-approval/validation-failures/page.tsx
+• app/(app)/regulatory/review-approval/settings/page.tsx
+• app/(app)/regulatory/[regulationId]/review/page.tsx
+• app/(app)/regulatory/[regulationId]/review/submit/page.tsx
+• app/(app)/regulatory/obligations/[obligationId]/review/page.tsx
+• app/(app)/regulatory/obligations/[obligationId]/review/submit/page.tsx
+Components:
+• features/regulatory/review/RegulatoryReviewDashboardPage.tsx
+• features/regulatory/review/RegulatoryReviewSummaryCards.tsx
+• features/regulatory/review/RegulatoryReviewInboxPage.tsx
+• features/regulatory/review/RegulatoryMySubmissionsPage.tsx
+• features/regulatory/review/RegulatoryReviewPackageRegisterPage.tsx
+• features/regulatory/review/RegulatoryReviewPackageTable.tsx
+• features/regulatory/review/RegulatoryReviewMobileCards.tsx
+• features/regulatory/review/RegulatoryReviewFilters.tsx
+• features/regulatory/review/RegulatoryReviewPackageFormPage.tsx
+• features/regulatory/review/RegulatoryReviewSubmissionWizard.tsx
+• features/regulatory/review/sections/ReviewSourceSelectionSection.tsx
+• features/regulatory/review/sections/ReviewValidationReadinessSection.tsx
+• features/regulatory/review/sections/ReviewSnapshotPreviewSection.tsx
+• features/regulatory/review/sections/ReviewReviewerRuleSection.tsx
+• features/regulatory/review/sections/ReviewESignatureSection.tsx
+• features/regulatory/review/sections/ReviewSubmissionSummarySection.tsx
+• features/regulatory/review/RegulatoryReviewPackageDetailPage.tsx
+• features/regulatory/review/RegulatoryReviewPackageHeader.tsx
+• features/regulatory/review/tabs/ReviewOverviewTab.tsx
+• features/regulatory/review/tabs/ReviewSourceTab.tsx
+• features/regulatory/review/tabs/ReviewSnapshotTab.tsx
+• features/regulatory/review/tabs/ReviewValidationTab.tsx
+36
+
+--- PAGE 37 ---
+• features/regulatory/review/tabs/ReviewEvidenceTab.tsx
+• features/regulatory/review/tabs/ReviewGapsTab.tsx
+• features/regulatory/review/tabs/ReviewActionsTab.tsx
+• features/regulatory/review/tabs/ReviewAuditMappingTab.tsx
+• features/regulatory/review/tabs/ReviewStagesTab.tsx
+• features/regulatory/review/tabs/ReviewDecisionsTab.tsx
+• features/regulatory/review/tabs/ReviewESignaturesTab.tsx
+• features/regulatory/review/tabs/ReviewConditionsTab.tsx
+• features/regulatory/review/tabs/ReviewHistoryTab.tsx
+• features/regulatory/review/RegulatoryReviewRulePage.tsx
+• features/regulatory/review/RegulatoryReviewRuleForm.tsx
+• features/regulatory/review/RegulatoryReviewValidationPanel.tsx
+• features/regulatory/review/RegulatoryReviewSnapshotPanel.tsx
+• features/regulatory/review/RegulatoryReviewStaleWarningPanel.tsx
+• features/regulatory/review/RegulatoryReviewConditionPanel.tsx
+• features/regulatory/review/dialogs/ReviewApproveDialog.tsx
+• features/regulatory/review/dialogs/ReviewApproveWithConditionsDialog.tsx
+• features/regulatory/review/dialogs/ReviewRejectDialog.tsx
+• features/regulatory/review/dialogs/ReviewReturnDialog.tsx
+• features/regulatory/review/dialogs/ReviewRequestInfoDialog.tsx
+• features/regulatory/review/dialogs/ReviewDelegateDialog.tsx
+• features/regulatory/review/dialogs/ReviewEscalateDialog.tsx
+• features/regulatory/review/dialogs/ReviewESignDialog.tsx
+• features/regulatory/review/dialogs/ReviewCancelSubmissionDialog.tsx
+• features/regulatory/review/dialogs/ReviewRefreshSnapshotDialog.tsx
+Shared badges:
+• features/regulatory/shared/RegulatoryReviewStatusBadge.tsx
+• features/regulatory/shared/RegulatoryReviewStageStatusBadge.tsx
+• features/regulatory/shared/RegulatoryReviewDecisionBadge.tsx
+• features/regulatory/shared/RegulatoryReviewValidationBadge.tsx
+• features/regulatory/shared/RegulatoryReviewESignBadge.tsx
+• features/regulatory/shared/RegulatoryReviewConditionBadge.tsx
+• features/regulatory/shared/RegulatoryReviewStaleBadge.tsx
+• features/regulatory/shared/RegulatoryReviewSlaBadge.tsx
+Hooks/services:
+• features/regulatory/hooks/useRegulatoryReviewDashboard.ts
+• features/regulatory/hooks/useRegulatoryReviewInbox.ts
+• features/regulatory/hooks/useRegulatoryReviewPackages.ts
+• features/regulatory/hooks/useRegulatoryReviewPackageDetail.ts
+• features/regulatory/hooks/useRegulatoryReviewMutations.ts
+• features/regulatory/hooks/useRegulatoryReviewRules.ts
+• features/regulatory/hooks/useRegulatoryReviewValidation.ts
+• features/regulatory/hooks/useRegulatoryReviewLookups.ts
+37
+
+--- PAGE 38 ---
+Services:
+• features/regulatory/services/regulatory-review.service.ts
+• features/regulatory/services/regulatory-review-dashboard.service.ts
+• features/regulatory/services/regulatory-review-package.service.ts
+• features/regulatory/services/regulatory-review-inbox.service.ts
+• features/regulatory/services/regulatory-review-rule.service.ts
+• features/regulatory/services/regulatory-review-validation.service.ts
+• features/regulatory/services/regulatory-review-decision.service.ts
+Schemas/types:
+• features/regulatory/schemas/regulatory-review-package.schema.ts
+• features/regulatory/schemas/regulatory-review-decision.schema.ts
+• features/regulatory/schemas/regulatory-review-rule.schema.ts
+• features/regulatory/schemas/regulatory-review-condition.schema.ts
+• features/regulatory/types/regulatory-review.types.ts
+================================================== INTEGRATIONS
+==================================================
+Regulatory Register:
+• Regulatory item can be submitted for review.
+• Approved regulatory item can be locked.
+• Source status updates after review decision.
+Applicability:
+• Applicability decision can require review.
+• Critical applicability decision can require e-signature.
+• Approved decision updates applicability readiness.
+Obligations:
+• Critical obligations can require review.
+• Approved obligations can be locked.
+• Obligation changes can mark review package stale.
+Compliance Status:
+• Compliance status changes can require review.
+• Non-compliance closure can require review.
+• Approved status decision can update compliance readiness foundation.
+• Do not claim legal certification.
+38
+
+--- PAGE 39 ---
+Evidence:
+• Evidence verification can require review.
+• Restricted evidence must not leak in review package.
+• Evidence package can be submitted for review foundation.
+Audit Mapping:
+• Audit mapping verification can require review.
+• Approved mapping can update audit coverage readiness.
+Actions / CAPA:
+• Regulatory CAPA closure can require review.
+• Critical gap waiver can require review.
+• Action closure readiness can feed validation.
+Review & Approval / E-Signature:
+• Use existing global adapters if available.
+• Do not duplicate global workflow/e-sign.
+• Store regulatory source context and snapshot.
+Reports / Export:
+• Approved review packages feed future reports/export readiness.
+• Open conditions can block reports if configured.
+• Do not build final reports in this phase.
+Notification Center:
+• Notify reviewer on assignment.
+• Notify submitter on decision.
+• Notify owner on return/rejection.
+• Notify reviewer on overdue stage.
+• Notify escalation owner on SLA breach.
+• Notify signer when e-signature required.
+• Notify condition owner when condition assigned/overdue.
+Global Search:
+• Index review packages if Global Search exists.
+• Search respects permissions and RLS.
+================================================== VALIDATION RULES
+==================================================
+• Review package requires source type and source record.
+• Source must be accessible and in scope.
+39
+
+--- PAGE 40 ---
+• Active submission requires validation pass unless override permission.
+• Review rule must resolve reviewer.
+• Reviewer must have required permission.
+• Self-approval blocked if setting enabled.
+• Reject/return/request-info requires reason.
+• Approve with conditions requires condition.
+• Validation override requires reason and elevated permission.
+• E-signature required approval cannot complete without e-signature.
+• Stale package cannot be approved.
+• Source locking requires source adapter.
+• Condition closure requires closure note.
+• Cancel submission requires reason.
+• Archive requires reason.
+• Settings changes require audit/history.
+• No fake legal certification wording.
+================================================== SECURITY REQUIREMENTS
+==================================================
+Check:
+• Auth required.
+• Regulatory entitlement required if plan system exists.
+• Review/approval entitlement required if plan system exists.
+• Backend permission required.
+• RLS blocks out-of-scope review package data.
+• company_id/site_id/unit_id/area_id/equipment_id enforced.
+• User cannot view another company/site review packages.
+• Reviewer sees only assigned/in-scope packages.
+• Submitter sees only own/in-scope submissions.
+• User cannot approve without assignment/permission.
+• User cannot e-sign without permission.
+• User cannot self-approve if blocked.
+• User cannot approve stale package.
+• User cannot access restricted evidence/action/audit details without permission.
+• No cross-company leakage.
+• No cross-site leakage.
+• No raw storage key exposure.
+• No unsafe raw SQL.
+• Safe error responses only.
+• Direct denied routes blocked.
+================================================== UI / UX REQUIREMENTS
+==================================================
+Design:
+• Enterprise-grade regulatory review UI.
+40
+
+--- PAGE 41 ---
+• Dashboard must clearly show pending reviews, overdue reviews, stale packages, validation failures,
+e-signature pending, and open conditions.
+• Inbox must make reviewer action simple and auditable.
+• Submission wizard must clearly show validation blockers before submission.
+• Snapshot preview must be readable and immutable.
+• Review package detail must show source, validation, evidence, gaps, actions, audit mapping, stages,
+decisions, e-signatures, conditions, and history.
+• Stale package warning must be obvious.
+• E-sign required status must be obvious.
+• Approval with conditions must be clear.
+• Foundation sections must not show fake data.
+• Dark/light polished.
+• Desktop/tablet/mobile responsive.
+• No low contrast.
+States:
+• Loading
+• No reviews
+• No assigned reviews
+• Draft package
+• Pending review
+• In review
+• Approved
+• Approved with conditions
+• Returned
+• Rejected
+• Overdue
+• Escalated
+• Stale package
+• Validation failed
+• E-signature pending
+• E-signature failed
+• Open conditions
+• Permission denied
+• Upgrade required
+• Locked/read-only
+• Error with retry
+================================================== TESTING REQUIREMENTS
+==================================================
+Backend tests:
+• Create review package for regulatory item.
+• Create review package for applicability decision.
+• Create review package for obligation.
+• Create review package for compliance assessment.
+41
+
+--- PAGE 42 ---
+• Create review package for evidence verification.
+• Create review package for audit mapping.
+• Create review package for regulatory CAPA closure.
+• Run validation.
+• Block submission on validation failure.
+• Submit package.
+• Resolve reviewer from rule.
+• Block self-approval when setting enabled.
+• Approve package.
+• Approve with conditions.
+• Reject with reason.
+• Return with reason.
+• Request more info with reason.
+• Complete e-signature through adapter.
+• Block approval when e-signature fails.
+• Mark package stale on source change.
+• Refresh snapshot.
+• Lock source after approval.
+• Close condition with note.
+• Escalate overdue review.
+• Dashboard counts match real data.
+• Permission denied for unauthorized user.
+• RLS blocks cross-site rows.
+• Restricted evidence does not leak.
+• Audit/history/e-sign events created.
+Frontend tests:
+• Review dashboard renders.
+• Inbox renders.
+• My submissions renders.
+• Package register renders.
+• Submission wizard validates.
+• Validation panel renders.
+• Snapshot panel renders.
+• Package detail tabs render.
+• Approve dialog works.
+• Approve with conditions requires condition.
+• Reject dialog requires reason.
+• Return dialog requires reason.
+• Request info dialog requires reason.
+• E-sign dialog works.
+• Stale warning renders.
+• Permission denied state works.
+• Locked/read-only state works.
+• Dark/light works.
+• Mobile layout works.
+42
+
+--- PAGE 43 ---
+E2E:
+1. Login as Company Admin.
+2. Create or open an active regulatory obligation.
+3. Submit obligation for review.
+4. Confirm validation runs and package snapshot is created.
+5. Login as assigned reviewer.
+6. Open review inbox.
+7. Approve with e-signature.
+8. Confirm source obligation is approved/locked if rule requires.
+9. Confirm history and audit events exist.
+10. Submit compliance status decision for review.
+11. Return for correction with reason.
+12. Login as submitter and update source.
+13. Resubmit review package.
+14. Approve with conditions.
+15. Create condition action foundation.
+16. Close condition with note.
+17. Change source record after submission and confirm package becomes stale.
+18. Refresh snapshot and resubmit.
+19. Confirm report readiness foundation updates.
+20. Login as read-only user and confirm decisions denied.
+21. Login as another-site user and confirm package inaccessible.
+22. Login as user without restricted evidence permission and confirm restricted evidence is masked.
+================================================== ACCEPTANCE CRITERIA
+==================================================
+This phase is complete only when:
+✓ Review dashboard works
+✓ Review inbox works
+✓ My submissions works
+✓ Review package register works
+✓ Review package creation/submission works
+✓ Review rule builder foundation works
+✓ Reviewer resolution works
+✓ Validation before submission works
+43
+
+--- PAGE 44 ---
+✓ Immutable snapshot works
+✓ Approve workflow works
+✓ Approve with conditions works
+✓ Reject/return/request-info workflows work
+✓ E-signature adapter connected
+✓ E-signature status works
+✓ Stale review package detection works
+✓ Source locking after approval works
+✓ Conditions foundation works
+✓ SLA/overdue/escalation foundation works
+✓ Regulatory item review works
+✓ Applicability decision review works
+✓ Obligation review works
+✓ Compliance status review works
+✓ Evidence verification review works
+✓ Audit mapping review works
+✓ Regulatory CAPA closure review works
+✓ Reports/export readiness foundation connected
+✓ Notification foundation connected
+✓ Global Search foundation connected if available
+✓ Permissions seeded and enforced
+✓ RLS policies work
+44
+
+--- PAGE 45 ---
+✓ company_id/site_id/unit/area/equipment isolation works
+✓ Site switcher works
+✓ No fake approvals
+✓ No fake e-signatures
+✓ No fake legal certification
+✓ No mock production data
+✓ Audit logs created
+✓ Regulatory review history events created
+✓ E-signature events linked
+✓ Restricted linked data protection works
+✓ Frontend permission states work
+✓ Locked/read-only states work
+✓ Dark/light responsive UI polished
+✓ Backend tests added/fixed
+✓ Frontend tests added/fixed
+✓ E2E tests added/fixed
+✓ Production build passes
+✓ TypeScript passes
+✓ Lint passes
+Final output:
+1. Existing Regulatory Register, Applicability, Obligations, Compliance, Evidence, Audit Mapping,
+Actions/CAPA, Review, E-Signature, Notification systems reviewed
+2. Review & Approval routes created/fixed
+3. Review dashboard completed
+4. Review inbox completed
+45
+
+--- PAGE 46 ---
+5. My submissions completed
+6. Review package register completed
+7. Submission wizard completed
+8. Review rule builder foundation completed
+9. Validation engine completed
+10. Immutable snapshot foundation completed
+11. Review decision workflows completed
+12. E-signature adapter connected
+13. Conditions foundation completed
+14. Stale review package detection completed
+15. Source locking integration completed
+16. SLA/overdue/escalation foundation completed
+17. Regulatory item/applicability/obligation/compliance/evidence/audit mapping/action review
+integrations completed
+18. Reports/export readiness foundation connected
+19. Notification foundation connected
+20. Global Search foundation connected if available
+21. Permissions seeded/enforced
+22. RLS and company/site/unit/area/equipment isolation verified
+23. Site switcher verified
+24. Dark/light responsive UI polished
+25. Backend tests added/fixed
+26. Frontend tests added/fixed
+27. E2E tests added/fixed
+28. Production build/typecheck/lint passed
+29. Files created/modified listed with exact paths
+30. Database migrations listed with exact paths
+31. API endpoints added/fixed listed
+32. Remaining gaps, if any, with exact reason and next safe step
+46

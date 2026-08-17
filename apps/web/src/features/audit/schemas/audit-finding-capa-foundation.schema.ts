@@ -1,0 +1,1 @@
+export const auditFindingCapaFoundationFields = ["capaRequired", "capaRequiredReason", "suggestedCorrectiveAction", "suggestedPreventiveAction", "verificationRequiredFoundation", "effectivenessCheckRequiredFoundation"] as const;

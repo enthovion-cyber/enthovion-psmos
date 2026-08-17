@@ -1,0 +1,1 @@
+export { usePssrTrainingReadinessDetail } from './usePssrTrainingRequirementDetail';

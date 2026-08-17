@@ -1,0 +1,1 @@
+export { IntegrationSettingsPage } from './PsiIntegrationPanels';

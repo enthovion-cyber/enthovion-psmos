@@ -1,0 +1,84 @@
+export type AuditHistoryEvent = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  unit_id?: string | null;
+  area_id?: string | null;
+  equipment_id?: string | null;
+  source_module: string;
+  source_object_type: string;
+  source_record_id: string;
+  event_type: string;
+  event_title: string;
+  event_description?: string | null;
+  event_severity?: string | null;
+  criticality?: string | null;
+  actor_user_id?: string | null;
+  source_snapshot_json?: Record<string, unknown> | null;
+  before_value_json?: Record<string, unknown> | null;
+  after_value_json?: Record<string, unknown> | null;
+  restricted?: boolean;
+  occurred_at: string;
+  created_at: string;
+};
+
+export type AuditHistoryList = {
+  rows: AuditHistoryEvent[];
+  total: number;
+  page: number;
+  limit: number;
+  groups?: Array<{ key: string; count: number }>;
+  dimension?: string;
+};
+
+export type AuditHistoryDashboardSummary = {
+  totalHistoricalAuditEvents: number;
+  completedAudits: number;
+  auditCyclesCompared: number;
+  repeatFindings: number;
+  recurringIssues: number;
+  systemicFindings: number;
+  firstTimeFindings: number;
+  findingsReopened: number;
+  findingsRepeatedAfterCapa: number;
+  capaIneffective: number;
+  capaOverdueRepeats: number;
+  evidenceGapsRepeated: number;
+  standardsWithRepeatedFindings: number;
+  clausesWithRepeatedFindings: number;
+  modulesWithRepeatedFindings: number;
+  unitsWithRepeatedFindings: number;
+  equipmentWithRepeatedFindings: number;
+  decliningComplianceScores: number;
+  improvingComplianceScores: number;
+  reviewCycleSlaBreaches: number;
+  reportsGenerated: number;
+  reportsStale: number;
+  continuousImprovementOpportunities: number;
+  trendRunsCompleted: number;
+  staleTrendRuns: number;
+};
+
+export type AuditHistoryDashboard = {
+  summary: AuditHistoryDashboardSummary;
+  activityTimeline: AuditHistoryEvent[];
+  repeatFindingsBySite: Array<{ key: string; count: number }>;
+  repeatFindingsByUnit: Array<{ key: string; count: number }>;
+  repeatFindingsByModule: Array<{ key: string; count: number }>;
+  repeatFindingsByStandardClause: Array<{ key: string; count: number }>;
+  repeatFindingsByEquipment: Array<{ key: string; count: number }>;
+  repeatFindingsByOwnerDepartment: Array<{ key: string; count: number }>;
+  recurrenceHeatmap: Array<Record<string, unknown>>;
+  capaEffectivenessTrend: Record<string, unknown>;
+  capaOverdueTrend: Array<{ period: string; count: number }>;
+  evidenceGapTrend: Array<{ period: string; count: number }>;
+  complianceScoreTrend: Record<string, unknown>;
+  standardsCoverageTrend: Array<{ key: string; count: number }>;
+  reviewApprovalCycleTrend: Array<{ period: string; count: number }>;
+  reportExportTrend: Array<{ period: string; count: number }>;
+  highRiskRecurringIssues: Array<Record<string, unknown>>;
+  continuousImprovementOpportunities: Array<Record<string, unknown>>;
+  recentlyDetectedRepeatFindings: Array<Record<string, unknown>>;
+  recentlyClosedRecurringIssues: Array<Record<string, unknown>>;
+  trendRunHistory: Array<Record<string, unknown>>;
+};

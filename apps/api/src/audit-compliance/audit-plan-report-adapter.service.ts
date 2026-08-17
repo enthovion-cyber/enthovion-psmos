@@ -1,0 +1,1 @@
+import { Injectable } from '@nestjs/common'; @Injectable() export class AuditPlanReportAdapterService { source(plan:Record<string,any>){return{module:'AUDIT_PLAN',recordId:plan.id,code:plan.plan_code,title:plan.plan_title,status:plan.plan_status};} }

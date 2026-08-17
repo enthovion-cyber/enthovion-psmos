@@ -1,0 +1,2 @@
+import { ForbiddenException,Injectable } from '@nestjs/common'; import { RequestUser } from '../common/decorators/current-user.decorator';
+@Injectable() export class AuditPlanPermissionService { require(user:RequestUser,key:string){if(user.isSuperAdmin||user.isCompanyAdmin||user.permissions.includes(key))return;throw new ForbiddenException(`Missing permission: ${key}`);} can(user:RequestUser,key:string){return Boolean(user.isSuperAdmin||user.isCompanyAdmin||user.permissions.includes(key));} }

@@ -1,0 +1,5 @@
+'use client';
+
+export function InspectionPlanImportCommitPanel({ onValidate, onCommit, validating, committing, job }: { onValidate: () => void; onCommit: () => void; validating?: boolean; committing?: boolean; job?: Record<string, unknown> | null }) {
+  return <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4"><h2 className="font-bold text-[var(--psm-text)]">Validate & Commit</h2><p className="mt-1 text-sm text-[var(--psm-muted)]">Commit creates draft inspection plans and generates backend scheduler previews.</p><div className="mt-3 flex gap-2"><button onClick={onValidate} disabled={validating || !job} className="rounded-lg border border-[var(--psm-line)] px-3 py-2 text-sm font-semibold text-[var(--psm-text)] disabled:opacity-50">{validating ? 'Validating...' : 'Validate'}</button><button onClick={onCommit} disabled={committing || !job} className="rounded-lg bg-info px-3 py-2 text-sm font-bold text-white disabled:opacity-50">{committing ? 'Committing...' : 'Commit'}</button></div></div>;
+}

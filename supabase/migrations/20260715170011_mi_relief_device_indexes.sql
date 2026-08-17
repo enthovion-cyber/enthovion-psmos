@@ -1,0 +1,18 @@
+create unique index if not exists idx_mi_relief_devices_company_site_tag on public.mi_relief_devices(company_id, site_id, lower(device_tag));
+create index if not exists idx_mi_relief_devices_company_site_status on public.mi_relief_devices(company_id, site_id, status);
+create index if not exists idx_mi_relief_devices_due on public.mi_relief_devices(company_id, site_id, next_test_due_date, due_status);
+create index if not exists idx_mi_relief_devices_safety_critical on public.mi_relief_devices(company_id, site_id, safety_critical);
+create index if not exists idx_mi_relief_protected_relief on public.mi_relief_device_protected_equipment(relief_device_id);
+create index if not exists idx_mi_relief_protected_equipment on public.mi_relief_device_protected_equipment(equipment_id);
+create index if not exists idx_mi_relief_technical_relief on public.mi_relief_device_technical_data(relief_device_id);
+create index if not exists idx_mi_relief_basis_relief on public.mi_relief_device_basis(relief_device_id);
+create index if not exists idx_mi_relief_requirements_due on public.mi_relief_device_test_requirements(company_id, site_id, next_test_due_date, due_status);
+create index if not exists idx_mi_relief_seals_relief on public.mi_relief_device_seals(relief_device_id);
+create index if not exists idx_mi_relief_tests_relief_date on public.mi_relief_device_tests(relief_device_id, test_date desc);
+create index if not exists idx_mi_relief_tests_status on public.mi_relief_device_tests(company_id, site_id, status, final_result);
+create index if not exists idx_mi_relief_test_results_test on public.mi_relief_device_test_results(test_id);
+create index if not exists idx_mi_relief_leak_tests_test on public.mi_relief_device_leak_tests(test_id);
+create index if not exists idx_mi_relief_certificates_relief on public.mi_relief_device_certificates(relief_device_id, status);
+create index if not exists idx_mi_relief_occurrences_due on public.mi_relief_device_occurrences(company_id, site_id, due_date, status);
+create index if not exists idx_mi_relief_history_relief on public.mi_relief_device_history_events(relief_device_id, created_at desc);
+create index if not exists idx_mi_relief_import_rows_job on public.mi_relief_device_import_rows(job_id, row_number);

@@ -1,0 +1,2 @@
+import { Injectable } from '@nestjs/common'; import { RequestUser } from '../common/decorators/current-user.decorator'; import { AuditPlanService } from './audit-plan.service';
+@Injectable() export class AuditPlanGenerationService { constructor(private readonly plans:AuditPlanService){} generate(user:RequestUser,programId:string,dto:Record<string,any>){return this.plans.generateFromProgram(user,programId,dto);} jobs(user:RequestUser){return this.plans.generationJobs(user);} }

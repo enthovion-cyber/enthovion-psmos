@@ -1,0 +1,6 @@
+import { PsiCard, PsiEmptyState } from '../shared/PsiUi';
+import { SafeguardConflictBadge } from '../shared/SafeguardBadges';
+
+export function SafeguardConflictPanel({ conflicts }: { conflicts: Array<Record<string, any>> }) {
+  return <PsiCard title="Conflict / Effectiveness Validation" subtitle="Backend conflict results for missing safeguards, IPL/LOPA warnings, source failures, bypass/impairment, overdue tests, SOP/training gaps, document gaps, MOC/PSSR readiness, and source mismatches.">{!conflicts.length ? <PsiEmptyState title="No conflicts returned" message="Run the backend conflict check. A No Conflict status can be produced when all checks pass." /> : <div className="space-y-2">{conflicts.map((conflict) => <article key={conflict.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{conflict.conflict_type}</p><SafeguardConflictBadge value={conflict.conflict_status} /></div><p className="mt-1 text-sm text-[var(--psm-muted)]">{conflict.message}</p><p className="mt-1 text-xs text-[var(--psm-muted)]">Compared module: {conflict.compared_module ?? 'Not specified'} / Severity: {conflict.severity}</p></article>)}</div>}</PsiCard>;
+}

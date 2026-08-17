@@ -1,0 +1,2 @@
+import { AuditCard } from "../shared/AuditUi";
+export function AuditScoreCapaImpactPanel({ impact = {} }: { impact?: Record<string, any> }) { return <AuditCard title="CAPA Impact"><div className="grid gap-3 sm:grid-cols-4">{Object.entries(impact ?? {}).map(([k, v]) => <div key={k} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3"><p className="text-xs uppercase text-[var(--psm-muted)]">{k}</p><b>{String(v ?? "-")}</b></div>)}</div></AuditCard>; }

@@ -1,0 +1,2 @@
+export { MaterialFamilyBadge } from './MaterialCompatibilityBadges';
+

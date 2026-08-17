@@ -1,0 +1,4 @@
+import { TrainingCard, TrainingEmptyState } from '../shared/TrainingUi';
+export function TrainingApprovalEvidencePanel({ rows }: { rows?: any[] | undefined }) {
+  return <TrainingCard title="Evidence" subtitle="Linked evidence/documents controlled by backend and Document Control integration when available.">{rows?.length ? <div className="space-y-2">{rows.map((row) => <div key={row.id} className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-sm"><p className="font-semibold">{row.evidence_title ?? row.document_id ?? row.evidence_record_id}</p><p className="text-xs text-[var(--psm-muted)]">{row.evidence_module} / {row.evidence_status ?? 'Not Reviewed'} / {row.included ? 'Included' : row.excluded_reason}</p></div>)}</div> : <TrainingEmptyState title="No evidence linked" message="Mandatory evidence checks are backend-generated. No evidence links were returned for this package." />}</TrainingCard>;
+}

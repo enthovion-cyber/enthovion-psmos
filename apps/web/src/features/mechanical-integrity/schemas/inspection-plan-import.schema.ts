@@ -1,0 +1,1 @@
+export const inspectionPlanImportColumns = ['plan_title', 'equipment_tag', 'plan_type', 'inspection_method', 'inspection_scope', 'scheduling_mode', 'frequency_value', 'frequency_unit', 'rule_name', 'responsible_person', 'responsible_team', 'checklist_items', 'acceptance_criteria', 'effective_date', 'review_date', 'notes'];

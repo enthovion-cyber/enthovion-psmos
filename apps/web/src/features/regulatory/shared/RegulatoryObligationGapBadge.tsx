@@ -1,0 +1,1 @@
+export { RegulatoryObligationGapBadge } from './RegulatoryObligationBadges';

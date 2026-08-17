@@ -1,0 +1,33 @@
+-- Mechanical Integrity Phase 3 - CML/TML thickness readings.
+
+create table if not exists public.mi_cml_thickness_readings (
+  id text primary key default gen_random_uuid()::text,
+  cml_id text not null references public.mi_cmls(id) on delete cascade,
+  equipment_id text not null references public.mi_equipment(id) on delete cascade,
+  company_id text not null,
+  site_id text not null,
+  campaign_id text null references public.mi_cml_reading_campaigns(id) on delete set null,
+  reading_date date not null,
+  thickness_value numeric(12,4) not null,
+  thickness_unit text not null default 'mm',
+  inspection_method text null,
+  inspector_user_id text null,
+  instrument_id text null,
+  temperature_c numeric(12,3) null,
+  surface_condition text null,
+  confidence text null,
+  evidence_document_id text null,
+  status text not null default 'Draft',
+  review_status text not null default 'Pending Review',
+  review_comment text null,
+  approved_by text null,
+  approved_at timestamptz null,
+  rejected_by text null,
+  rejected_at timestamptz null,
+  superseded_by_reading_id text null,
+  notes text null,
+  created_by text null,
+  updated_by text null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);

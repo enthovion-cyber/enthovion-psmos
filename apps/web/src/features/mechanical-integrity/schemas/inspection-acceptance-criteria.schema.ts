@@ -1,0 +1,1 @@
+export const inspectionAcceptanceCriteriaTypes = ['Minimum acceptable thickness', 'Alert thickness rule', 'Maximum allowable corrosion rate', 'Minimum remaining life', 'Defect acceptance criteria', 'Leak acceptance criteria', 'Test pressure criteria', 'Visual defect criteria', 'NDT indication criteria', 'Required corrective action trigger'];
