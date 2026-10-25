@@ -147,6 +147,8 @@ export type Equipment = {
   status: EquipmentStatus;
   criticality: EquipmentCriticality;
   safetyCritical: boolean;
+  isSafetyCritical?: boolean;
+  silRating?: string | null;
   classification?: string | null;
   hazardClass?: string | null;
   areaClassification?: string | null;

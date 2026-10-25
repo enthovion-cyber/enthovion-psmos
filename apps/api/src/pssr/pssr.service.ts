@@ -4,6 +4,7 @@ import { JsonValue } from '../common/types/db.types';
 import { SupabaseService } from '../database/supabase.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SearchIndexService } from '../search/search-index.service';
+import { WorkflowsService } from '../workflows/workflows.service';
 import { CreatePssrDto } from './dto/create-pssr.dto';
 import { PssrChecklistGeneratorService } from './pssr-checklist-generator.service';
 import { PssrNumberingService } from './pssr-numbering.service';
@@ -23,7 +24,8 @@ export class PssrService {
     private readonly search: SearchIndexService,
     private readonly numbering: PssrNumberingService,
     private readonly checklist: PssrChecklistGeneratorService,
-    private readonly blockers: PssrStartupBlockerService
+    private readonly blockers: PssrStartupBlockerService,
+    private readonly workflows: WorkflowsService
   ) {}
 
   async context(tenantId: string, scope: Scope) {
@@ -44,8 +46,9 @@ export class PssrService {
     const existing = await this.existingForMoc(tenantId, mocId);
     const actions = await this.safeMany(this.db.from('moc_required_actions').select('*').eq('tenant_id', tenantId).eq('moc_id', mocId));
     const equipment = await this.safeMany(this.db.from('moc_affected_equipment').select('*, equipment:Equipment(id,tag,name,type,criticality,siteId,unitId,areaId)').eq('tenant_id', tenantId).eq('moc_id', mocId));
+    const psiBlockers = await this.safeMany(this.db.from('psi_moc_impact_items').select('*').eq('tenant_id', tenantId).eq('moc_id', mocId).or('blocking.eq.true,pssr_blocker.eq.true'));
     const checklistPreview = this.checklist.preview({ pssrType: 'MOC Startup Review', startupType: 'Startup after MOC', riskLevel: moc.risk_level, moc });
-    return { moc, existingPssr: existing, actions, equipment, checklistPreview, blockersPreview: this.blockers.preview({ moc, actions, checklist: checklistPreview }) };
+    return { moc, existingPssr: existing, actions, equipment, psiBlockers, checklistPreview, blockersPreview: this.blockers.preview({ moc, actions, checklist: checklistPreview, psiBlockers }) };
   }
 
   async list(tenantId: string, scope: Scope, filters: Record<string, any> = {}) {
@@ -631,6 +634,19 @@ export class PssrService {
     await this.audit.write({ tenantId, actorId, action: 'PSSR_CREATED', entityType: 'PSSR', entityId: pssr.id, after: pssr as JsonValue });
     await this.index(tenantId, pssr);
     await this.notifyCoordinator(tenantId, pssr, actorId, dto.mocId ? 'pssr.triggered_from_moc' : 'pssr.created');
+    const workflowScope = {
+      allowedSiteIds: scope.allowedSiteIds ?? [],
+      selectedSiteId: scope.selectedSiteId ?? null,
+      corporateView: Boolean(scope.corporateView)
+    };
+    await this.workflows.startWorkflow(tenantId, actorId, {
+      module: 'PSSR',
+      recordId: pssr.id,
+      recordNumber: pssr.pssr_number,
+      siteId: pssr.site_id,
+      companyId: pssr.company_id,
+      contextData: { pssrType: pssr.pssr_type, riskLevel: pssr.risk_level }
+    }, workflowScope).catch(() => null);
     return this.get(tenantId, pssr.id, scope);
   }
 
@@ -1010,8 +1026,39 @@ export class PssrService {
       if (existing.has(key)) continue;
       const requirementId = crypto.randomUUID();
       await this.db.single<any>(this.db.from('pssr_training_requirements').insert({ id: requirementId, pssr_id: id, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, title: item.title, description: item.description, training_type: item.type, source: item.source, required_before_startup: item.beforeStartup, required_before_closure: item.beforeClosure, evidence_required: item.evidence, verification_required: item.verify, due_date: item.dueDate, owner_id: pssr.coordinator_id, created_by: actorId }).select().single());
+      await this.safeSingle(this.db.from('training_pssr_readiness').upsert({
+        id: requirementId,
+        company_id: pssr.company_id ?? tenantId,
+        site_id: pssr.site_id,
+        unit_id: pssr.unit_id ?? null,
+        area_id: pssr.area_id ?? null,
+        pssr_id: id,
+        readiness_title: item.title,
+        readiness_source: item.source ?? 'PSSR Template',
+        readiness_status: 'Not Assessed',
+        safety_critical: Boolean(item.beforeStartup),
+        startup_blocker: Boolean(item.beforeStartup),
+        owner_user_id: pssr.coordinator_id,
+        target_startup_at: pssr.target_startup_at,
+        created_by: actorId,
+        updated_by: actorId
+      }));
       for (const role of item.roles) {
-        await this.safeSingle(this.db.from('pssr_training_assignments').insert({ id: crypto.randomUUID(), pssr_id: id, training_requirement_id: requirementId, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, role_id: role, department_id: role, status: 'Assigned' }).select().single());
+        const assignmentId = crypto.randomUUID();
+        await this.safeSingle(this.db.from('pssr_training_assignments').insert({ id: assignmentId, pssr_id: id, training_requirement_id: requirementId, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, role_id: role, department_id: role, status: 'Assigned' }).select().single());
+        await this.safeSingle(this.db.from('training_pssr_assignments').upsert({
+          id: assignmentId,
+          company_id: pssr.company_id ?? tenantId,
+          site_id: pssr.site_id,
+          unit_id: pssr.unit_id ?? null,
+          area_id: pssr.area_id ?? null,
+          pssr_id: id,
+          readiness_id: requirementId,
+          role_id: role,
+          assignment_status: 'Assigned',
+          runtime_status: 'Assigned',
+          startup_blocker: Boolean(item.beforeStartup)
+        }));
       }
     }
     for (const ack of ['Startup briefing', 'Toolbox talk', 'Control room briefing', 'Contractor briefing', 'Emergency response briefing']) {
@@ -1026,6 +1073,23 @@ export class PssrService {
   async addTrainingRequirement(tenantId: string, actorId: string, id: string, dto: Record<string, any>, scope: Scope) {
     const pssr = await this.get(tenantId, id, scope);
     const row = await this.db.single<any>(this.db.from('pssr_training_requirements').insert({ id: crypto.randomUUID(), pssr_id: id, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, title: dto.title, description: dto.description ?? null, training_type: dto.trainingType ?? 'General awareness', source: dto.source ?? 'Manual', required_role_id: dto.requiredRoleId ?? null, required_department_id: dto.requiredDepartmentId ?? null, required_before_startup: dto.requiredBeforeStartup ?? true, required_before_closure: dto.requiredBeforeClosure ?? false, evidence_required: dto.evidenceRequired ?? false, verification_required: dto.verificationRequired ?? true, due_date: dto.dueDate ?? null, owner_id: dto.ownerId ?? actorId, created_by: actorId }).select().single());
+    await this.safeSingle(this.db.from('training_pssr_readiness').upsert({
+      id: row.id,
+      company_id: pssr.company_id ?? tenantId,
+      site_id: pssr.site_id,
+      unit_id: pssr.unit_id ?? null,
+      area_id: pssr.area_id ?? null,
+      pssr_id: id,
+      readiness_title: row.title,
+      readiness_source: row.source ?? 'Manual',
+      readiness_status: 'Not Assessed',
+      safety_critical: Boolean(row.required_before_startup),
+      startup_blocker: Boolean(row.required_before_startup),
+      owner_user_id: row.owner_id,
+      target_startup_at: pssr.target_startup_at,
+      created_by: actorId,
+      updated_by: actorId
+    }));
     await this.history(tenantId, pssr, actorId, 'TRAINING', 'PSSR_TRAINING_REQUIREMENT_ADDED', 'Training requirement added', null, row);
     return this.trainingReadinessTab(tenantId, id, scope);
   }
@@ -1033,6 +1097,14 @@ export class PssrService {
   async patchTrainingRequirement(tenantId: string, actorId: string, id: string, requirementId: string, dto: Record<string, any>, scope: Scope) {
     const pssr = await this.get(tenantId, id, scope);
     const row = await this.db.single<any>(this.db.from('pssr_training_requirements').update(this.compact({ title: dto.title, description: dto.description, training_type: dto.trainingType, source: dto.source, required_role_id: dto.requiredRoleId, required_department_id: dto.requiredDepartmentId, required_before_startup: dto.requiredBeforeStartup, required_before_closure: dto.requiredBeforeClosure, evidence_required: dto.evidenceRequired, verification_required: dto.verificationRequired, due_date: dto.dueDate, owner_id: dto.ownerId, status: dto.status, updated_at: new Date().toISOString() })).eq('tenant_id', tenantId).eq('pssr_id', id).eq('id', requirementId).select().single());
+    await this.safeSingle(this.db.from('training_pssr_readiness').update({
+      readiness_title: row.title,
+      safety_critical: Boolean(row.required_before_startup),
+      startup_blocker: Boolean(row.required_before_startup),
+      owner_user_id: row.owner_id,
+      updated_by: actorId,
+      updated_at: new Date().toISOString()
+    }).eq('id', requirementId));
     await this.history(tenantId, pssr, actorId, 'TRAINING', 'PSSR_TRAINING_REQUIREMENT_UPDATED', 'Training requirement updated', null, row);
     await this.recalculatePssrReadiness(tenantId, id);
     return this.trainingReadinessTab(tenantId, id, scope);
@@ -1041,6 +1113,7 @@ export class PssrService {
   async deleteTrainingRequirement(tenantId: string, actorId: string, id: string, requirementId: string, scope: Scope) {
     const pssr = await this.get(tenantId, id, scope);
     await this.db.single<any>(this.db.from('pssr_training_requirements').delete().eq('tenant_id', tenantId).eq('pssr_id', id).eq('id', requirementId).select().single());
+    await this.safeSingle(this.db.from('training_pssr_readiness').delete().eq('id', requirementId));
     await this.history(tenantId, pssr, actorId, 'TRAINING', 'PSSR_TRAINING_REQUIREMENT_DELETED', 'Training requirement deleted', { requirementId }, null);
     await this.recalculatePssrReadiness(tenantId, id);
     return this.trainingReadinessTab(tenantId, id, scope);
@@ -1064,6 +1137,21 @@ export class PssrService {
     if (action === 'waive') Object.assign(patch, { status: 'Waived', waiver_reason: dto.reason ?? 'Waived by authorized user', waived_by: actorId, waived_at: now });
     if (action === 'reminder') Object.assign(patch, { reminder_count: dto.reminderCount ?? 1 });
     const row = await this.db.single<any>(this.db.from('pssr_training_assignments').update(patch).eq('tenant_id', tenantId).eq('pssr_id', id).eq('id', assignmentId).select().single());
+    await this.safeSingle(this.db.from('training_pssr_assignments').update({
+      assignment_status: row.status,
+      runtime_status: row.status,
+      completion_status: row.status,
+      verified_by: row.verified_by ?? null,
+      verified_at: row.verified_at ?? null,
+      updated_at: now
+    }).eq('id', assignmentId));
+    if (['Verified', 'Completed', 'Waived'].includes(row.status)) {
+      await this.safeSingle(this.db.from('training_pssr_blockers').update({
+        blocker_status: 'Resolved',
+        resolved_by: actorId,
+        resolved_at: now
+      }).eq('assignment_id', assignmentId).eq('blocker_status', 'Open'));
+    }
     await this.history(tenantId, pssr, actorId, 'TRAINING', `PSSR_TRAINING_${action.toUpperCase()}`, `Training assignment ${action}`, null, row);
     await this.recalculatePssrReadiness(tenantId, id);
     return this.trainingReadinessTab(tenantId, id, scope);
@@ -1163,6 +1251,7 @@ export class PssrService {
   }
 
   async punchListTab(tenantId: string, id: string, scope: Scope) {
+    await this.refreshPunchActionStatuses(tenantId, id, scope).catch(() => null);
     await this.get(tenantId, id, scope);
     const [items, links, evidence, verifications, deferrals] = await Promise.all([
       this.safeMany<any>(this.db.from('pssr_punch_items').select('*').eq('tenant_id', tenantId).eq('pssr_id', id).order('created_at')),
@@ -1198,7 +1287,42 @@ export class PssrService {
     const sourceRecordId = dto.sourceRecordId ?? null;
     const existing = await this.safeSingle<any>(this.db.from('pssr_punch_items').select('id').eq('tenant_id', tenantId).eq('pssr_id', id).eq('source_module', sourceModule).eq('title', dto.title).maybeSingle());
     if (existing && sourceRecordId) return this.punchListTab(tenantId, id, scope);
-    const row = await this.safeSingle<any>(this.db.from('pssr_punch_items').insert({ id: dto.id ?? crypto.randomUUID(), pssr_id: id, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, punch_number: dto.punchNumber ?? await this.nextScopedNumber('pssr_punch_items', 'punch_number', id, 'PUNCH'), title: dto.title, description: dto.description ?? null, category: dto.category ?? 'B', source_module: sourceModule, source_record_id: sourceRecordId, related_equipment_id: dto.relatedEquipmentId ?? null, severity: dto.severity ?? 'Medium', owner_id: dto.ownerId ?? pssr.coordinator_id ?? actorId, due_date: dto.dueDate ?? null, priority: dto.priority ?? dto.severity ?? 'Medium', status: dto.status ?? 'Open', startup_blocking: dto.startupBlocking ?? dto.category === 'A', evidence_required: dto.evidenceRequired ?? true, verification_required: dto.verificationRequired ?? true, linked_action_id: dto.linkedActionId ?? null, created_by: actorId, updated_at: new Date().toISOString() }).select().single());
+    const punchId = dto.id ?? crypto.randomUUID();
+    const isStartupBlocking = dto.startupBlocking ?? dto.category === 'A';
+    const timingGate = isStartupBlocking ? 'PRE_STARTUP' : 'POST_STARTUP';
+    let linkedActionId = dto.linkedActionId ?? null;
+
+    // Auto-spawn universal Action in Phase 1 Action Center if not explicitly provided
+    if (!linkedActionId) {
+      try {
+        const actionRow = await this.safeSingle<any>(this.db.from('Action').insert({
+          id: crypto.randomUUID(),
+          tenantId,
+          companyId: pssr.company_id,
+          siteId: pssr.site_id,
+          unitId: pssr.unit_id ?? null,
+          areaId: pssr.area_id ?? null,
+          title: `[PSSR Punch] ${dto.title}`,
+          description: dto.description ?? `PSSR Punch List item for ${pssr.pssr_number}`,
+          sourceType: 'PSSR',
+          sourceId: id,
+          sourceUrl: `/pssr/${id}?tab=punch-list`,
+          priority: dto.severity === 'Critical' ? 'CRITICAL' : dto.severity === 'High' ? 'HIGH' : 'MEDIUM',
+          status: 'OPEN',
+          timingGate,
+          assignedToId: dto.ownerId ?? pssr.coordinator_id ?? actorId,
+          createdById: actorId,
+          dueDate: dto.dueDate ? new Date(dto.dueDate).toISOString() : null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }).select('id').single());
+        if (actionRow?.id) linkedActionId = actionRow.id;
+      } catch (err) {
+        // Defensive: if Action table is unavailable, continue with punch item persistence
+      }
+    }
+
+    const row = await this.safeSingle<any>(this.db.from('pssr_punch_items').insert({ id: punchId, pssr_id: id, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, punch_number: dto.punchNumber ?? await this.nextScopedNumber('pssr_punch_items', 'punch_number', id, 'PUNCH'), title: dto.title, description: dto.description ?? null, category: dto.category ?? 'B', source_module: sourceModule, source_record_id: sourceRecordId, related_equipment_id: dto.relatedEquipmentId ?? null, severity: dto.severity ?? 'Medium', owner_id: dto.ownerId ?? pssr.coordinator_id ?? actorId, due_date: dto.dueDate ?? null, priority: dto.priority ?? dto.severity ?? 'Medium', status: dto.status ?? 'Open', startup_blocking: isStartupBlocking, evidence_required: dto.evidenceRequired ?? true, verification_required: dto.verificationRequired ?? true, linked_action_id: linkedActionId, created_by: actorId, updated_at: new Date().toISOString() }).select().single());
     if (row) await this.safeSingle(this.db.from('pssr_punch_item_links').upsert({ id: `punch_link_${row.id}`, pssr_id: id, punch_item_id: row.id, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, source_module: row.source_module, source_record_id: row.source_record_id, linked_action_id: row.linked_action_id }).select().single());
     await this.recalculatePssrReadiness(tenantId, id);
     return this.punchListTab(tenantId, id, scope);
@@ -1207,6 +1331,10 @@ export class PssrService {
   async patchPunchItem(tenantId: string, actorId: string, id: string, punchItemId: string, dto: Record<string, any>, scope: Scope) {
     const pssr = await this.get(tenantId, id, scope);
     const row = await this.db.single<any>(this.db.from('pssr_punch_items').update(this.compact({ title: dto.title, description: dto.description, category: dto.category, source_module: dto.sourceModule, source_record_id: dto.sourceRecordId, related_equipment_id: dto.relatedEquipmentId, severity: dto.severity, owner_id: dto.ownerId, due_date: dto.dueDate, priority: dto.priority, status: dto.status, startup_blocking: dto.startupBlocking, evidence_required: dto.evidenceRequired, verification_required: dto.verificationRequired, linked_action_id: dto.linkedActionId, updated_at: new Date().toISOString() })).eq('tenant_id', tenantId).eq('pssr_id', id).eq('id', punchItemId).select().single());
+    if (row?.linked_action_id) {
+      const timingGate = row.startup_blocking ? 'PRE_STARTUP' : 'POST_STARTUP';
+      await this.safeSingle(this.db.from('Action').update({ title: `[PSSR Punch] ${row.title}`, description: row.description ?? '', timingGate, updatedAt: new Date().toISOString() }).eq('id', row.linked_action_id));
+    }
     await this.history(tenantId, pssr, actorId, 'PUNCH', 'PSSR_PUNCH_UPDATED', 'Punch item updated', null, row);
     await this.recalculatePssrReadiness(tenantId, id);
     return this.punchListTab(tenantId, id, scope);
@@ -1230,6 +1358,16 @@ export class PssrService {
     if (action === 'reopen') Object.assign(patch, { status: 'Open', closed_by: null, closed_at: null });
     const row = await this.db.single<any>(this.db.from('pssr_punch_items').update(patch).eq('tenant_id', tenantId).eq('pssr_id', id).eq('id', punchItemId).select().single());
     if (['verify', 'reject'].includes(action)) await this.safeSingle(this.db.from('pssr_punch_item_verifications').insert({ id: crypto.randomUUID(), pssr_id: id, punch_item_id: punchItemId, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, status: action === 'verify' ? 'Verified' : 'Rejected', verified_by: action === 'verify' ? actorId : null, verified_at: action === 'verify' ? now : null, rejected_by: action === 'reject' ? actorId : null, rejected_at: action === 'reject' ? now : null, rejection_reason: action === 'reject' ? dto.reason ?? 'Rejected' : null, comment: dto.comment ?? null }).select().single());
+
+    // Sync Action Center status
+    if (row?.linked_action_id) {
+      if (['verify', 'close'].includes(action)) {
+        await this.safeSingle(this.db.from('Action').update({ status: 'CLOSED', completedAt: now, updatedAt: now }).eq('id', row.linked_action_id));
+      } else if (action === 'reopen') {
+        await this.safeSingle(this.db.from('Action').update({ status: 'OPEN', completedAt: null, updatedAt: now }).eq('id', row.linked_action_id));
+      }
+    }
+
     await this.history(tenantId, pssr, actorId, 'PUNCH', `PSSR_PUNCH_${action.toUpperCase().replaceAll('-', '_')}`, `Punch item ${action}`, null, row);
     await this.recalculatePssrReadiness(tenantId, id);
     return this.punchListTab(tenantId, id, scope);
@@ -1242,7 +1380,32 @@ export class PssrService {
     if (!dto.justification || !dto.riskAssessment || !dto.dueDateAfterStartup) throw new BadRequestException('Deferral justification, risk assessment, and due date are required');
     const deferral = await this.db.single<any>(this.db.from('pssr_punch_item_deferrals').insert({ id: crypto.randomUUID(), pssr_id: id, punch_item_id: punchItemId, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, justification: dto.justification, risk_assessment: dto.riskAssessment, temporary_controls: dto.temporaryControls ?? null, approved_by: dto.approvedBy ?? actorId, approved_at: new Date().toISOString(), due_date_after_startup: dto.dueDateAfterStartup, startup_impact_statement: dto.startupImpactStatement ?? null, status: 'Approved' }).select().single());
     await this.db.single(this.db.from('pssr_punch_items').update({ status: 'Deferred', startup_blocking: false, due_date: dto.dueDateAfterStartup, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('pssr_id', id).eq('id', punchItemId).select().single());
+
+    // Update Action timingGate to POST_STARTUP
+    if (item.linked_action_id) {
+      await this.safeSingle(this.db.from('Action').update({ timingGate: 'POST_STARTUP', dueDate: new Date(dto.dueDateAfterStartup).toISOString(), updatedAt: new Date().toISOString() }).eq('id', item.linked_action_id));
+    }
+
     await this.history(tenantId, pssr, actorId, 'PUNCH', 'PSSR_PUNCH_DEFERRED', 'Punch item deferred with risk acceptance', null, deferral);
+    await this.recalculatePssrReadiness(tenantId, id);
+    return this.punchListTab(tenantId, id, scope);
+  }
+
+  async refreshPunchActionStatuses(tenantId: string, id: string, scope: Scope) {
+    await this.get(tenantId, id, scope);
+    const punchItems = await this.safeMany<any>(this.db.from('pssr_punch_items').select('*').eq('tenant_id', tenantId).eq('pssr_id', id));
+    const linkedActionIds = punchItems.map((p) => p.linked_action_id).filter(Boolean);
+    if (linkedActionIds.length > 0) {
+      const actions = await this.safeMany<any>(this.db.from('Action').select('id,status').in('id', linkedActionIds));
+      const actionMap = new Map(actions.map((a) => [a.id, a.status]));
+      for (const item of punchItems) {
+        if (!item.linked_action_id) continue;
+        const actStatus = actionMap.get(item.linked_action_id);
+        if (['CLOSED', 'VERIFIED'].includes(actStatus) && item.status !== 'Closed') {
+          await this.db.from('pssr_punch_items').update({ status: 'Closed', closed_at: new Date().toISOString() }).eq('id', item.id);
+        }
+      }
+    }
     await this.recalculatePssrReadiness(tenantId, id);
     return this.punchListTab(tenantId, id, scope);
   }
@@ -1297,6 +1460,23 @@ export class PssrService {
     if (action === 'reject') await this.db.single(this.db.from('pssrs').update({ status: 'Returned For Correction', authorization_status: 'Returned For Correction', updated_at: now }).eq('tenant_id', tenantId).eq('id', id).select('id').single());
     await this.history(tenantId, pssr, actorId, 'AUTHORIZATION', `PSSR_SIGNATURE_${action.toUpperCase()}`, `Authorization signature ${action}: ${row.signature_role}`, null, row);
     await this.audit.write({ tenantId, actorId, action: `PSSR_SIGNATURE_${action.toUpperCase()}`, entityType: 'PSSR_AUTHORIZATION_SIGNATURE', entityId: signatureId, after: row as JsonValue });
+    try {
+      const workflowScope = {
+        allowedSiteIds: scope.allowedSiteIds ?? [],
+        selectedSiteId: scope.selectedSiteId ?? null,
+        corporateView: Boolean(scope.corporateView)
+      };
+      const instances = await this.workflows.forRecord(tenantId, 'PSSR', id, workflowScope);
+      if (instances?.length) {
+        if (action === 'sign') {
+          await this.workflows.approve(tenantId, actorId, instances[0].id, { comment: dto.comment ?? `Signed by ${row.signature_role}` }, workflowScope);
+        } else if (action === 'reject') {
+          await this.workflows.reject(tenantId, actorId, instances[0].id, { comment: dto.reason ?? `Rejected by ${row.signature_role}` }, workflowScope);
+        }
+      }
+    } catch {
+      // Defensive: ignore workflow advance failures if no active instance is configured
+    }
     return this.startupAuthorizationTab(tenantId, id, scope);
   }
 
@@ -1562,11 +1742,12 @@ export class PssrService {
 
   private async generateChecklistAndBlockers(tenantId: string, pssr: any, moc: any) {
     const actions = moc ? await this.safeMany<any>(this.db.from('moc_required_actions').select('*').eq('tenant_id', tenantId).eq('moc_id', moc.id)) : [];
+    const psiBlockers = moc ? await this.safeMany<any>(this.db.from('psi_moc_impact_items').select('*').eq('tenant_id', tenantId).eq('moc_id', moc.id).or('blocking.eq.true,pssr_blocker.eq.true')) : [];
     const checklist = this.checklist.preview({ pssrType: pssr.pssr_type, startupType: pssr.startup_type, riskLevel: pssr.risk_level, moc });
     for (const item of checklist) {
       await this.db.single(this.db.from('pssr_checklist_items').insert(this.checklistInsertPayload(tenantId, pssr, item, pssr.created_by)).select().single());
     }
-    for (const blocker of this.blockers.preview({ moc, actions, checklist })) {
+    for (const blocker of this.blockers.preview({ moc, actions, checklist, psiBlockers })) {
       await this.db.single(this.db.from('pssr_startup_blockers').insert({ id: crypto.randomUUID(), pssr_id: pssr.id, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, blocker_type: blocker.sourceModule, blocker_title: blocker.blockerTitle, blocker_description: blocker.blockerDescription, source_module: blocker.sourceModule, source_record_id: blocker.sourceRecordId ?? null, severity: blocker.severity, blocking: blocker.blocking, status: blocker.status }).select().single());
     }
   }
@@ -1868,14 +2049,85 @@ export class PssrService {
       this.testingCommissioningTab(tenantId, id, scope),
       this.punchListTab(tenantId, id, scope)
     ]);
+
+    const linkedMocId = pssr.linkedMoc?.moc_id ?? pssr.linked_moc_id ?? null;
+
+    // Cross-module Hard Gate Verification: Action Center (timingGate = PRE_STARTUP)
+    const livePreStartupActions = await this.safeMany<any>(
+      this.db.from('Action')
+        .select('id, title, description, status, timingGate, sourceType, sourceId, priority')
+        .eq('tenantId', tenantId)
+        .eq('timingGate', 'PRE_STARTUP')
+        .not('status', 'in', '("CLOSED","VERIFIED")')
+    );
+    const pssrActionBlockers = (livePreStartupActions || []).filter((a: any) =>
+      (a.sourceType === 'PSSR' && a.sourceId === id) ||
+      (linkedMocId && a.sourceType === 'MOC' && a.sourceId === linkedMocId)
+    );
+
+    // Cross-module Hard Gate Verification: Central Training & Competency Blockers
+    const [livePssrTrainingBlockers, liveMocTrainingBlockers] = await Promise.all([
+      this.safeMany<any>(
+        this.db.from('training_pssr_blockers')
+          .select('id, blocker_title, blocker_type, blocker_severity, blocker_status, startup_blocker')
+          .eq('company_id', tenantId)
+          .eq('pssr_id', id)
+          .eq('blocker_status', 'Open')
+          .eq('startup_blocker', true)
+      ),
+      linkedMocId ? this.safeMany<any>(
+        this.db.from('training_moc_blockers')
+          .select('id, blocker_title, blocker_type, blocker_severity, blocker_status, startup_blocker')
+          .eq('company_id', tenantId)
+          .eq('moc_id', linkedMocId)
+          .eq('blocker_status', 'Open')
+          .eq('startup_blocker', true)
+      ) : Promise.resolve([])
+    ]);
+
+    const livePreStartupActionBlockers = (pssrActionBlockers || []).map((a: any) => ({
+      id: `action_${a.id}`,
+      sourceId: a.id,
+      title: `Action Center pre-startup task pending: ${a.title}`,
+      description: a.description ?? `Task ${a.id} must be closed/verified prior to startup`,
+      severity: a.priority === 'CRITICAL' ? 'Critical' : 'High',
+      sourceModule: 'Action Center',
+      status: a.status,
+      startupBlocking: true
+    }));
+
+    const liveCentralTrainingBlockers = [
+      ...(livePssrTrainingBlockers || []).map((t: any) => ({
+        id: `tr_pssr_${t.id}`,
+        sourceId: t.id,
+        title: `PSSR Training Blocker: ${t.blocker_title}`,
+        description: t.blocker_type ?? 'Mandatory delta-training assignment incomplete',
+        severity: t.blocker_severity ?? 'Critical',
+        sourceModule: 'Training & Competency',
+        status: t.blocker_status,
+        startupBlocking: true
+      })),
+      ...(liveMocTrainingBlockers || []).map((t: any) => ({
+        id: `tr_moc_${t.id}`,
+        sourceId: t.id,
+        title: `MOC Training Blocker: ${t.blocker_title}`,
+        description: t.blocker_type ?? 'MOC delta-training requirement incomplete',
+        severity: t.blocker_severity ?? 'Critical',
+        sourceModule: 'Training & Competency',
+        status: t.blocker_status,
+        startupBlocking: true
+      }))
+    ];
+
     const readinessRows = [
       ['PSSR checklist complete', checklist.summary.completionPercent, checklist.blockers.length],
       ['Field verification complete', field.summary.fieldVerificationStatus === 'Ready' ? 100 : field.summary.fieldChecklistCompletionPercent, field.blockers.length],
       ['Document readiness complete', documents.summary.readinessPercent, documents.blockers.length],
-      ['Training complete', training.summary.completionPercent, training.blockers.length],
+      ['Training complete', training.summary.completionPercent, training.blockers.length + liveCentralTrainingBlockers.length],
       ['Testing / commissioning complete', testing.summary.completionPercent, testing.blockers.length],
       ['Category A punch items closed', punch.summary.categoryAOpen ? 0 : 100, punch.summary.categoryAOpen],
       ['Category B punch items risk-accepted', punch.summary.categoryBOpen && !punch.deferrals?.length ? 50 : 100, punch.summary.categoryBOpen && !punch.deferrals?.length ? 1 : 0],
+      ['Action Center pre-startup tasks closed', livePreStartupActionBlockers.length === 0 ? 100 : 0, livePreStartupActionBlockers.length],
       ['Linked MOC startup blockers closed', pssr.summary.linkedMocStartupBlockers ? 0 : 100, pssr.summary.linkedMocStartupBlockers],
       ['Required approvals complete', 100, 0],
       ['Required signatures complete', signatures.length && signatures.some((item) => !['Signed', 'Waived', 'Not Required'].includes(item.status)) ? 0 : 100, signatures.filter((item) => !['Signed', 'Waived', 'Not Required'].includes(item.status)).length],
@@ -1893,6 +2145,8 @@ export class PssrService {
       ...training.blockers.map((b: any) => ({ ...b, sourceModule: 'Training & Personnel Readiness', startupBlocking: true })),
       ...testing.blockers.map((b: any) => ({ ...b, sourceModule: 'Testing & Commissioning', startupBlocking: true })),
       ...punch.blockers.map((b: any) => ({ ...b, sourceModule: 'Punch List / Actions', startupBlocking: true })),
+      ...livePreStartupActionBlockers,
+      ...liveCentralTrainingBlockers,
       ...signatures.filter((item) => !['Signed', 'Waived', 'Not Required'].includes(item.status)).map((item) => ({ id: `${item.id}_signature`, sourceId: item.id, title: 'Required authorization signature missing', description: item.signature_role, severity: 'High', sourceModule: 'Workflow / Signatures', status: item.status, startupBlocking: true })),
       ...conditions.filter((item) => item.required && !['Closed', 'Complete', 'Waived'].includes(item.status)).map((item) => ({ id: `${item.id}_condition`, sourceId: item.id, title: 'Required startup condition open', description: item.description, severity: 'Medium', sourceModule: 'Site policy', status: item.status, startupBlocking: false }))
     ];
@@ -1925,7 +2179,10 @@ export class PssrService {
 
   private async recordStartupRelease(tenantId: string, pssr: any, authorizationId: string, actorId: string, dto: Record<string, any>) {
     const row = await this.safeSingle<any>(this.db.from('pssr_startup_release_events').insert({ id: crypto.randomUUID(), pssr_id: pssr.id, authorization_id: authorizationId, tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, event_type: 'STARTUP_RELEASED', description: dto.description ?? 'Startup released from PSSR authorization', released_by: actorId, released_at: new Date().toISOString(), metadata: dto }).select().single());
-    if (pssr.linkedMoc?.moc_id) await this.safeSingle(this.db.from('moc_history_events').insert({ id: crypto.randomUUID(), tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, moc_id: pssr.linkedMoc.moc_id, event_type: 'PSSR_STARTUP_RELEASED', title: 'PSSR startup released', description: `${pssr.pssr_number} released startup`, actor_id: actorId }).select().single());
+    if (pssr.linkedMoc?.moc_id) {
+      await this.safeSingle(this.db.from('moc_history_events').insert({ id: crypto.randomUUID(), tenant_id: tenantId, company_id: pssr.company_id, site_id: pssr.site_id, moc_id: pssr.linkedMoc.moc_id, event_type: 'PSSR_STARTUP_RELEASED', title: 'PSSR startup released', description: `${pssr.pssr_number} released startup`, actor_id: actorId }).select().single());
+      await this.safeSingle(this.db.from('mocs').update({ status: 'Startup Authorized', updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', pssr.linkedMoc.moc_id).select('id').single());
+    }
     for (const equipment of pssr.equipment ?? []) {
       await this.safeSingle(this.db.from('equipment_timeline_events').insert({ id: crypto.randomUUID(), tenantId, equipmentId: equipment.equipment_id, eventType: 'PSSR_STARTUP_RELEASED', title: 'PSSR startup released', description: `${pssr.pssr_number} released startup`, occurredAt: new Date().toISOString(), createdById: actorId }).select().single());
     }

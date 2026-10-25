@@ -91,7 +91,7 @@ export function HazopReviewSignoffTab({ study }: { study: any }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {can('hazop.review.start') ? <button disabled={workflowMutations.recalculate.isPending} onClick={() => void run('Readiness recalculated.', () => workflowMutations.recalculate.mutateAsync())} className="rounded-lg border border-[var(--psm-line)] px-3 py-2 text-sm font-semibold disabled:opacity-45">{workflowMutations.recalculate.isPending ? 'Recalculating...' : 'Recalculate Readiness'}</button> : null}
-          {can('hazop.review.export_package') ? <button disabled={workflowMutations.exportPackage.isPending} onClick={() => void exportPackage()} className="rounded-lg border border-blue-400/30 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-100 disabled:opacity-45">Export Approval Package</button> : null}
+          {can('hazop.review.export_package') ? <button disabled={workflowMutations.exportPackage.isPending} onClick={() => void exportPackage()} className="rounded-lg border border-blue-400/30 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-600 dark:text-blue-200 hover:bg-blue-500/20 transition disabled:opacity-45">Export Approval Package</button> : null}
         </div>
       </div>
 

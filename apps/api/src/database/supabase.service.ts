@@ -1,12 +1,16 @@
 import { Injectable, Logger, OnModuleInit, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { request as httpsRequest, RequestOptions } from 'node:https';
+import { Agent as HttpsAgent, request as httpsRequest, RequestOptions } from 'node:https';
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
   client!: SupabaseClient;
   private readonly logger = new Logger(SupabaseService.name);
+  // Once Supabase headers overflow Undici's limit, skip the doomed first attempt on later requests
+  // (it doubled every query's latency) and reuse keep-alive sockets instead of a new TLS handshake each time.
+  private preferLargeHeaders = false;
+  private readonly largeHeaderAgent = new HttpsAgent({ keepAlive: true, maxSockets: 50, family: 4, timeout: 15_000 });
 
   constructor(private readonly config: ConfigService) {}
 
@@ -54,12 +58,15 @@ export class SupabaseService implements OnModuleInit {
     const host = this.requestHost(input);
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
+        if (this.preferLargeHeaders) return await this.fetchWithLargeHeaders(input, init);
         return await fetch(input, init);
       } catch (error) {
         lastError = error;
-        if (this.transportReason(error) === 'UND_ERR_HEADERS_OVERFLOW') {
-          this.logger.warn(`Supabase response headers exceeded Undici's limit; retrying ${host} through the large-header HTTPS transport.`);
-          return this.fetchWithLargeHeaders(input, init);
+        if (!this.preferLargeHeaders && this.transportReason(error) === 'UND_ERR_HEADERS_OVERFLOW') {
+          this.preferLargeHeaders = true;
+          this.logger.warn(`Supabase response headers exceeded Undici's limit; using the large-header HTTPS transport for ${host} from now on.`);
+          attempt -= 1;
+          continue;
         }
         this.logger.warn(`Supabase request to ${host} failed on attempt ${attempt + 1}/3: ${this.transportReason(error)}`);
         if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
@@ -80,7 +87,8 @@ export class SupabaseService implements OnModuleInit {
     const options: RequestOptions = {
       method,
       headers: requestHeaders,
-      maxHeaderSize: 128 * 1024
+      maxHeaderSize: 128 * 1024,
+      agent: this.largeHeaderAgent
     };
     const signal = init?.signal ?? inputRequest?.signal;
     if (signal) options.signal = signal;
@@ -105,6 +113,7 @@ export class SupabaseService implements OnModuleInit {
           }));
         });
       });
+      request.setTimeout(15_000, () => request.destroy(Object.assign(new Error('Supabase request timed out'), { code: 'UND_ERR_CONNECT_TIMEOUT' })));
       request.on('error', reject);
       if (body) request.write(body);
       request.end();

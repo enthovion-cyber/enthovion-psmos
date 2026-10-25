@@ -1,0 +1,2 @@
+export type RegulatoryChange = Record<string, unknown> & { id: string; change_code?: string; change_title?: string; change_type?: string; source_type?: string; change_status?: string; impact_status?: string; criticality?: string; updated_at?: string };
+export type RegulatoryChangeRegister = { rows: RegulatoryChange[]; total: number; summary?: Record<string, unknown>; permissions?: Record<string, unknown> };

@@ -27,6 +27,7 @@ export function useMOCTemporaryEmergencyMutations(id: string) {
     updateEmergency: useMutation({ mutationFn: (values: Record<string, any>) => mocTemporaryEmergencyService.updateEmergency(id, values), onSuccess: refresh }),
     completeEmergencyReview: useMutation({ mutationFn: (values: Record<string, any>) => mocTemporaryEmergencyService.completeEmergencyReview(id, values), onSuccess: refresh }),
     createEmergencyFollowupAction: useMutation({ mutationFn: (values: Record<string, any>) => mocTemporaryEmergencyService.createEmergencyFollowupAction(id, values), onSuccess: refresh }),
-    convertEmergencyToPermanent: useMutation({ mutationFn: (values: Record<string, any>) => mocTemporaryEmergencyService.convertEmergencyToPermanent(id, values), onSuccess: refresh })
+    convertEmergencyToPermanent: useMutation({ mutationFn: (values: Record<string, any>) => mocTemporaryEmergencyService.convertEmergencyToPermanent(id, values), onSuccess: refresh }),
+    runExpiryCheck: useMutation({ mutationFn: () => mocTemporaryEmergencyService.runExpiryCheck(), onSuccess: refresh })
   };
 }

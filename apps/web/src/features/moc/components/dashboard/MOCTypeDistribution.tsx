@@ -3,11 +3,10 @@
 import React from 'react';
 import { useMOCDashboardStore } from '../../stores/moc-dashboard.store';
 
-// Local high-fidelity implementation of Badge to guarantee styled uniformity
 const Badge = ({ tone, children }: { tone: string; children: React.ReactNode }) => {
-  let colors = 'bg-slate-900 text-slate-400 border-slate-800';
-  if (tone === 'blue') colors = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
-  if (tone === 'purple') colors = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+  let colors = 'bg-[var(--psm-surface-2)] text-[var(--psm-muted)] border-[var(--psm-line)]';
+  if (tone === 'blue') colors = 'bg-primary/10 text-primary border-primary/20';
+  if (tone === 'purple') colors = 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
   return (
     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border tracking-wide whitespace-nowrap ${colors}`}>
       {children}
@@ -15,12 +14,11 @@ const Badge = ({ tone, children }: { tone: string; children: React.ReactNode }) 
   );
 };
 
-// Local custom dynamic ProgressBar with optimized color theme support
 const ProgressBar = ({ value, tone }: { value: number; tone: string }) => {
-  let barColor = 'bg-sky-500';
+  let barColor = 'bg-primary';
   if (tone === 'purple') barColor = 'bg-purple-500';
   return (
-    <div className="w-full bg-slate-900 border border-slate-800/80 h-1.5 rounded-full overflow-hidden">
+    <div className="w-full bg-[var(--psm-surface-2)] border border-[var(--psm-line)] h-1.5 rounded-full overflow-hidden">
       <div 
         className={`h-full ${barColor} transition-all duration-500 ease-out`} 
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }} 
@@ -29,7 +27,6 @@ const ProgressBar = ({ value, tone }: { value: number; tone: string }) => {
   );
 };
 
-// Clean high-fidelity production fallback data matching typical operational structures
 const DEFAULT_MOCK_DATA = [
   { label: 'Permanent Change', count: 64, percent: 58, tone: 'blue' },
   { label: 'Temporary Change', count: 32, percent: 29, tone: 'purple' },
@@ -37,61 +34,45 @@ const DEFAULT_MOCK_DATA = [
 ];
 
 interface MOCTypeDistributionProps {
-  items?: Array<{
-    label: string;
-    count?: number;
-    percent?: number;
-    filter?: any;
-    tone?: string;
-  }>;
+  items?: Array<Record<string, any>> | undefined;
 }
 
 export function MOCTypeDistribution({ items }: MOCTypeDistributionProps) {
   const setFilters = useMOCDashboardStore((state) => state.setFilters);
-
-  // Fallback to rich default operational records if passed items are empty or unpopulated
-  const activeItems = items && items.length > 0 ? items : DEFAULT_MOCK_DATA;
-
-  // Compute maximum height control parameters dynamically
+  const activeItems: Array<Record<string, any>> = items && items.length > 0 ? items : DEFAULT_MOCK_DATA;
   const totalVolume = activeItems.reduce((sum, item) => sum + Number(item.count ?? 0), 0);
 
   return (
-    <div className="w-full rounded-xl border border-slate-800 bg-slate-950 p-4 shadow-md md:p-5 flex flex-col justify-between h-full">
-      
-      {/* Dynamic Enhanced Header Stack */}
-      <div className="mb-4 flex items-center justify-between border-b border-slate-900 pb-2">
-        <div>
-          <h3 className="text-base font-bold tracking-tight text-white">
-            MOC Type Distribution
-          </h3>
-        </div>
-        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-slate-400 border border-slate-800">
+    <div className="w-full rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4 shadow-sm md:p-5 flex flex-col justify-between h-full text-[var(--psm-fg)]">
+      <div className="mb-4 flex items-center justify-between border-b border-[var(--psm-line)] pb-2">
+        <h3 className="text-base font-bold tracking-tight text-[var(--psm-fg)]">
+          MOC Type Distribution
+        </h3>
+        <span className="rounded-full bg-[var(--psm-surface-2)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--psm-muted)] border border-[var(--psm-line)]">
           Classification Metrics
         </span>
       </div>
 
-      {/* Main Content Workspace Layout */}
       <div className="space-y-3 flex-1 flex flex-col justify-center">
         {activeItems.length > 0 ? (
           activeItems.map((item) => {
             const calculatedPercent = item.percent ?? (totalVolume ? Math.round((Number(item.count ?? 0) / totalVolume) * 100) : 0);
-            const isTemporary = item.label.toLowerCase().includes('temporary');
+            const isTemporary = String(item.label || '').toLowerCase().includes('temporary');
             const visualTone = isTemporary ? 'purple' : 'blue';
 
             return (
               <button
                 key={item.label}
                 onClick={() => setFilters(item.filter ?? { change_type: item.label })}
-                className="w-full rounded-xl border border-slate-900 bg-slate-900/40 p-3.5 text-left hover:border-slate-800 hover:bg-slate-900/70 transition-all duration-200 group focus:outline-none focus:ring-1 focus:ring-slate-700"
+                className="w-full rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3.5 text-left hover:border-primary/50 transition-all group focus:outline-none"
               >
-                {/* Header Information Frame */}
                 <div className="mb-2.5 flex items-center justify-between gap-4">
-                  <span className="text-xs font-bold text-slate-200 group-hover:text-white transition-colors truncate">
+                  <span className="text-xs font-bold text-[var(--psm-fg)] group-hover:text-primary transition-colors truncate">
                     {item.label}
                   </span>
                   
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-medium text-slate-500 group-hover:text-slate-400 transition-colors">
+                    <span className="text-[10px] font-medium text-[var(--psm-muted)] group-hover:text-[var(--psm-fg)] transition-colors">
                       {calculatedPercent}%
                     </span>
                     <Badge tone={visualTone}>
@@ -100,18 +81,12 @@ export function MOCTypeDistribution({ items }: MOCTypeDistributionProps) {
                   </div>
                 </div>
 
-                {/* Progress Visual Tracker */}
                 <ProgressBar value={Number(calculatedPercent)} tone={visualTone} />
               </button>
             );
           })
-        ) : (
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <p className="text-xs font-medium text-slate-500">No MOC type distribution yet</p>
-          </div>
-        )}
+        ) : null}
       </div>
-
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { SiteGuard } from '../common/guards/site.guard';
 import { TrainingPssrReadinessService } from './training-pssr-readiness.service';
 
 @UseGuards(JwtAuthGuard, SiteGuard, PermissionsGuard)
-@Controller('pssr')
+@Controller('training-competency/pssr')
 export class PssrTrainingController {
   constructor(private readonly pssrTraining: TrainingPssrReadinessService) {}
 

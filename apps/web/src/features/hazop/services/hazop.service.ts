@@ -31,6 +31,7 @@ export const hazopService = {
   bulkGenerateScenarios: hazopScenarioService.bulkGenerate,
   markScenarioLopaRequired: hazopScenarioService.markLopaRequired,
   clearScenarioLopaRequired: hazopScenarioService.clearLopaRequired,
+  escalateScenarioToLopa: hazopScenarioService.escalateToLopa,
   riskSummary: (id: string) => api.get(`/hazop/${id}/risk/summary`).then(unwrap<any>),
   riskMatrix: (id: string) => api.get(`/hazop/${id}/risk/matrix`).then(unwrap<any>),
   riskRegister: (id: string, params?: Record<string, any>) => api.get(`/hazop/${id}/risk/register`, { params }).then(unwrap<any>),

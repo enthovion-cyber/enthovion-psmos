@@ -1,2 +1,11 @@
 import { RegulatoryEvidenceRegisterPage } from '@/features/regulatory/evidence/RegulatoryEvidenceRegisterPage';
-export default function Page({ params }: { params: { obligationId: string } }) { return <RegulatoryEvidenceRegisterPage initialFilters={{ obligationId: params.obligationId }} />; }
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function Page(props: { params: Promise<{ obligationId: string }> }) {
+  const params = await props.params;
+  return <RegulatoryEvidenceRegisterPage initialFilters={{ obligationId: params.obligationId }} />;
+}

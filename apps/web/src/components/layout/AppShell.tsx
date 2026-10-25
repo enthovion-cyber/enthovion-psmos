@@ -5,6 +5,8 @@ import { CommandPalette } from './CommandPalette';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useSidebar } from '@/providers/SidebarProvider';
+import { PSMCopilotDrawer } from '@/features/ai/components/PSMCopilotDrawer';
+import { PSMCopilotFloatingButton } from '@/features/ai/components/PSMCopilotFloatingButton';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
@@ -17,6 +19,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main className="mx-auto w-full max-w-[1800px] p-3 sm:p-5 lg:p-6">{children}</main>
       </div>
       <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <PSMCopilotDrawer />
+      <PSMCopilotFloatingButton />
     </div>
   );
 }

@@ -28,7 +28,7 @@ const columns = [
   ['blockers', 'Blockers'],
   ['authorization', 'Authorization'],
   ['updated', 'Last Updated']
-];
+] as const;
 
 export function PSSRRegisterTable({ 
   register, 

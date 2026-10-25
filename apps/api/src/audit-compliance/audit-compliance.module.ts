@@ -59,6 +59,7 @@ import { AuditExecutionHistoryService } from "./audit-execution-history.service"
 import { AuditExecutionService } from "./audit-execution.service";
 import { AuditCapaHistoryService } from "./audit-capa-history.service";
 import { AuditCapaService } from "./audit-capa.service";
+import { AuditCapaActionEngineAdapterService } from "./audit-capa-action-engine-adapter.service";
 import { AuditEvidenceHistoryService } from "./audit-evidence-history.service";
 import { AuditEvidenceService } from "./audit-evidence.service";
 import { AuditFindingHistoryService } from "./audit-finding-history.service";
@@ -91,6 +92,7 @@ import { AuditHistoryTrendService } from "./audit-history-trend.service";
     AuditExecutionService,
     AuditExecutionHistoryService,
     AuditCapaService,
+    AuditCapaActionEngineAdapterService,
     AuditCapaHistoryService,
     AuditEvidenceService,
     AuditEvidenceHistoryService,
@@ -155,6 +157,7 @@ import { AuditHistoryTrendService } from "./audit-history-trend.service";
     AuditChecklistService,
     AuditExecutionService,
     AuditCapaService,
+    AuditCapaActionEngineAdapterService,
     AuditEvidenceService,
     AuditScoringService,
     AuditStandardMappingService,

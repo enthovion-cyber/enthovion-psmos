@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Download, Eye, FileText } from 'lucide-react';
 import { HazopAvatar } from './HazopAvatarGroup';
 
-export function HazopAttachmentsPreview({ preview, canDownload, onNavigate }: { preview: any; canDownload?: boolean; onNavigate: (tab?: string) => void }) {
+export function HazopAttachmentsPreview({ preview, canDownload, onNavigate }: { preview: any; canDownload?: boolean | undefined; onNavigate: (tab?: string | undefined) => void }) {
   if (preview.restricted) return <Panel title="8. Attachments Preview"><Empty text="Restricted by permission." /></Panel>;
   return (
     <Panel title="8. Attachments Preview" action={<button onClick={() => onNavigate('Attachments')} className="text-xs font-semibold text-primary">View all</button>}>

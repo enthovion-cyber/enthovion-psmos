@@ -505,7 +505,7 @@ export class SignupService {
   private nextRoute(companyIds: string[], siteIds: string[]) {
     if (companyIds.length > 1) return '/workspace/select';
     if (siteIds.length > 1) return '/site/select';
-    return '/dashboard';
+    return '/executive';
   }
 
   private nextForSession(session: SignupSession) {

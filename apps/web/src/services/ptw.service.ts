@@ -72,6 +72,16 @@ export type PermitIsolation = {
   removal_verified_by?: string | null;
   removal_verified_at?: string | null;
   notes?: string | null;
+  is_safety_critical?: boolean;
+  is_sif_bypass?: boolean;
+  sif_tag?: string | null;
+  sil_rating?: string | null;
+  bypass_reason?: string | null;
+  bypass_certificate_number?: string | null;
+  bypass_authorized_by?: string | null;
+  bypass_authorized_at?: string | null;
+  bypass_status?: string;
+  bypass_risk_assessment_attached?: boolean;
 };
 export type GasTest = {
   id: string;
@@ -261,6 +271,59 @@ export type CreatePermitInput = {
   maxPersonnel?: number;
 };
 
+export interface WorkforceCompetencyResult {
+  permitId: string;
+  permitType?: string;
+  cleared: boolean;
+  isFullyCompliant?: boolean;
+  totalWorkers?: number;
+  authorizedCount?: number;
+  blockedCount?: number;
+  blockers?: string[];
+  violations: string[];
+  checkedAt?: string;
+  workers: Array<{
+    userId?: string;
+    workerName: string;
+    role: string;
+    compliant: boolean;
+    missingOrExpiredCerts: string[];
+  }>;
+  evaluations?: Array<{
+    workerId: string;
+    workerName: string;
+    roleOnPermit: string;
+    isAuthorized: boolean;
+    status: 'VALID' | 'EXPIRED' | 'MISSING' | 'EXPIRING_SOON' | 'NOT_REQUIRED';
+    expiryDate: string | null;
+    daysToExpiry: number | null;
+    certTitle: string | null;
+    blockerMessage: string | null;
+  }>;
+}
+
+export interface SceBypassCheckResult {
+  hasSafetyCriticalIsolations: boolean;
+  totalIsolations: number;
+  safetyCriticalCount: number;
+  bypassesPendingApproval: number;
+  blockers: string[];
+  isolations: Array<{
+    id: string;
+    isolationPointTag: string;
+    equipmentTag?: string;
+    isSafetyCritical: boolean;
+    isSifBypass: boolean;
+    silRating?: string | null;
+    bypassStatus: string;
+    bypassCertificateNumber?: string | null;
+    bypassAuthorizedBy?: string | null;
+    bypassAuthorizedAt?: string | null;
+    isBlocked: boolean;
+    blockerReason?: string | null;
+  }>;
+}
+
 export const ptwService = {
   list: (params?: Record<string, string>) => api.get('/ptw', { params }).then(unwrap<Permit[]>),
   dashboard: () => api.get('/ptw/dashboard').then(unwrap<PermitDashboard>),
@@ -327,5 +390,13 @@ export const ptwService = {
   downloadCertificate: (id: string) => api.get(`/ptw/${id}/certificate`, { responseType: 'blob' }).then((response) => response.data as Blob),
   downloadIsolationCertificate: (id: string) => api.get(`/ptw/${id}/isolation-certificate`, { responseType: 'blob' }).then((response) => response.data as Blob),
   certificateUrl: (id: string) => `${api.defaults.baseURL}/ptw/${id}/certificate`,
-  isolationCertificateUrl: (id: string) => `${api.defaults.baseURL}/ptw/${id}/isolation-certificate`
+  isolationCertificateUrl: (id: string) => `${api.defaults.baseURL}/ptw/${id}/isolation-certificate`,
+  emergencySuspend: (input: { siteId: string; unitId?: string; areaId?: string; reason: string; alarmType?: string; broadcastAlert?: boolean }) =>
+    api.post('/ptw/emergency-suspend', input).then(unwrap<any>),
+  workforceCompetencyCheck: (id: string) =>
+    api.get(`/ptw/${id}/workforce/competency-check`).then(unwrap<WorkforceCompetencyResult>),
+  isolationSceBypassStatus: (id: string) =>
+    api.get(`/ptw/${id}/isolation/sce-bypass-status`).then(unwrap<SceBypassCheckResult>),
+  authorizeIsolationBypass: (id: string, isolationId: string, input: { bypassCertificateNumber: string; bypassReason: string; silRating?: string; sifTag?: string; riskAssessmentReference?: string; signature?: string }) =>
+    api.post(`/ptw/${id}/isolation/${isolationId}/authorize-bypass`, input).then(unwrap<PermitIsolation>)
 };

@@ -28,6 +28,21 @@ export type AuditExecutionRow = {
   evidence_missing_count: number;
   field_findings_count: number;
   critical_findings_count: number;
+  major_nc_blockers_count?: number | null;
+  closure_blocked?: boolean | null;
+  closure_blocker_summary_json?: Array<{
+    id: string;
+    code: string;
+    title: string;
+    type?: string;
+    severity?: string;
+    issue: string;
+    missingContainment?: boolean;
+    missingCapa?: boolean;
+  }> | null;
+  major_nc_waiver_approved_by?: string | null;
+  major_nc_waiver_reason?: string | null;
+  major_nc_waiver_granted_at?: string | null;
   ready_for_finding_register: boolean;
   created_at: string;
   updated_at: string;
@@ -143,6 +158,18 @@ export type AuditExecutionReadiness = {
   safety_critical_items_reviewed: boolean;
   validation_errors_resolved: boolean;
   lead_auditor_review_complete: boolean;
+  major_nc_blockers_count?: number | null;
+  major_nc_blockers?: Array<{
+    id: string;
+    code: string;
+    title: string;
+    type?: string;
+    severity?: string;
+    issue: string;
+    missingContainment?: boolean;
+    missingCapa?: boolean;
+  }> | null;
+  closure_blocked?: boolean | null;
   missing_items_json?: string[] | null;
   warnings_json?: string[] | null;
 };
@@ -155,6 +182,7 @@ export type AuditExecutionDetail = {
   evidence: AuditExecutionEvidence[];
   notes: AuditFieldNote[];
   findings: AuditFieldFinding[];
+  formalFindings?: Record<string, any>[] | null;
   interviews: AuditExecutionEngagement[];
   walkthroughs: AuditExecutionEngagement[];
   readiness: AuditExecutionReadiness;

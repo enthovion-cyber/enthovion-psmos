@@ -54,7 +54,7 @@ export function NotesSection({
       
       {/* Mockup Header Style */}
       <div className="flex items-center justify-between border-b border-[var(--psm-line)] p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Notes</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--psm-text)]">Notes</h2>
         <button 
           type="button" 
           onClick={() => setShowAddForm(!showAddForm)}
@@ -127,7 +127,7 @@ export function NotesSection({
                       <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-info/10 border border-info/20 text-[10px] font-bold text-info tracking-wider">
                         {getInitials(note.authorName ?? note.authorId)}
                       </div>
-                      <span className="font-semibold text-white truncate">
+                      <span className="font-semibold text-[var(--psm-text)] truncate">
                         {note.authorName ?? note.authorId ?? 'System'}
                       </span>
                     </div>

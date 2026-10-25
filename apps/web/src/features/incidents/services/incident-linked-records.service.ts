@@ -13,5 +13,6 @@ export const incidentLinkedRecordsService = {
   requestReview: incidentDetailService.requestLinkedRecordsReview,
   approveReview: incidentDetailService.approveLinkedRecordsReview,
   rejectReview: incidentDetailService.rejectLinkedRecordsReview,
-  export: incidentDetailService.exportLinkedRecords
+  export: incidentDetailService.exportLinkedRecords,
+  spawnMoc: incidentDetailService.spawnMoc
 };

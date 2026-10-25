@@ -87,6 +87,7 @@ export class ActionsService {
       dueDate: dto.dueDate,
       evidenceRequired: dto.evidenceRequired ?? false,
       verificationRequired: dto.verificationRequired ?? false,
+      timingGate: dto.timingGate ?? 'NOT_APPLICABLE',
       updatedAt: now
     }).select().single());
     await this.history(tenantId, action.id, actorId, 'ACTION_CREATED', null, action);
@@ -114,6 +115,9 @@ export class ActionsService {
       patch.evidenceRequired = true;
       patch.verificationRequired = true;
     }
+    if (dto.timingGate !== undefined) patch.timingGate = dto.timingGate;
+    if (dto.extensionReason !== undefined) patch.extensionReason = dto.extensionReason;
+    if (dto.requestedDueDate !== undefined) patch.requestedDueDate = dto.requestedDueDate;
     const action = await this.db.single<any>(this.db.from('Action').update(patch).eq('tenantId', tenantId).eq('id', id).select().single());
     await this.history(tenantId, id, actorId, 'ACTION_UPDATED', before, action);
     await this.audit.write({ tenantId, actorId, action: 'ACTION_UPDATED', entityType: 'Action', entityId: id, before: before as JsonValue, after: action as JsonValue });
@@ -223,11 +227,39 @@ export class ActionsService {
       verifiedById: actorId
     }).select().single());
     const patch = dto.decision === 'APPROVED'
-      ? { status: 'PENDING_VERIFICATION', verifiedById: actorId, verifiedAt: new Date().toISOString(), verificationNotes: dto.notes ?? null, updatedAt: new Date().toISOString() }
+      ? { status: 'VERIFIED', verifiedById: actorId, verifiedAt: new Date().toISOString(), verificationNotes: dto.notes ?? null, updatedAt: new Date().toISOString() }
       : { status: 'IN_PROGRESS', verifiedById: null, verifiedAt: null, verificationNotes: dto.notes ?? null, updatedAt: new Date().toISOString() };
     const action = await this.db.single<any>(this.db.from('Action').update(patch).eq('tenantId', tenantId).eq('id', actionId).select().single());
     await this.history(tenantId, actionId, actorId, dto.decision === 'APPROVED' ? 'VERIFICATION_APPROVED' : 'VERIFICATION_REJECTED', before, { action, verification });
     await this.audit.write({ tenantId, actorId, action: dto.decision === 'APPROVED' ? 'ACTION_VERIFIED' : 'ACTION_VERIFICATION_REJECTED', entityType: 'Action', entityId: actionId, before: before as JsonValue, after: action as JsonValue });
+    return action;
+  }
+
+  async requestExtension(tenantId: string, actorId: string, actionId: string, dto: { requestedDueDate: string; reason: string }) {
+    const before = await this.getBase(tenantId, actionId);
+    const patch = {
+      requestedDueDate: dto.requestedDueDate,
+      extensionReason: dto.reason,
+      extensionStatus: 'REQUESTED',
+      updatedAt: new Date().toISOString()
+    };
+    const action = await this.db.single<any>(this.db.from('Action').update(patch).eq('tenantId', tenantId).eq('id', actionId).select().single());
+    await this.history(tenantId, actionId, actorId, 'EXTENSION_REQUESTED', before, action);
+    return action;
+  }
+
+  async reviewExtension(tenantId: string, actorId: string, actionId: string, dto: { decision: 'APPROVED' | 'REJECTED'; notes?: string }) {
+    const before = await this.getBase(tenantId, actionId);
+    const patch: Record<string, unknown> = {
+      extensionStatus: dto.decision,
+      extensionApprovedById: actorId,
+      updatedAt: new Date().toISOString()
+    };
+    if (dto.decision === 'APPROVED' && before.requestedDueDate) {
+      patch.dueDate = before.requestedDueDate;
+    }
+    const action = await this.db.single<any>(this.db.from('Action').update(patch).eq('tenantId', tenantId).eq('id', actionId).select().single());
+    await this.history(tenantId, actionId, actorId, dto.decision === 'APPROVED' ? 'EXTENSION_APPROVED' : 'EXTENSION_REJECTED', before, action);
     return action;
   }
 
@@ -247,7 +279,8 @@ export class ActionsService {
         open: open.length,
         overdue: open.filter((action: any) => new Date(action.dueDate).getTime() < Date.now()).length,
         safetyCritical: open.filter((action: any) => action.priority === 'SAFETY_CRITICAL').length,
-        pendingVerification: open.filter((action: any) => action.status === 'PENDING_VERIFICATION').length
+        pendingVerification: open.filter((action: any) => action.status === 'PENDING_VERIFICATION').length,
+        preStartupBlockers: open.filter((action: any) => action.timingGate === 'PRE_STARTUP' || action.timing_gate === 'PRE_STARTUP').length
       },
       byPriority: groupCount(open, 'priority'),
       byModule: groupCount(open, 'moduleKey'),

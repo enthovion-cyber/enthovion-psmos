@@ -13,10 +13,10 @@ export function SelectedPermitPreview({ permit }: { permit: Permit | null }) {
   if (!permit) {
     return (
       <DashboardPanel title="Selected Permit Preview">
-        <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-slate-950/20 rounded-xl border border-slate-900">
-          <Clock className="h-8 w-8 text-slate-700 mb-2 animate-pulse" />
-          <p className="text-xs text-slate-400 font-medium">No permit selected from the live register ledger.</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Select an operational card entry from the left rail to view real-time telemetry.</p>
+        <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-slate-50 dark:bg-slate-950/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+          <Clock className="h-7 w-7 text-slate-400 dark:text-slate-600 mb-1.5 animate-pulse" />
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold">No permit selected from the live register ledger.</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Select an operational card entry from the left rail to view real-time telemetry.</p>
         </div>
       </DashboardPanel>
     );
@@ -24,7 +24,7 @@ export function SelectedPermitPreview({ permit }: { permit: Permit | null }) {
 
   const latestGas = permit.gasTests?.[0];
   const isolationTotal = permit.isolations?.length ?? 0;
-  const isolationComplete = permit.isolations?.filter((item) => 
+  const isolationComplete = permit.isolations?.filter((item) =>
     ['Confirmed', 'Verified', 'Fully Isolated'].includes(item.isolation_status ?? item.status)
   ).length ?? 0;
   const signaturesDone = permit.signatures?.filter((item) => item.status === 'Signed').length ?? 0;
@@ -46,9 +46,9 @@ export function SelectedPermitPreview({ permit }: { permit: Permit | null }) {
     if (permit.id && window.confirm(`Request a 4 hour extension for ${permit.permit_number}?`)) {
       const currentExpiry = new Date(permit.planned_end_at).getTime();
       const baseExpiry = Number.isFinite(currentExpiry) ? currentExpiry : Date.now();
-      mutations.extend.mutate({ 
-        newExpiryAt: new Date(baseExpiry + 4 * 60 * 60 * 1000).toISOString(), 
-        reason: 'Dashboard extension request' 
+      mutations.extend.mutate({
+        newExpiryAt: new Date(baseExpiry + 4 * 60 * 60 * 1000).toISOString(),
+        reason: 'Dashboard extension request'
       });
     }
   };
@@ -60,110 +60,161 @@ export function SelectedPermitPreview({ permit }: { permit: Permit | null }) {
   };
 
   return (
-    <DashboardPanel 
-      title="Permit Control Card" 
-      action="Open Detail" 
-      actionHref={`/ptw/${permit.id}`} 
-      className="bg-slate-950/40 border border-slate-800/80 shadow-2xl rounded-xl transition-all duration-300"
+    <DashboardPanel
+      title="Permit Control Card"
+      action="Open Detail"
+      actionHref={`/ptw/${permit.id}`}
+      className="shadow-sm dark:shadow-2xl"
     >
       {/* Top Section: Identification & Live Infographic Countdown */}
-      <div className="flex flex-col gap-4 border-b border-slate-900 pb-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-2 flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-bold tracking-tight text-white bg-slate-900/80 px-2.5 py-0.5 rounded border border-slate-800">
+      <div className="flex flex-col gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <h2 className="text-base sm:text-lg font-bold font-mono tracking-tight text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800">
               {permit.permit_number}
             </h2>
             <PermitTypeBadge type={permit.permit_type} />
             <PermitStatusBadge status={permit.status} />
             <RiskBadge risk={permit.risk_level} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-200 truncate">{permit.title}</h3>
-          <p className="max-w-4xl text-xs leading-relaxed text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-900/60 font-medium">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{permit.title}</h3>
+          <p className="max-w-4xl text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-900 font-medium">
             {permit.work_description}
           </p>
         </div>
 
         {/* Real-time Infographic Countdown Widget */}
-        <div className="flex justify-start sm:justify-end shrink-0 pt-1">
+        <div className="flex justify-start sm:justify-end shrink-0 pt-0.5">
           <RealTimeCountdown targetDateString={permit.planned_end_at} startDateString={permit.planned_start_at} />
         </div>
       </div>
 
       {/* Middle Section: Meta Data & Metric Sub-grids */}
-      <div className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr]">
+      <div className="mt-3 grid gap-2.5 grid-cols-1 md:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr]">
         {/* Core Administrative Ledger Row */}
-        <div className="space-y-2 bg-slate-950/50 p-3 rounded-xl border border-slate-900 flex flex-col justify-between text-xs">
-          <MiniRow label="Holder" value={<span className="font-semibold text-slate-200">{permit.holder?.displayName ?? '-'}</span>} />
-          <MiniRow label="Area / Unit" value={<span className="text-slate-300 font-medium">{`${permit.area?.name ?? permit.job_area ?? '-'} / ${permit.unit?.name ?? '-'}`}</span>} />
-          <MiniRow label="Equipment Tag" value={<span className="text-cyan-400 font-semibold bg-cyan-950/20 px-1.5 py-0.2 rounded border border-cyan-900/30">{permit.equipment_tag ?? '-'}</span>} />
-          <MiniRow label="Start / Expiry" value={<span className="text-slate-400 text-[11px]">{`${formatDateTime(permit.planned_start_at)} - ${formatDateTime(permit.planned_end_at)}`}</span>} />
+        <div className="space-y-1.5 bg-slate-50 dark:bg-slate-950/50 p-2.5 rounded-lg border border-slate-200 dark:border-slate-900 flex flex-col justify-between text-xs">
+          <MiniRow label="Holder" value={<span className="font-semibold text-slate-800 dark:text-slate-200">{permit.holder?.displayName ?? '-'}</span>} />
+          <MiniRow label="Area / Unit" value={<span className="text-slate-700 dark:text-slate-300 font-medium">{`${permit.area?.name ?? permit.job_area ?? '-'} / ${permit.unit?.name ?? '-'}`}</span>} />
+          <MiniRow label="Equipment Tag" value={<span className="text-sky-700 dark:text-cyan-400 font-semibold bg-sky-50 dark:bg-cyan-950/20 px-1.5 py-0.5 rounded border border-sky-200 dark:border-cyan-900/30">{permit.equipment_tag ?? '-'}</span>} />
+          <MiniRow label="Start / Expiry" value={<span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">{`${formatDateTime(permit.planned_start_at)} - ${formatDateTime(permit.planned_end_at)}`}</span>} />
         </div>
 
         {/* Diagnostic Grid Part 1 */}
         <MetricGrid
           items={[
-            { label: 'Gas Status', value: latestGas?.result ?? 'No test', icon: <RefreshCw size={11} />, tone: latestGas?.result?.toUpperCase() === 'PASS' ? 'text-emerald-400 bg-emerald-500/5 border-emerald-500/20' : 'text-amber-400 bg-amber-500/5 border-amber-500/20' },
-            { label: 'Isolation Logs', value: isolationTotal ? `${isolationComplete}/${isolationTotal}` : 'N/R', icon: <ShieldCheck size={11} />, tone: isolationComplete === isolationTotal && isolationTotal > 0 ? 'text-emerald-400 bg-emerald-500/5 border-emerald-500/20' : 'text-amber-400 bg-amber-500/5 border-amber-500/20' },
-            { label: 'Workforce Roll', value: `${workforceCount}/${permit.max_personnel ?? 'open'}`, icon: <Users size={11} />, tone: 'text-cyan-400 bg-cyan-500/5 border-cyan-500/20' },
-            { label: 'Signatures', value: `${signaturesDone}/${permit.signatures?.length ?? 0}`, icon: <FileSignature size={11} />, tone: signaturesDone === (permit.signatures?.length ?? 0) ? 'text-emerald-400 bg-emerald-500/5 border-emerald-500/20' : 'text-amber-400 bg-amber-500/5 border-amber-500/20' }
+            {
+              label: 'Gas Status',
+              value: latestGas?.result ?? 'No test',
+              icon: <RefreshCw size={11} />,
+              tone: latestGas?.result?.toUpperCase() === 'PASS'
+                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+                : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
+            },
+            {
+              label: 'Isolation Logs',
+              value: isolationTotal ? `${isolationComplete}/${isolationTotal}` : 'N/R',
+              icon: <ShieldCheck size={11} />,
+              tone: isolationComplete === isolationTotal && isolationTotal > 0
+                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+                : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
+            },
+            {
+              label: 'Workforce Roll',
+              value: `${workforceCount}/${permit.max_personnel ?? 'open'}`,
+              icon: <Users size={11} />,
+              tone: 'text-sky-700 dark:text-cyan-400 bg-sky-50 dark:bg-cyan-500/10 border-sky-200 dark:border-cyan-500/20'
+            },
+            {
+              label: 'Signatures',
+              value: `${signaturesDone}/${permit.signatures?.length ?? 0}`,
+              icon: <FileSignature size={11} />,
+              tone: signaturesDone === (permit.signatures?.length ?? 0)
+                ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+                : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
+            }
           ]}
         />
 
         {/* Diagnostic Grid Part 2 */}
         <MetricGrid
           items={[
-            { label: 'SIMOPS Conflicts', value: conflictCount, icon: <AlertTriangle size={11} />, tone: conflictCount ? 'text-rose-400 bg-rose-500/10 border-rose-500/20 animate-pulse font-bold' : 'text-emerald-400 bg-emerald-500/5 border-emerald-500/20' },
-            { label: 'Shift Handover', value: permit.handovers?.some((item) => !item.acknowledged_at) ? 'Pending Check' : 'Acknowledged', icon: <Calendar size={11} />, tone: permit.handovers?.some((item) => !item.acknowledged_at) ? 'text-amber-400 bg-amber-500/5 border-amber-500/20' : 'text-cyan-400 bg-cyan-500/5 border-cyan-500/20' },
-            { label: 'Latest System Audit Event', value: lastHistory?.title ?? lastHistory?.event_title ?? '-', icon: <Clock size={11} />, tone: 'text-slate-300 bg-slate-900/60 border-slate-800/60', wide: true }
+            {
+              label: 'SIMOPS Conflicts',
+              value: conflictCount,
+              icon: <AlertTriangle size={11} />,
+              tone: conflictCount
+                ? 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/20 font-bold'
+                : 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+            },
+            {
+              label: 'Shift Handover',
+              value: permit.handovers?.some((item) => !item.acknowledged_at) ? 'Pending Check' : 'Acknowledged',
+              icon: <Calendar size={11} />,
+              tone: permit.handovers?.some((item) => !item.acknowledged_at)
+                ? 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
+                : 'text-sky-700 dark:text-cyan-400 bg-sky-50 dark:bg-cyan-500/10 border-sky-200 dark:border-cyan-500/20'
+            },
+            {
+              label: 'Latest System Audit Event',
+              value: lastHistory?.title ?? lastHistory?.event_title ?? '-',
+              icon: <Clock size={11} />,
+              tone: 'text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800',
+              wide: true
+            }
           ]}
         />
       </div>
 
       {/* Operations & Action Toolbar */}
-      <div className="mt-5 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-900">
-        <Link 
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800 hover:text-white" 
+      <div className="mt-5 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+        <Link
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
           href={`/ptw/${permit.id}`}
         >
           <ExternalLink size={13} /> Open Detail
         </Link>
-        
-        <button 
-          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-950 bg-rose-950/20 px-3 py-1.5 text-xs font-semibold text-rose-300 transition-all hover:bg-rose-900/40 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-30" 
-          disabled={busy || !canSuspend} 
+
+        <button
+          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-950 bg-rose-50 dark:bg-rose-950/20 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 transition-all hover:bg-rose-100 dark:hover:bg-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={busy || !canSuspend}
           onClick={suspendFromDashboard}
+          type="button"
         >
           <ShieldAlert size={13} className={busy ? 'animate-spin' : ''} /> Suspend
         </button>
-        
-        <button 
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30" 
-          disabled={busy || !canExtend} 
+
+        <button
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={busy || !canExtend}
           onClick={extendFromDashboard}
+          type="button"
         >
           Extend Log
         </button>
-        
-        <button 
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30" 
-          disabled={busy || !canClose} 
+
+        <button
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={busy || !canClose}
           onClick={closeFromDashboard}
+          type="button"
         >
           Close Permit
         </button>
-        
-        <div className="h-4 w-px bg-slate-900 hidden sm:block mx-1" />
 
-        <button 
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5 text-xs font-semibold text-slate-400 transition-all hover:border-slate-700 hover:text-slate-200 ml-auto" 
+        <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1" />
+
+        <button
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200 ml-auto shadow-sm"
           onClick={() => window.print()}
+          type="button"
         >
           <Printer size={13} /> Print
         </button>
-        
-        <button 
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-1.5 text-xs font-semibold text-slate-400 transition-all hover:border-slate-700 hover:text-slate-200" 
+
+        <button
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200 shadow-sm"
           onClick={() => window.open(ptwService.certificateUrl(permit.id), '_blank')}
+          type="button"
         >
           <Download size={13} /> Export PDF
         </button>
@@ -174,19 +225,19 @@ export function SelectedPermitPreview({ permit }: { permit: Permit | null }) {
 
 function MetricGrid({ items }: { items: Array<{ label: string; value: string | number; icon: React.ReactNode; tone: string; wide?: boolean }> }) {
   return (
-    <div className="grid grid-cols-2 gap-2 w-full">
+    <div className="grid grid-cols-2 gap-1.5 w-full">
       {items.map((item) => (
-        <div 
-          key={item.label} 
-          className={`rounded-xl border p-2.5 flex flex-col justify-between shadow-sm backdrop-blur-md ${
+        <div
+          key={item.label}
+          className={`rounded-lg border p-2 flex flex-col justify-between shadow-xs transition-colors ${
             item.wide ? 'col-span-2' : ''
           } ${item.tone}`}
         >
-          <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            <span>{item.label}</span>
-            <span className="text-slate-600 shrink-0">{item.icon}</span>
+          <div className="flex items-center justify-between gap-1 text-[9px] font-bold uppercase tracking-wider opacity-80">
+            <span className="truncate">{item.label}</span>
+            <span className="shrink-0">{item.icon}</span>
           </div>
-          <div className="mt-1.5 truncate text-xs font-bold tracking-wide">
+          <div className="mt-1 truncate text-xs font-bold tracking-tight">
             {item.value}
           </div>
         </div>
@@ -197,73 +248,51 @@ function MetricGrid({ items }: { items: Array<{ label: string; value: string | n
 
 function RealTimeCountdown({ targetDateString, startDateString }: { targetDateString: string; startDateString: string }) {
   const [displayTime, setDisplayTime] = useState('');
-  const [percentageLeft, setPercentageLeft] = useState(100);
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    const calculateTime = () => {
+    function update() {
+      const target = new Date(targetDateString).getTime();
       const now = Date.now();
-      const end = new Date(targetDateString).getTime();
-      const start = new Date(startDateString).getTime();
-      const totalDuration = end - start;
-      const remaining = end - now;
+      const diff = target - now;
 
-      if (remaining <= 0) {
+      if (!Number.isFinite(target) || diff <= 0) {
         setDisplayTime('EXPIRED');
-        setPercentageLeft(0);
         setIsExpired(true);
         return;
       }
 
       setIsExpired(false);
-      const diffHrs = Math.floor(remaining / (1000 * 60 * 60));
-      const diffMins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-      const diffSecs = Math.floor((remaining % (1000 * 60)) / 1000);
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
-      const hrsStr = diffHrs > 0 ? `${diffHrs}h ` : '';
-      setDisplayTime(`${hrsStr}${diffMins}m ${diffSecs}s`);
-
-      if (totalDuration > 0) {
-        const pct = Math.max(0, Math.min(100, (remaining / totalDuration) * 100));
-        setPercentageLeft(pct);
+      if (hours > 0) {
+        setDisplayTime(`${hours}h ${mins}m`);
+      } else {
+        setDisplayTime(`${mins}m ${secs}s`);
       }
-    };
+    }
 
-    calculateTime();
-    const interval = setInterval(calculateTime, 1000);
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [targetDateString, startDateString]);
 
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentageLeft / 100) * circumference;
-
   return (
-    <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-slate-950 border border-slate-900 shadow-xl">
-      <svg className="absolute -rotate-90 transform" width="80" height="80">
-        <circle 
-          cx="40" cy="40" r={radius} 
-          className="stroke-slate-900" strokeWidth="4" fill="transparent" 
-        />
-        <circle
-          cx="40" cy="40" r={radius}
-          className={`transition-all duration-1000 ease-linear ${isExpired ? 'stroke-rose-500' : percentageLeft < 20 ? 'stroke-amber-500' : 'stroke-cyan-500'}`}
-          strokeWidth="4"
-          fill="transparent"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-        />
-      </svg>
-
-      <div className="text-center z-10 p-1">
-        <Clock size={11} className={`mx-auto mb-0.5 ${isExpired ? 'text-rose-400' : 'text-cyan-400 animate-pulse'}`} />
-        <div className={`text-[10px] font-bold tracking-tighter ${isExpired ? 'text-rose-400' : 'text-slate-200'}`}>
-          {displayTime}
-        </div>
-        <div className="text-[8px] font-bold tracking-wider uppercase text-slate-500 mt-0.5">
-          Timer
-        </div>
+    <div
+      className={`flex flex-col items-center justify-center px-3 py-1.5 rounded-lg border text-center transition-all ${
+        isExpired
+          ? 'border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400'
+          : 'border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
+      }`}
+    >
+      <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider">
+        <Clock size={11} className={isExpired ? 'text-rose-600 dark:text-rose-400' : 'animate-spin text-amber-600 dark:text-amber-400'} />
+        <span>{isExpired ? 'Expired' : 'Remaining'}</span>
+      </div>
+      <div className="mt-0.5 font-mono text-sm sm:text-base font-black tracking-tight leading-none">
+        {displayTime}
       </div>
     </div>
   );

@@ -819,7 +819,7 @@ export class PssrController {
 
   @Post(':id/punch-list/refresh-action-statuses')
   @Permissions(PermissionKeys.PSSRManage)
-  punchRefreshActions(@CurrentUser() user: RequestUser, @Param('id') id: string) { return this.pssr.punchListTab(user.tenantId, id, this.scope(user)); }
+  punchRefreshActions(@CurrentUser() user: RequestUser, @Param('id') id: string) { return this.pssr.refreshPunchActionStatuses(user.tenantId, id, this.scope(user)); }
 
   @Post(':id/:action')
   @Permissions(PermissionKeys.PSSRManage)

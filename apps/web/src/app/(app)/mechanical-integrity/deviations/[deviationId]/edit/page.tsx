@@ -1,5 +1,11 @@
 import { DeviationFormPage } from '@/features/mechanical-integrity/deviations/DeviationFormPage';
 
-export default function MechanicalIntegrityEditDeviationPage({ params }: { params: { deviationId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function MechanicalIntegrityEditDeviationPage(props: { params: Promise<{ deviationId: string }> }) {
+  const params = await props.params;
   return <DeviationFormPage deviationId={params.deviationId} />;
 }

@@ -1092,6 +1092,18 @@ export class IncidentController {
   @Permissions(PermissionKeys.IncidentsActionsLink)
   linkExistingCapaAction(@CurrentUser() user: RequestUser, @Param('id') id: string, @Param('capaId') capaId: string, @Body() dto: Record<string, any>) { return this.incidents.linkExistingCapaAction(user.tenantId, user.id, this.scope(user), id, capaId, dto, user.permissions); }
 
+  @Post(':id/capa/:capaId/sync-action')
+  @Permissions(PermissionKeys.IncidentsCapaEdit)
+  syncCapaAction(@CurrentUser() user: RequestUser, @Param('id') id: string, @Param('capaId') capaId: string) { return this.incidents.syncCapaToActionCenter(user.tenantId, user.id, this.scope(user), id, capaId, user.permissions); }
+
+  @Post(':id/capa/:capaId/spawn-moc')
+  @Permissions(PermissionKeys.IncidentsCapaEdit)
+  spawnCapaMoc(@CurrentUser() user: RequestUser, @Param('id') id: string, @Param('capaId') capaId: string, @Body() dto: Record<string, any>) { return this.incidents.spawnMoc(user.tenantId, user.id, this.scope(user), id, { ...dto, capaItemId: capaId }, user.permissions); }
+
+  @Post(':id/spawn-moc')
+  @Permissions(PermissionKeys.IncidentsLinkedRecordsCreate)
+  spawnMoc(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() dto: Record<string, any>) { return this.incidents.spawnMoc(user.tenantId, user.id, this.scope(user), id, dto, user.permissions); }
+
   @Get(':id/linked-records')
   @Permissions(PermissionKeys.IncidentsLinkedRecordsView)
   linkedRecords(@CurrentUser() user: RequestUser, @Param('id') id: string) { return this.incidents.linkedRecordsTab(user.tenantId, this.scope(user), id, user.permissions); }

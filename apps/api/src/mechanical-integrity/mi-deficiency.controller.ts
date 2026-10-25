@@ -246,6 +246,18 @@ export class MiDeviationController {
   close(@CurrentUser() user: RequestUser, @Param('deviationId') deviationId: string, @Body() body: Record<string, any>) {
     return this.deficiencies.closeDeviation(user, deviationId, body);
   }
+
+  @Post(':deviationId/links')
+  @Permissions(PermissionKeys.MechanicalIntegrityDeviationEdit)
+  addLinkedRecord(@CurrentUser() user: RequestUser, @Param('deviationId') deviationId: string, @Body() body: Record<string, any>) {
+    return this.deficiencies.addDeviationLinkedRecord(user, deviationId, body);
+  }
+
+  @Delete(':deviationId/links/:linkId')
+  @Permissions(PermissionKeys.MechanicalIntegrityDeviationEdit)
+  removeLinkedRecord(@CurrentUser() user: RequestUser, @Param('deviationId') deviationId: string, @Param('linkId') linkId: string) {
+    return this.deficiencies.removeDeviationLinkedRecord(user, deviationId, linkId);
+  }
 }
 
 @ApiTags('mechanical-integrity-deficiency-scoped')

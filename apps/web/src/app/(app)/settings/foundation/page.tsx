@@ -1,5 +1,5 @@
-import { FoundationManagement } from '@/features/foundation/FoundationManagement';
+import { LocationTreeExplorer } from '@/features/foundation/LocationTreeExplorer';
 
 export default function FoundationSettingsPage() {
-  return <FoundationManagement />;
+  return <LocationTreeExplorer />;
 }

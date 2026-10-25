@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
-// 1. Exact color mapping for the professional dark theme
 const STATUS_COLORS: Record<string, string> = {
   'Draft': '#64748b',            // Slate
   'In Progress': '#3b82f6',      // Blue
@@ -13,8 +12,6 @@ const STATUS_COLORS: Record<string, string> = {
   'Cancelled': '#ef4444',        // Red
 };
 
-// 2. Define the exact order and names of your standard statuses
-// This guarantees they ALWAYS appear in the legend, even if value is 0.
 const STANDARD_STATUSES = [
   'Draft', 
   'In Progress', 
@@ -34,19 +31,14 @@ interface ChartDataItem {
 }
 
 export function HazopStatusDistributionChart({ data = [] }: { data: ChartDataItem[] }) {
-  
-  // 3. Merge incoming data with the standard statuses
   const completeData = useMemo(() => {
-    // Create a lookup map from the provided data for fast access
     const dataMap = new Map(data.map(item => [item.name, item.value]));
 
-    // Map over standard statuses to ensure they all exist, defaulting to 0
     const mergedData = STANDARD_STATUSES.map(name => ({
       name,
       value: dataMap.get(name) || 0
     }));
 
-    // If there are any custom/extra statuses not in our standard list, append them
     data.forEach(item => {
       if (!STANDARD_STATUSES.includes(item.name)) {
         mergedData.push({ name: item.name, value: item.value });
@@ -56,104 +48,103 @@ export function HazopStatusDistributionChart({ data = [] }: { data: ChartDataIte
     return mergedData;
   }, [data]);
 
-  // Calculate total dynamically using our completed data array
   const total = useMemo(() => completeData.reduce((sum, item) => sum + item.value, 0), [completeData]);
 
   return (
     <Panel title="Studies by Status">
-      <div className="flex h-full flex-col sm:flex-row items-center gap-6 pb-2">
-        
+      <div className="flex h-full flex-col sm:flex-row items-center gap-4 pb-1">
         {/* Left Side: Doughnut Chart */}
-        <div className="relative flex h-[220px] w-full flex-1 items-center justify-center sm:max-w-[240px]">
+        <div className="relative flex h-[190px] w-full flex-1 items-center justify-center sm:max-w-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {total === 0 ? (
-                // Fallback: If total is 0, render a clean empty gray ring
-                <Pie 
-                  data={[{ name: 'No Data', value: 1 }]} 
-                  dataKey="value" 
-                  innerRadius={65} 
-                  outerRadius={95} 
-                  stroke="none"
-                  fill="var(--psm-line, #334155)" 
-                />
-              ) : (
-                // Normal: Render actual data
-                <Pie 
-                  data={completeData} 
-                  dataKey="value" 
-                  innerRadius={65} 
-                  outerRadius={95} 
-                  paddingAngle={0}
-                  stroke="none"
+                <Pie
+                  data={[{ name: 'Empty', value: 1 }]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={75}
+                  dataKey="value"
+                  stroke="transparent"
+                  isAnimationActive={false}
                 >
-                  {completeData.map((item, index) => (
-                    <Cell 
-                      key={item.name} 
-                      fill={STATUS_COLORS[item.name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length]} 
-                    />
-                  ))}
+                  <Cell fill="var(--psm-line)" />
+                </Pie>
+              ) : (
+                <Pie
+                  data={completeData.filter(d => d.value > 0)}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={75}
+                  paddingAngle={3}
+                  dataKey="value"
+                  stroke="transparent"
+                >
+                  {completeData
+                    .filter(d => d.value > 0)
+                    .map((entry, index) => {
+                      const color = STATUS_COLORS[entry.name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length] || '#3b82f6';
+                      return <Cell key={`cell-${index}`} fill={color} />;
+                    })}
                 </Pie>
               )}
-              {total > 0 && (
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'var(--psm-surface, #1e293b)', 
-                    borderColor: 'var(--psm-line, #334155)',
-                    borderRadius: '8px',
-                    color: '#f8fafc'
-                  }} 
-                  itemStyle={{ color: '#e2e8f0' }}
-                  // Only show tooltip for items that actually have a value > 0
-                  filterNull={false}
-                  formatter={(value: number) => value === 0 ? [null, null] : [value, '']}
-                />
-              )}
+              
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length > 0 && payload[0]) {
+                    const item = payload[0];
+                    const percentage = total > 0 ? Math.round(((Number(item.value) || 0) / total) * 100) : 0;
+                    return (
+                      <div className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] px-2.5 py-1.5 shadow-xl text-xs">
+                        <span className="font-semibold text-[var(--psm-text)]">{item.name ?? 'Status'}: </span>
+                        <span className="font-bold text-primary">{item.value ?? 0}</span>
+                        <span className="text-[var(--psm-muted)] ml-1">({percentage}%)</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
-          
-          {/* Center Label Overlay */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pt-1">
-            <span className="text-[28px] font-semibold tracking-tight text-white leading-none">
+
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+            <span className="text-2xl font-bold tracking-tight text-[var(--psm-text)] leading-none">
               {total}
             </span>
-            <span className="text-[13px] font-medium text-gray-400 mt-1">
+            <span className="text-[11px] font-medium text-[var(--psm-muted)] mt-1">
               Total
             </span>
           </div>
         </div>
 
-        {/* Right Side: Detailed Legend (Always renders all statuses) */}
-        <div className="flex w-full flex-col justify-center space-y-2.5 sm:w-[200px]">
+        {/* Right Side: Legend */}
+        <div className="flex w-full flex-col justify-center space-y-1.5 sm:w-[200px]">
           {completeData.map((item, index) => {
-            // Calculate percentage safely avoiding division by zero
             const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
             const color = STATUS_COLORS[item.name] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
             
             return (
-              <div key={item.name} className="flex items-center justify-between text-[13px]">
-                
-                {/* Status Indicator & Name */}
-                <div className="flex items-center gap-2.5">
+              <div key={item.name} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 min-w-0">
                   <span 
-                    className="h-2.5 w-2.5 rounded-sm shadow-sm" 
+                    className="h-2 w-2 rounded-sm shrink-0" 
                     style={{ backgroundColor: color }} 
                   />
-                  <span className="font-medium text-gray-300">
+                  <span className="truncate text-[var(--psm-text)] font-medium">
                     {item.name}
                   </span>
                 </div>
 
-                {/* Absolute Value & Percentage */}
-                <div className="flex items-center text-right font-medium tracking-wide">
-                  <span className="w-[28px] text-gray-200">
+                <div className="flex items-center text-right font-medium tracking-wide shrink-0">
+                  <span className="w-[24px] text-[var(--psm-text)] font-bold">
                     {item.value}
                   </span>
-                  <span className="w-[42px] text-gray-500">
+                  <span className="w-[38px] text-[var(--psm-muted)] text-[10px]">
                     ({percentage}%)
                   </span>
                 </div>
-                
               </div>
             );
           })}
@@ -163,12 +154,10 @@ export function HazopStatusDistributionChart({ data = [] }: { data: ChartDataIte
   );
 }
 
-// --- Reusable UI Sub-components ---
-
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="w-full max-w-lg rounded-xl border border-[var(--psm-line,#1e293b)] bg-[var(--psm-surface,#0f172a)] p-5 shadow-lg">
-      <h3 className="mb-4 text-base font-semibold text-white tracking-wide">
+    <section className="w-full rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-[var(--psm-text)] tracking-wide">
         {title}
       </h3>
       {children}

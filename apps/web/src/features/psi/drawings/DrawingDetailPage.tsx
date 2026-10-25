@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useDrawingDetail } from '../hooks/useDrawingDetail';
 import { useDrawingMutations } from '../hooks/useDrawingMutations';
 import { PsiButton, PsiErrorState, PsiLoadingState } from '../shared/PsiUi';
+import { PsiMocLockBanner } from '../shared/PsiMocLockBanner';
 import { DrawingDetailHeader } from './DrawingDetailHeader';
 import { DrawingAsBuiltVerificationTab } from './tabs/DrawingAsBuiltVerificationTab';
 import { DrawingChangeHistoryTab } from './tabs/DrawingChangeHistoryTab';
@@ -68,6 +69,19 @@ export function DrawingDetailPage({ drawingId }: { drawingId: string }) {
         onRunCompleteness={() => void mutations.runCompleteness.mutateAsync()}
         onRunConflict={() => void mutations.runConflictCheck.mutateAsync()}
         onSubmitReview={() => void mutations.submitReview.mutateAsync({ reason: 'Submitted from PSI Drawings / P&IDs detail page.' })}
+      />
+      <PsiMocLockBanner
+        isLocked={
+          detail.data.drawing.moc_update_required ||
+          detail.data.drawing.status === 'Pending MOC Change' ||
+          detail.data.drawing.redline_status === 'Redlined - Pending MOC'
+        }
+        mocId={detail.data.mocRedlines?.linked_moc_id}
+        lockReason={
+          detail.data.drawing.redline_status === 'Redlined - Pending MOC'
+            ? 'Drawing contains active redlines locked for MOC review. Field implementation must complete before promoting to As-Built baseline.'
+            : undefined
+        }
       />
       <div className="overflow-x-auto rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-2">
         <div className="flex min-w-max gap-2">

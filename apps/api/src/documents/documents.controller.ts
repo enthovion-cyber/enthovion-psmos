@@ -133,6 +133,30 @@ export class DocumentsController {
     return this.documents.relations(user.tenantId, id);
   }
 
+  @Get(':id/equipment')
+  @Permissions(PermissionKeys.DocumentsRead)
+  getLinkedEquipment(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.documents.getLinkedEquipment(user.tenantId, id);
+  }
+
+  @Post(':id/equipment')
+  @Permissions(PermissionKeys.DocumentsLink)
+  linkEquipment(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body('equipmentId') equipmentId: string, @Body('notes') notes?: string) {
+    return this.documents.linkEquipment(user.tenantId, id, equipmentId, notes);
+  }
+
+  @Delete(':id/equipment/:equipmentId')
+  @Permissions(PermissionKeys.DocumentsLink)
+  unlinkEquipment(@CurrentUser() user: RequestUser, @Param('id') id: string, @Param('equipmentId') equipmentId: string) {
+    return this.documents.unlinkEquipment(user.tenantId, id, equipmentId);
+  }
+
+  @Post(':id/redline')
+  @Permissions(PermissionKeys.DocumentsEdit)
+  setRedlineStatus(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body('mocId') mocId: string, @Body('markupUrl') markupUrl?: string) {
+    return this.documents.setRedlineStatus(user.tenantId, id, mocId, markupUrl);
+  }
+
   @Delete(':id/relations/:relationId')
   @Permissions(PermissionKeys.DocumentsLink)
   deleteRelation(@CurrentUser() user: RequestUser, @Param('relationId') relationId: string) {

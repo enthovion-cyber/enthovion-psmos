@@ -522,6 +522,11 @@ export class LopaService {
   async addIplRegistryEquipmentLink(tenantId: string, actorId: string, id: string, dto: LopaIplRegistryEquipmentLinkDto, scope: Scope) {
     await this.ensureIplRegistryMutable(tenantId, id, scope);
     const row = await this.db.single<any>(this.db.from('lopa_ipl_registry_equipment_links').insert(this.clean({ id: crypto.randomUUID(), tenant_id: tenantId, registry_id: id, equipment_id: dto.equipmentId, equipment_tag: dto.equipmentTag, equipment_name: dto.equipmentName, equipment_type: dto.equipmentType, link_type: dto.linkType ?? 'Protected Equipment', status: dto.status, notes: dto.notes, created_by: actorId })).select().single());
+    if (dto.equipmentId) {
+      try {
+        await this.db.from('Equipment').update({ safetyCritical: true, criticality: 'CRITICAL', updatedAt: new Date().toISOString() }).eq('tenantId', tenantId).eq('id', dto.equipmentId);
+      } catch {}
+    }
     await this.writeIplRegistryHistory(tenantId, id, actorId, 'EQUIPMENT_LINKED', 'Equipment linked', dto.equipmentTag ?? dto.equipmentName ?? 'Equipment linked.', null, row);
     await this.writeAudit(tenantId, actorId, 'lopa.ipl_registry.equipment.link', 'LOPA_IPL_REGISTRY', id, row as JsonValue);
     return this.iplRegistryDetail(tenantId, id, scope);
@@ -1721,6 +1726,11 @@ export class LopaService {
     if (!['Sensor','Logic Solver','Final Element','Auxiliary','Other'].includes(dto.componentType)) throw new BadRequestException('Invalid SIF component type.');
     const now = new Date().toISOString(); const payload = this.clean({ id: componentId ?? crypto.randomUUID(), tenant_id: tenantId, company_id: study.company_id ?? null, site_id: study.site_id, lopa_study_id: id, sif_specification_id: sifId, component_type: dto.componentType, component_tag: dto.componentTag, component_name: dto.componentName, component_description: dto.componentDescription, equipment_id: dto.equipmentId, process_variable: dto.processVariable, range_text: dto.rangeText, setpoint: dto.setpoint, voting_group: dto.votingGroup, action_on_trip: dto.actionOnTrip, fail_position: dto.failPosition, response_time: dto.responseTime, diagnostics: dto.diagnostics, independence_notes: dto.independenceNotes, proof_test_requirement: dto.proofTestRequirement, document_id: dto.documentId, sort_order: dto.sortOrder ?? 0, updated_by: actorId, updated_at: now, ...(componentId ? {} : { created_by: actorId }) });
     const row = componentId ? await this.db.single<any>(this.db.from('lopa_sif_components').update(payload).eq('tenant_id', tenantId).eq('lopa_study_id', id).eq('sif_specification_id', sifId).eq('id', componentId).select().single()) : await this.db.single<any>(this.db.from('lopa_sif_components').insert(payload).select().single());
+    if (dto.equipmentId) {
+      try {
+        await this.db.from('Equipment').update({ safetyCritical: true, criticality: 'CRITICAL', updatedAt: new Date().toISOString() }).eq('tenantId', tenantId).eq('id', dto.equipmentId);
+      } catch {}
+    }
     await this.markSilNeedsReassessment(tenantId, actorId, study, await this.determinationFor(tenantId, id), `${dto.componentType} ${componentId ? 'updated' : 'added'}`);
     await this.writeHistory(tenantId, id, actorId, componentId ? 'SIF_COMPONENT_UPDATED' : 'SIF_COMPONENT_CREATED', `${dto.componentType} ${componentId ? 'updated' : 'added'}`, dto.componentTag ?? dto.componentName ?? dto.componentType, { sifId, componentId: row.id } as JsonValue); await this.writeAudit(tenantId, actorId, componentId ? 'lopa.sif.components.edit' : 'lopa.sif.components.create', 'LOPA', id, row as JsonValue); return row;
   }
@@ -4238,9 +4248,124 @@ export class LopaService {
     const now = new Date().toISOString();
     await this.db.single(this.db.from('lopa_review_workflows').update({ workflow_status: 'Approved', current_step: 'Approved / Locked', approval_status: 'Approved', approved_by: actorId, approved_at: now, review_completed_at: now, closed_by: actorId, closed_at: now, updated_by: actorId, updated_at: now }).eq('tenant_id', tenantId).eq('id', workflow.id).select('id').single());
     await this.optionalSingle(this.db.from('lopa_studies').update({ status: 'Approved', review_status: 'Approved', approval_status: 'Approved', signature_status: missingSignatures.length ? 'Pending' : 'Complete', current_review_step: 'Approved / Locked', locked: true, locked_by: actorId, locked_at: now, last_approved_at: now, review_workflow_id: workflow.id, updated_by: actorId, updated_at: now }).eq('tenant_id', tenantId).eq('id', id).select('id').single());
+    await this.syncApprovedSifsAndIplsToEquipmentAndMi(tenantId, actorId, id, scope).catch(() => null);
     await this.writeHistory(tenantId, id, actorId, 'LOPA_APPROVED', 'LOPA study approved', dto.comments || 'LOPA study approved and locked.', { workflowId: workflow.id, snapshotId: snapshot.id, override: !!dto.overrideBlockers });
     await this.writeAudit(tenantId, actorId, 'lopa.review_signoff.approve', 'LOPAReviewWorkflow', workflow.id, { snapshotId: snapshot.id, override: !!dto.overrideBlockers });
     return this.reviewSignoffTab(tenantId, id, scope);
+  }
+
+  async syncApprovedSifsAndIplsToEquipmentAndMi(tenantId: string, actorId: string, id: string, scope: Scope) {
+    const study = await this.studyRecord(tenantId, id, scope);
+    const determination = await this.determinationFor(tenantId, id);
+    const [sifs, components, safeguards] = await Promise.all([
+      this.optionalMany('lopa_sif_specifications', (q) => q.select('*').eq('tenant_id', tenantId).eq('lopa_study_id', id).is('deleted_at', null)),
+      this.optionalMany('lopa_sif_components', (q) => q.select('*').eq('tenant_id', tenantId).eq('lopa_study_id', id).is('deleted_at', null)),
+      this.optionalMany('lopa_study_safeguards', (q) => q.select('*').eq('tenant_id', tenantId).eq('lopa_study_id', id))
+    ]);
+
+    const targetSil = determination?.target_sil ?? 'SIL 1';
+    const promotedEquipmentIds = new Set<string>();
+
+    for (const comp of components) {
+      if (comp.equipment_id) promotedEquipmentIds.add(comp.equipment_id);
+    }
+    for (const sif of sifs) {
+      if (sif.equipment_id) promotedEquipmentIds.add(sif.equipment_id);
+    }
+    for (const sg of safeguards) {
+      if (sg.equipment_id) promotedEquipmentIds.add(sg.equipment_id);
+    }
+
+    const now = new Date().toISOString();
+    let promotedCount = 0;
+
+    for (const eqId of promotedEquipmentIds) {
+      try {
+        await this.db.from('Equipment').update({
+          safetyCritical: true,
+          criticality: 'CRITICAL',
+          updatedAt: now
+        }).eq('tenantId', tenantId).eq('id', eqId);
+
+        await this.db.from('EquipmentTimelineEvent').insert({
+          id: crypto.randomUUID(),
+          tenantId,
+          equipmentId: eqId,
+          eventType: 'SIF_APPROVED',
+          title: `Safety Critical Element Promoted via LOPA ${study.lopa_number ?? id}`,
+          description: `Asset credited in LOPA study with target ${targetSil}. Promoted to Safety Critical Element.`,
+          actorName: actorId,
+          occurredAt: now,
+          sourceType: 'LOPA',
+          sourceId: id
+        });
+        promotedCount++;
+      } catch {}
+    }
+
+    let miSyncedSifs = 0;
+    for (const sif of sifs) {
+      const intervalMonths = Number(sif.proof_test_interval_months ?? sif.proof_test_interval) || 12;
+      const nextDue = new Date(Date.now() + intervalMonths * 30 * 86400000).toISOString().slice(0, 10);
+      const sifTag = sif.sif_tag || sif.sif_number || `SIF-${sif.id.slice(0, 6)}`;
+      const sifTitle = sif.title || sif.safety_function || `Safety Instrumented Function ${sifTag}`;
+
+      try {
+        await this.db.from('mi_sifs').upsert({
+          id: sif.id,
+          company_id: study.company_id,
+          site_id: study.site_id,
+          sif_tag: sifTag,
+          sif_name: sifTitle,
+          target_sil: targetSil,
+          achieved_sil: determination?.achieved_sil ?? targetSil,
+          test_interval_months: intervalMonths,
+          next_test_due_date: nextDue,
+          due_status: 'On Track',
+          status: 'Active',
+          lopa_study_id: id,
+          updated_at: now
+        }, { onConflict: 'id' });
+
+        await this.db.from('mi_sif_test_requirements').upsert({
+          id: `mi_test_req_${sif.id}`,
+          sif_id: sif.id,
+          company_id: study.company_id,
+          site_id: study.site_id,
+          proof_test_interval_months: intervalMonths,
+          target_sil: targetSil,
+          proof_test_procedure: sif.srs_document_id ?? 'SRS-PROC-001',
+          created_by: actorId,
+          updated_at: now
+        }, { onConflict: 'sif_id' });
+
+        await this.db.from('mi_safeguard_occurrences').upsert({
+          id: `mi_sgo_${sif.id}`,
+          company_id: study.company_id,
+          site_id: study.site_id,
+          safeguard_type: 'SIS / SIF',
+          sif_id: sif.id,
+          occurrence_number: `MI-SGO-${sifTag}`,
+          due_date: nextDue,
+          due_basis: `LOPA ${study.lopa_number ?? ''} SIL Proof Test Schedule (${intervalMonths}M)`,
+          status: 'Scheduled',
+          assigned_user_id: sif.maintenance_owner_id ?? actorId
+        }, { onConflict: 'id' });
+
+        miSyncedSifs++;
+      } catch {}
+    }
+
+    await this.writeHistory(tenantId, id, actorId, 'LOPA_SIL_MI_SYNCED', 'Promoted SCEs and Synced MI Proof-Test Intervals', `Promoted ${promotedCount} assets to Safety Critical and synced ${miSyncedSifs} SIF proof-test schedules to MI.`, { promotedCount, miSyncedSifs, targetSil });
+    await this.writeAudit(tenantId, actorId, 'lopa.sil.sync_equipment_mi', 'LOPA', id, { promotedCount, miSyncedSifs, targetSil } as JsonValue);
+
+    return {
+      success: true,
+      promotedEquipmentCount: promotedCount,
+      miSyncedSifsCount: miSyncedSifs,
+      targetSil,
+      message: `Successfully promoted ${promotedCount} Safety Critical Elements in Equipment Registry and synced ${miSyncedSifs} SIF schedules to Mechanical Integrity.`
+    };
   }
 
   async reopenReview(tenantId: string, actorId: string, id: string, dto: LopaReviewDecisionDto, scope: Scope) {
@@ -5603,8 +5728,8 @@ export class LopaService {
     let row: any = null;
     if (type === 'EQUIPMENT') row = await this.optionalSingle(this.db.from('Equipment').select('id,tag,name,type,status,siteId,updatedAt').eq('tenantId', tenantId).eq('id', dto.linkedRecordId).single());
     else if (['DOCUMENT', 'SRS', 'PROOF TEST PROCEDURE'].includes(type)) row = await this.optionalSingle(this.db.from('documents').select('id,document_number,title,document_type,status,revision,site_id,updated_at').eq('tenant_id', tenantId).eq('id', dto.linkedRecordId).single());
-    else if (type === 'MOC') row = await this.optionalSingle(this.db.from('moc_requests').select('*').eq('tenant_id', tenantId).eq('id', dto.linkedRecordId).single());
-    else if (type === 'PSSR') row = await this.optionalSingle(this.db.from('pssr_requests').select('*').eq('tenant_id', tenantId).eq('id', dto.linkedRecordId).single());
+    else if (type === 'MOC') row = await this.optionalSingle(this.db.from('mocs').select('*').eq('tenant_id', tenantId).eq('id', dto.linkedRecordId).single());
+    else if (type === 'PSSR') row = await this.optionalSingle(this.db.from('pssrs').select('*').eq('tenant_id', tenantId).eq('id', dto.linkedRecordId).single());
     if (row && (row.site_id ?? row.siteId) && (row.site_id ?? row.siteId) !== study.site_id) throw new ForbiddenException('The selected record is outside this LOPA study site.');
     return {
       linkedRecordNumber: dto.linkedRecordNumber ?? row?.tag ?? row?.document_number ?? row?.number ?? row?.moc_number ?? row?.pssr_number ?? dto.linkedRecordId,

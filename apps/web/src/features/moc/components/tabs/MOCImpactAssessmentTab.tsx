@@ -1,3 +1,4 @@
+import { MOCImpactAIPanel } from '../impact/MOCImpactAIPanel';
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,14 +54,35 @@ export function MOCImpactAssessmentTab({ moc }: { moc: any }) {
   return (
     <form onSubmit={onSave} className="space-y-4">
       <ImpactAssessmentSummaryCard data={assessment.data} isDirty={form.formState.isDirty} locked={locked} />
+      <MOCImpactAIPanel mocId={moc.id} />
       {locked ? <div className="rounded-lg border border-amber-300/20 bg-amber-500/10 p-3 text-sm font-semibold text-amber-100">This MOC status is {moc.status}. Return it for revision before editing impact assessment answers.</div> : null}
       {sectionMissing ? <div className="rounded-lg border border-red-300/20 bg-red-500/10 p-3 text-sm font-semibold text-red-100">{sectionMissing}</div> : null}
       {mutations.save.isError ? <ErrorState message={(mutations.save.error as Error).message || 'Impact assessment save failed.'} /> : null}
 
-      <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-cyan-300/10 bg-[#061426]/95 p-3 shadow-xl shadow-black/20 backdrop-blur">
-        <button type="button" onClick={() => form.reset()} disabled={!form.formState.isDirty || mutations.save.isPending} className="rounded-md border border-white/10 px-3 py-2 text-xs font-black text-slate-200 disabled:opacity-50">Cancel Changes</button>
-        <button type="submit" disabled={locked || mutations.save.isPending} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50">{mutations.save.isPending ? 'Saving...' : 'Save / Regenerate Preview'}</button>
-        <button type="button" onClick={() => mutations.complete.mutate()} disabled={locked || mutations.complete.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50">{mutations.complete.isPending ? 'Completing...' : 'Complete Assessment'}</button>
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)]/95 p-3 shadow-md backdrop-blur">
+        <button
+          type="button"
+          onClick={() => form.reset()}
+          disabled={!form.formState.isDirty || mutations.save.isPending}
+          className="rounded-md border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 py-2 text-xs font-bold text-[var(--psm-fg)] hover:bg-[var(--psm-surface-3)] transition-colors disabled:opacity-50"
+        >
+          Cancel Changes
+        </button>
+        <button
+          type="submit"
+          disabled={locked || mutations.save.isPending}
+          className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          {mutations.save.isPending ? 'Saving...' : 'Save / Regenerate Preview'}
+        </button>
+        <button
+          type="button"
+          onClick={() => mutations.complete.mutate()}
+          disabled={locked || mutations.complete.isPending}
+          className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+        >
+          {mutations.complete.isPending ? 'Completing...' : 'Complete Assessment'}
+        </button>
       </div>
 
       <EquipmentImpactSection form={form} locked={locked} />
@@ -85,3 +107,4 @@ export function MOCImpactAssessmentTab({ moc }: { moc: any }) {
     </form>
   );
 }
+

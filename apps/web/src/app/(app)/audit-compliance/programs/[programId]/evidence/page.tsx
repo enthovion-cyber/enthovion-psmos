@@ -1,3 +1,11 @@
 import { AuditEvidenceSourcePage } from "@/features/audit/evidence/AuditEvidenceSourcePage";
 
-export default function Page({ params }: { params: { programId: string } }) { return <AuditEvidenceSourcePage sourcePath={`programs/${params.programId}`} title="Audit Program Evidence" />; }
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function Page(props: { params: Promise<{ programId: string }> }) {
+  const params = await props.params;
+  return <AuditEvidenceSourcePage sourcePath={`programs/${params.programId}`} title="Audit Program Evidence" />;
+}

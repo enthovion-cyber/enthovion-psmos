@@ -25,10 +25,26 @@ export function MOCImpactAssessmentStep() {
   };
   return (
     <StepShell eyebrow="Step 5" title="Impact Assessment">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {checks.map(([key, label]) => <button key={key} type="button" onClick={() => setBool(key, !impact[key])} className={`rounded-lg border p-3 text-left text-sm font-semibold transition ${impact[key] ? 'border-blue-300/60 bg-blue-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-blue-300/40'}`}>{label}<span className="mt-1 block text-xs text-slate-500">{impact[key] ? 'Yes' : 'No'}</span></button>)}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {checks.map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setBool(key, !impact[key])}
+            className={`rounded-xl border p-3.5 text-left text-sm font-semibold transition-all ${
+              impact[key]
+                ? 'border-primary bg-primary/10 text-[var(--psm-fg)] shadow-sm'
+                : 'border-[var(--psm-line)] bg-[var(--psm-surface-2)] text-[var(--psm-muted)] hover:border-primary/50 hover:text-[var(--psm-fg)]'
+            }`}
+          >
+            <span>{label}</span>
+            <span className={`mt-2 block text-xs font-bold ${impact[key] ? 'text-primary' : 'text-[var(--psm-muted)]'}`}>
+              {impact[key] ? 'Yes' : 'No'}
+            </span>
+          </button>
+        ))}
       </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Field label="Chemicals affected"><input className={inputClass} {...register('impactAssessment.chemicalsAffected')} /></Field>
         <Field label="Which SOPs are affected?"><input className={inputClass} {...register('impactAssessment.affectedSops')} /></Field>
         <Field label="Affected roles"><input className={inputClass} {...register('impactAssessment.affectedRoles')} /></Field>

@@ -1,0 +1,308 @@
+export type ManagementReviewCycle = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  department_id?: string | null;
+  unit_id?: string | null;
+  cycle_code: string;
+  cycle_title: string;
+  cycle_type: string;
+  governance_level: string;
+  reporting_period_start: string;
+  reporting_period_end: string;
+  planned_review_date?: string | null;
+  required_completion_date?: string | null;
+  review_frequency: string;
+  owner_user_id: string;
+  sponsor_user_id?: string | null;
+  coordinator_user_id?: string | null;
+  cycle_status: 'Draft' | 'Planned' | 'Active' | 'Awaiting Review' | 'Under Review' | 'Follow-Up In Progress' | 'Completed' | 'Completed With Open Commitments' | 'Cancelled' | 'Archived';
+  readiness_status: string;
+  scope_json?: Record<string, unknown>;
+  notes?: string | null;
+  activated_at?: string | null;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ManagementReviewMeeting = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  review_cycle_id: string;
+  meeting_code: string;
+  meeting_title: string;
+  meeting_type: string;
+  meeting_status: 'Draft' | 'Scheduled' | 'Preparing' | 'Ready' | 'Ready With Warnings' | 'In Progress' | 'Adjourned' | 'Minutes Draft' | 'Minutes Under Approval' | 'Completed' | 'Completed With Open Follow-Up' | 'Cancelled' | 'Archived';
+  chairperson_user_id: string;
+  secretary_user_id?: string | null;
+  coordinator_user_id?: string | null;
+  executive_sponsor_user_id?: string | null;
+  scheduled_start_at: string;
+  scheduled_end_at: string;
+  timezone: string;
+  meeting_mode: 'In Person' | 'Virtual' | 'Hybrid';
+  location?: string | null;
+  calendar_event_reference?: string | null;
+  confidentiality_level: string;
+  quorum_status?: string | null;
+  source_freshness_status: string;
+  started_at?: string | null;
+  adjourned_at?: string | null;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ManagementReviewParticipant = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  meeting_id: string;
+  user_id: string;
+  participant_role: string;
+  required: boolean;
+  invitation_status: string;
+  rsvp_status: 'Invited' | 'Accepted' | 'Tentative' | 'Declined' | 'No Response';
+  attendance_status: 'Present' | 'Absent' | 'Apology Received' | 'Joined Late' | 'Left Early' | 'Not Recorded';
+  apology_note?: string | null;
+  invited_at?: string | null;
+  responded_at?: string | null;
+};
+
+export type ManagementReviewAgendaItem = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  meeting_id: string;
+  agenda_code: string;
+  agenda_category: string;
+  agenda_title: string;
+  agenda_description?: string | null;
+  agenda_order: number;
+  scheduled_duration_minutes?: number | null;
+  presenter_user_id?: string | null;
+  owner_user_id?: string | null;
+  psm_element_id?: string | null;
+  source_module?: string | null;
+  source_record_type?: string | null;
+  source_record_id?: string | null;
+  decision_required: boolean;
+  criticality?: string | null;
+  priority?: string | null;
+  agenda_status: 'Draft' | 'Ready' | 'Presented' | 'Discussed' | 'Decision Required' | 'Decision Recorded' | 'Deferred' | 'Carried Forward' | 'Closed for Meeting' | 'Removed With Reason';
+  discussion_summary?: string | null;
+};
+
+export type ManagementReviewPackage = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  meeting_id: string;
+  review_cycle_id: string;
+  package_code: string;
+  package_title: string;
+  package_type: string;
+  package_status: 'Draft' | 'Collecting Sources' | 'Validation Pending' | 'Ready With Warnings' | 'Not Ready' | 'Prepared' | 'Pending Approval' | 'Approved' | 'Published' | 'Locked' | 'Stale' | 'Superseded' | 'Archived';
+  confidentiality_level: string;
+  current_version_number: number;
+  readiness_status: string;
+  source_count: number;
+  restricted_source_count: number;
+  excluded_source_count: number;
+  stale_source_count: number;
+  stale_status: boolean;
+  stale_reason?: string | null;
+  manifest_hash?: string | null;
+  published_at?: string | null;
+  created_at: string;
+};
+
+export type ManagementReviewMinutes = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  meeting_id: string;
+  minutes_code: string;
+  current_version_number: number;
+  minutes_status: 'Draft' | 'Under Review' | 'Returned for Correction' | 'Pending Approval' | 'Approved' | 'Approved With Conditions' | 'Locked' | 'Superseded' | 'Archived';
+  summary?: string | null;
+  attendance_snapshot_json?: Record<string, unknown>;
+  agenda_summary_json?: Record<string, unknown>;
+  decision_summary_json?: Record<string, unknown>;
+  commitment_summary_json?: Record<string, unknown>;
+  carry_forward_summary_json?: Record<string, unknown>;
+  approved_at?: string | null;
+  approved_by?: string | null;
+  locked_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ManagementReviewDecision = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  decision_code: string;
+  decision_title: string;
+  decision_type: string;
+  decision_description: string;
+  decision_rationale?: string | null;
+  review_cycle_id?: string | null;
+  meeting_id?: string | null;
+  agenda_item_id?: string | null;
+  decision_maker_user_id: string;
+  decision_authority_role: string;
+  decision_at: string;
+  criticality?: string | null;
+  decision_status: 'Proposed' | 'Recorded' | 'Pending Validation' | 'Pending Approval' | 'Returned for Revision' | 'Approved' | 'Approved With Conditions' | 'Active' | 'Implementation In Progress' | 'Implementation Verified' | 'Completed' | 'Deferred' | 'Superseded' | 'Withdrawn With Reason';
+  approval_required: boolean;
+  implementation_status: string;
+  verification_required: boolean;
+  verification_status?: string | null;
+  responsible_owner_user_id?: string | null;
+  due_at?: string | null;
+  created_at: string;
+};
+
+export type ManagementReviewCommitment = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  commitment_code: string;
+  commitment_title: string;
+  commitment_description: string;
+  decision_id?: string | null;
+  meeting_id?: string | null;
+  review_cycle_id?: string | null;
+  owner_user_id: string;
+  accountable_executive_user_id?: string | null;
+  priority: string;
+  criticality?: string | null;
+  effective_due_at?: string | null;
+  commitment_status: 'Draft' | 'Assigned' | 'Accepted' | 'In Progress' | 'Awaiting Information' | 'Overdue' | 'Pending Verification' | 'Verified' | 'Completed' | 'Reopened' | 'Cancelled With Reason' | 'Superseded';
+  universal_action_id?: string | null;
+  verification_required: boolean;
+  verification_status?: string | null;
+  completed_at?: string | null;
+  verified_at?: string | null;
+  created_at: string;
+};
+
+export type ManagementReviewCarryForward = {
+  id: string;
+  company_id: string;
+  site_id?: string | null;
+  source_cycle_id?: string | null;
+  source_meeting_id?: string | null;
+  source_decision_id?: string | null;
+  source_commitment_id?: string | null;
+  source_record_type: string;
+  source_record_id: string;
+  target_cycle_id?: string | null;
+  target_meeting_id?: string | null;
+  carry_forward_reason: string;
+  carried_forward_by: string;
+  carried_forward_at: string;
+  current_status: string;
+  resolved_at?: string | null;
+};
+
+export type ManagementReviewReadiness = {
+  readinessStatus: string;
+  blockerCount: number;
+  warningCount: number;
+  blockers: (string | { message?: string; title?: string; code?: string })[];
+  warnings: (string | { message?: string; title?: string; code?: string })[];
+  checkedAt?: string | null | undefined;
+  score?: number | undefined;
+  overallScore?: number | undefined;
+  readinessScore?: number | undefined;
+  quorumSatisfied?: boolean | undefined;
+  packageGenerated?: boolean | undefined;
+  commitmentsReconciled?: boolean | undefined;
+  risksCurrent?: boolean | undefined;
+  agendaDistributed?: boolean | undefined;
+  freshnessCompliant?: boolean | undefined;
+  checks?: any[] | undefined;
+  categories?: any[] | undefined;
+};
+
+export type ManagementReviewRow = Record<string, unknown> & {
+  id: string;
+  cycle_title?: string;
+  cycle_code?: string;
+  cycle_status?: string;
+  meeting_title?: string;
+  meeting_code?: string;
+  meeting_status?: string;
+  package_title?: string;
+  package_code?: string;
+  package_status?: string;
+  minutes_code?: string;
+  minutes_status?: string;
+  decision_title?: string;
+  decision_code?: string;
+  decision_summary?: string;
+  decision_status?: string;
+  commitment_title?: string;
+  commitment_code?: string;
+  commitment_status?: string;
+  event_title?: string;
+  event_type?: string;
+  scheduled_start_at?: string;
+  scheduled_end_at?: string;
+  effective_due_at?: string;
+  due_at?: string;
+};
+
+export type ManagementReviewPaged = {
+  rows: ManagementReviewRow[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type ManagementReviewFollowUpData = {
+  scope: Record<string, unknown>;
+  totalCommitments: number;
+  openCommitments: number;
+  overdueCommitments: number;
+  pendingVerificationCount: number;
+  aging: {
+    under7Days: number;
+    sevenTo14Days: number;
+    fifteenTo30Days: number;
+    over30Days: number;
+  };
+  rows: ManagementReviewCommitment[];
+};
+
+export type ManagementReviewDashboard = {
+  generatedAt: string;
+  scope: Record<string, unknown>;
+  summary: {
+    totalReviewCycles: number;
+    activeReviewCycles: number;
+    upcomingReviewMeetings: number;
+    overdueReviewMeetings: number;
+    meetingsCompleted: number;
+    minutesPendingApproval: number;
+    approvedManagementReviews: number;
+    openAgendaItems: number;
+    criticalAgendaItems: number;
+    pendingDecisions: number;
+    openCommitments: number;
+    overdueCommitments: number;
+    criticalRisksCount?: number;
+    escalationsCount?: number;
+    [key: string]: number | undefined;
+  };
+  nextMeeting: ManagementReviewMeeting | null;
+  upcomingMeetings: ManagementReviewMeeting[];
+  criticalRisks: ManagementReviewRow[];
+  escalations: ManagementReviewRow[];
+  pendingDecisions: ManagementReviewDecision[];
+  openCommitments: ManagementReviewCommitment[];
+};

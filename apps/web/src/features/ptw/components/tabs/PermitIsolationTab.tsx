@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, RefreshCcw, UploadCloud, History, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, RefreshCcw, UploadCloud, History, ChevronDown, ChevronUp, ShieldAlert, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { useMutationToast } from '@/providers/ToastProvider';
 import type { Permit } from '@/services/ptw.service';
@@ -16,6 +16,7 @@ import { IsolationPointForm } from '../isolation/IsolationPointForm';
 import { IsolationPointsTable } from '../isolation/IsolationPointsTable';
 import { IsolationSummaryCard } from '../isolation/IsolationSummaryCard';
 import { ValveIsolationSection } from '../isolation/ValveIsolationSection';
+import { SceBypassModal } from '../isolation/SceBypassModal';
 
 export function PermitIsolationTab({ permit }: { permit: Permit }) {
   const isolation = usePermitIsolation(permit.id);
@@ -28,10 +29,14 @@ export function PermitIsolationTab({ permit }: { permit: Permit }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<PermitIsolationPoint | null>(null);
   const [expandHistory, setExpandHistory] = useState(false);
+  const [bypassModalPoint, setBypassModalPoint] = useState<PermitIsolationPoint | null>(null);
 
   const points = isolation.data ?? [];
   const historyEvents = history.data ?? [];
   const busy = mutations.create.isPending || mutations.update.isPending;
+
+  // Pending SCE / SIF Bypasses
+  const pendingBypasses = points.filter(p => (p.is_safety_critical || p.is_sif_bypass) && p.bypass_status !== 'Authorized');
 
   // Limit constants
   const INITIAL_HISTORY_LIMIT = 3;
@@ -96,6 +101,38 @@ export function PermitIsolationTab({ permit }: { permit: Permit }) {
       <IsolationSummaryCard summary={summary.data} />
       <IsolationBlockerBanner blockers={summary.data?.blockers ?? []} />
 
+      {/* SCE / SIF Interlock Bypass Blocker Banner */}
+      {pendingBypasses.length > 0 && (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-500/20 text-rose-300">
+              <ShieldAlert size={18} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-rose-200">
+                Safety Barrier Gate Blocker: {pendingBypasses.length} Unauthorized SCE / SIF Bypass{pendingBypasses.length > 1 ? 'es' : ''}
+              </h3>
+              <p className="mt-1 text-xs text-rose-300/80 leading-relaxed">
+                The permit contains Safety Critical Element (SCE) or Safety Instrumented Function (SIF) isolation points that require an authorized bypass certificate before field activation can proceed.
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {pendingBypasses.map((bp) => (
+                  <button
+                    key={bp.id}
+                    type="button"
+                    onClick={() => setBypassModalPoint(bp)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-400/40 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-200 hover:bg-rose-900/80 transition"
+                  >
+                    <Zap size={12} className="text-amber-400" />
+                    Authorize Bypass for {bp.isolation_point_tag ?? bp.isolation_point} ({bp.sil_rating ?? 'SCE'})
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Isolation Controls Banner */}
       <section className="psm-card p-4 rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface-1,inherit)] shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -159,6 +196,7 @@ export function PermitIsolationTab({ permit }: { permit: Permit }) {
           onVerify={(id) => run(() => mutations.verify.mutateAsync(id), 'Isolation verified')}
           onDeIsolate={(id) => run(() => mutations.deIsolate.mutateAsync(id), 'Isolation point de-isolated')}
           onRemovalVerify={(id) => run(() => mutations.removalVerify.mutateAsync(id), 'Removal verified')}
+          onAuthorizeBypass={(point) => setBypassModalPoint(point)}
         />
       )}
 
@@ -242,6 +280,17 @@ export function PermitIsolationTab({ permit }: { permit: Permit }) {
           </div>
         )}
       </section>
+      {/* SCE / SIF Interlock Bypass Authorization Modal */}
+      <SceBypassModal
+        isOpen={!!bypassModalPoint}
+        onClose={() => setBypassModalPoint(null)}
+        onSuccess={() => {
+          isolation.refetch();
+          summary.refetch();
+        }}
+        permitId={permit.id}
+        isolationPoint={bypassModalPoint}
+      />
     </div>
   );
 }

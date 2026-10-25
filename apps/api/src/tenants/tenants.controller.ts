@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, RequestUser } from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
@@ -19,6 +19,33 @@ export class TenantsController {
   @Get('context')
   context(@CurrentUser() user: RequestUser) {
     return this.tenants.context(user);
+  }
+
+  @Get('tree')
+  hierarchyTree(@CurrentUser() user: RequestUser) {
+    return this.tenants.getHierarchyTree(user.tenantId);
+  }
+
+  @Get('settings/numbering')
+  numberingRules(@CurrentUser() user: RequestUser) {
+    return this.tenants.listNumberingRules(user.tenantId);
+  }
+
+  @Put('settings/numbering/:moduleKey')
+  @Permissions(PermissionKeys.SettingsManage)
+  updateNumberingRule(@CurrentUser() user: RequestUser, @Param('moduleKey') moduleKey: string, @Body() body: any) {
+    return this.tenants.updateNumberingRule(user.tenantId, moduleKey, body);
+  }
+
+  @Get('settings/risk-matrix')
+  riskMatrixConfig(@CurrentUser() user: RequestUser) {
+    return this.tenants.getRiskMatrixConfig(user.tenantId);
+  }
+
+  @Post('settings/risk-matrix')
+  @Permissions(PermissionKeys.SettingsManage)
+  saveRiskMatrixConfig(@CurrentUser() user: RequestUser, @Body() body: any) {
+    return this.tenants.saveRiskMatrixConfig(user.tenantId, body);
   }
 
   @Get('companies')

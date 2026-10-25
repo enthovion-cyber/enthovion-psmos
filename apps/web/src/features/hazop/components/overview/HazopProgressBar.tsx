@@ -8,7 +8,7 @@ export function HazopProgressBar({ label, percent, helper, tone = 'bg-primary' }
         <span className="font-medium text-[var(--psm-text)]">{label}</span>
         <span className="text-[var(--psm-muted)]">{helper ?? `${value}%`}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="h-2 overflow-hidden rounded-full bg-[var(--psm-surface-2)]">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${value}%` }} />
       </div>
     </div>

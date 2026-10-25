@@ -4,12 +4,13 @@ import { Permissions } from '../common/decorators/permissions.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../common/guards/permissions.guard';
 import { SiteGuard } from '../common/guards/site.guard';
+import { RegulatoryHistoryTrendService } from './regulatory-history-trend.service';
 import { RegulatoryService } from './regulatory.service';
 
 @UseGuards(JwtAuthGuard, SiteGuard, PermissionsGuard)
 @Controller('regulatory')
 export class RegulatoryController {
-  constructor(private readonly regulatory: RegulatoryService) {}
+  constructor(private readonly regulatory: RegulatoryService, private readonly historyTrends: RegulatoryHistoryTrendService) {}
 
   @Get()
   @Permissions('regulatory.register.view')
@@ -27,6 +28,637 @@ export class RegulatoryController {
   @Permissions('regulatory.dashboard.view')
   dashboardSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
     return this.regulatory.dashboardSummary(this.scope(user), query);
+  }
+
+  @Get('changes/dashboard') @Permissions('regulatory.change.dashboard.view')
+  changeDashboard(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChangeDashboard(this.scope(user), query, user.permissions); }
+  @Get('changes/dashboard/summary') @Permissions('regulatory.change.dashboard.view')
+  changeDashboardSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChangeDashboard(this.scope(user), query, user.permissions).then((data) => data.summary); }
+  @Get('changes/dashboard/:group(by-jurisdiction|by-source|by-site|by-status|impact-pending|recent)') @Permissions('regulatory.change.dashboard.view')
+  changeDashboardGroup(@CurrentUser() user: RequestUser, @Param('group') group: string, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChangeDashboard(this.scope(user), query, user.permissions).then((data: any) => data[{ 'by-jurisdiction': 'byJurisdiction', 'by-source': 'bySource', 'by-site': 'bySite', 'by-status': 'byStatus', 'impact-pending': 'impactPending', recent: 'recent' }[group] ?? 'summary']); }
+  @Get('changes') @Permissions('regulatory.change.register.view')
+  changes(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChanges(this.scope(user), query, user.permissions); }
+  @Get('changes/register') @Permissions('regulatory.change.register.view')
+  changesRegister(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChanges(this.scope(user), query, user.permissions); }
+  @Get('changes/summary') @Permissions('regulatory.change.register.view')
+  changesSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChanges(this.scope(user), { ...query, limit: 5000 }, user.permissions).then((data) => data.summary); }
+  @Post('changes') @Permissions('regulatory.change.create')
+  createChange(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.regulatory.createRegulatoryChange(user.id, this.scope(user), dto, user.permissions); }
+  @Get('changes/sources') @Permissions('regulatory.change.source.view')
+  changeSources(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChangeSources(this.scope(user), query, user.permissions); }
+  @Post('changes/sources') @Permissions('regulatory.change.source.create')
+  createChangeSource(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.regulatory.createRegulatoryChangeSource(user.id, this.scope(user), dto, user.permissions); }
+  @Get('changes/watchlist') @Permissions('regulatory.change.watchlist.view')
+  changeWatchlist(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryChangeSources(this.scope(user), { ...query, sourceStatus: query.sourceStatus ?? 'Active' }, [...user.permissions, 'regulatory.change.source.view']); }
+  @Get('changes/sources/:sourceId') @Permissions('regulatory.change.source.view')
+  changeSource(@CurrentUser() user: RequestUser, @Param('sourceId') sourceId: string) { return this.regulatory.regulatoryChangeSource(this.scope(user), sourceId, user.permissions); }
+  @Patch('changes/sources/:sourceId') @Permissions('regulatory.change.source.edit')
+  updateChangeSource(@CurrentUser() user: RequestUser, @Param('sourceId') sourceId: string, @Body() dto: Record<string, any>) { return this.regulatory.updateRegulatoryChangeSource(user.id, this.scope(user), sourceId, dto, user.permissions); }
+  @Post('changes/sources/:sourceId/mark-checked') @Permissions('regulatory.change.source.edit')
+  checkChangeSource(@CurrentUser() user: RequestUser, @Param('sourceId') sourceId: string, @Body() dto: Record<string, any>) { return this.regulatory.markRegulatoryChangeSourceChecked(user.id, this.scope(user), sourceId, dto, user.permissions); }
+  @Get('changes/impact-assessments') @Permissions('regulatory.change.impact.view')
+  impactAssessments(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryImpactAssessments(this.scope(user), query, user.permissions); }
+  @Post('changes/impact-assessments') @Permissions('regulatory.change.impact.create')
+  createImpactAssessment(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.regulatory.createRegulatoryImpactAssessment(user.id, this.scope(user), dto, user.permissions); }
+  @Get('changes/impact-assessments/:impactId') @Permissions('regulatory.change.impact.view')
+  impactAssessment(@CurrentUser() user: RequestUser, @Param('impactId') impactId: string) { return this.regulatory.regulatoryImpactAssessmentDetail(this.scope(user), impactId, user.permissions); }
+  @Patch('changes/impact-assessments/:impactId') @Permissions('regulatory.change.impact.edit')
+  updateImpactAssessment(@CurrentUser() user: RequestUser, @Param('impactId') impactId: string, @Body() dto: Record<string, any>) { return this.regulatory.updateRegulatoryImpactAssessment(user.id, this.scope(user), impactId, dto, user.permissions); }
+  @Post('changes/impact-assessments/:impactId/affected-records') @Permissions('regulatory.change.affected_records.manage')
+  addAffectedRecord(@CurrentUser() user: RequestUser, @Param('impactId') impactId: string, @Body() dto: Record<string, any>) { return this.regulatory.addRegulatoryChangeAffectedRecord(user.id, this.scope(user), impactId, dto, user.permissions); }
+  @Post('changes/impact-assessments/:impactId/mark-affected-records-stale') @Permissions('regulatory.change.mark_stale_records')
+  markAffectedRecordsStale(@CurrentUser() user: RequestUser, @Param('impactId') impactId: string, @Body() dto: Record<string, any>) { return this.regulatory.markRegulatoryChangeAffectedRecordsStale(user.id, this.scope(user), impactId, dto, user.permissions); }
+  @Post('changes/impact-assessments/:impactId/create-actions') @Permissions('regulatory.change.create_action_foundation')
+  createChangeActions(@CurrentUser() user: RequestUser, @Param('impactId') impactId: string, @Body() dto: Record<string, any>) { return this.regulatory.createRegulatoryChangeActions(user.id, this.scope(user), impactId, dto, user.permissions); }
+  @Post('changes/:changeId/start-impact-assessment') @Permissions('regulatory.change.impact.create')
+  startChangeImpact(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.startRegulatoryChangeImpact(user.id, this.scope(user), changeId, dto, user.permissions); }
+  @Get('changes/:changeId') @Permissions('regulatory.change.view')
+  changeDetail(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string) { return this.regulatory.regulatoryChangeDetail(this.scope(user), changeId, user.permissions); }
+  @Patch('changes/:changeId') @Permissions('regulatory.change.edit')
+  updateChange(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.updateRegulatoryChange(user.id, this.scope(user), changeId, dto, user.permissions); }
+  @Post('changes/:changeId/mark-reviewed') @Permissions('regulatory.change.edit')
+  markChangeReviewed(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.transitionRegulatoryChange(user.id, this.scope(user), changeId, 'reviewed', dto, user.permissions); }
+  @Post('changes/:changeId/submit-review') @Permissions('regulatory.change.submit_review')
+  submitChangeReview(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.transitionRegulatoryChange(user.id, this.scope(user), changeId, 'submitted', dto, user.permissions); }
+  @Post('changes/:changeId/approve-foundation') @Permissions('regulatory.change.impact.approve_foundation')
+  approveChangeFoundation(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.transitionRegulatoryChange(user.id, this.scope(user), changeId, 'approved', dto, user.permissions); }
+  @Post('changes/:changeId/implement') @Permissions('regulatory.change.implement')
+  implementChange(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.transitionRegulatoryChange(user.id, this.scope(user), changeId, 'implemented', dto, user.permissions); }
+  @Post('changes/:changeId/archive') @Permissions('regulatory.change.archive')
+  archiveChange(@CurrentUser() user: RequestUser, @Param('changeId') changeId: string, @Body() dto: Record<string, any>) { return this.regulatory.transitionRegulatoryChange(user.id, this.scope(user), changeId, 'archived', dto, user.permissions); }
+
+  @Get('reports')
+  @Permissions('regulatory.report.register.view')
+  regulatoryReports(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReports(this.scope(user), query, user.permissions);
+  }
+
+  @Post('reports')
+  @Permissions('regulatory.report.create')
+  createRegulatoryReport(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.createRegulatoryReport(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('reports/dashboard')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsDashboard(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportDashboard(user.id, this.scope(user), query, user.permissions);
+  }
+
+  @Get('reports/dashboard/summary')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsDashboardSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportDashboardSummary(user.id, this.scope(user), query, user.permissions);
+  }
+
+  @Get('reports/dashboard/by-type')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsByType(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReportDashboard(user.id, this.scope(user), query, user.permissions).then((data) => data.byType); }
+
+  @Get('reports/dashboard/by-status')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsByStatus(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReportDashboard(user.id, this.scope(user), query, user.permissions).then((data) => data.byStatus); }
+
+  @Get('reports/dashboard/by-site')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsBySite(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReportDashboard(user.id, this.scope(user), query, user.permissions).then((data) => data.bySite); }
+
+  @Get('reports/dashboard/stale')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsDashboardStale(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, view: 'stale' }, user.permissions); }
+
+  @Get('reports/dashboard/failed')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsDashboardFailed(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, view: 'failed' }, user.permissions); }
+
+  @Get('reports/dashboard/recent')
+  @Permissions('regulatory.report.dashboard.view')
+  regulatoryReportsDashboardRecent(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, limit: query.limit ?? 12 }, user.permissions); }
+
+  @Get('reports/register')
+  @Permissions('regulatory.report.register.view')
+  regulatoryReportRegister(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), query, user.permissions); }
+
+  @Get('reports/summary')
+  @Permissions('regulatory.report.register.view')
+  regulatoryReportSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, limit: 5000 }, user.permissions).then((data) => data.summary); }
+
+  @Get('reports/:view(draft|generated|pending-approval|approved|locked|stale|failed|exported|archived|downloads)')
+  @Permissions('regulatory.report.register.view')
+  regulatoryReportSavedView(@CurrentUser() user: RequestUser, @Param('view') view: string, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, view }, user.permissions); }
+
+  @Post('reports/generate')
+  @Permissions('regulatory.report.generate')
+  generateRegulatoryReport(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.generateRegulatoryReport(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('reports/templates')
+  @Permissions('regulatory.report.template.view')
+  regulatoryReportTemplates(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportTemplates(this.scope(user), query, user.permissions);
+  }
+
+  @Post('reports/templates')
+  @Permissions('regulatory.report.template.create')
+  createRegulatoryReportTemplate(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.createRegulatoryReportTemplate(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Patch('reports/templates/:templateId')
+  @Permissions('regulatory.report.template.edit')
+  updateRegulatoryReportTemplate(@CurrentUser() user: RequestUser, @Param('templateId') templateId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateRegulatoryReportTemplate(user.id, this.scope(user), templateId, dto, user.permissions);
+  }
+
+  @Post('reports/templates/:templateId/archive')
+  @Permissions('regulatory.report.template.archive')
+  archiveRegulatoryReportTemplate(@CurrentUser() user: RequestUser, @Param('templateId') templateId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.archiveRegulatoryReportTemplate(user.id, this.scope(user), templateId, dto, user.permissions);
+  }
+
+  @Get('reports/templates/:templateId')
+  @Permissions('regulatory.report.template.view')
+  regulatoryReportTemplateDetail(@CurrentUser() user: RequestUser, @Param('templateId') templateId: string) { return this.regulatory.regulatoryReportTemplateDetail(this.scope(user), templateId, user.permissions); }
+
+  @Post('reports/templates/:templateId/reactivate')
+  @Permissions('regulatory.report.template.edit')
+  reactivateRegulatoryReportTemplate(@CurrentUser() user: RequestUser, @Param('templateId') templateId: string, @Body() dto: Record<string, any>) { return this.regulatory.reactivateRegulatoryReportTemplate(user.id, this.scope(user), templateId, dto, user.permissions); }
+
+  @Get('reports/jobs')
+  @Permissions('regulatory.report.job.view')
+  regulatoryReportJobs(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportJobs(this.scope(user), query, user.permissions);
+  }
+
+  @Get('reports/jobs/:jobId')
+  @Permissions('regulatory.report.job.view')
+  regulatoryReportJobDetail(@CurrentUser() user: RequestUser, @Param('jobId') jobId: string) { return this.regulatory.regulatoryReportJobDetail(this.scope(user), jobId, user.permissions); }
+
+  @Post('reports/jobs/:jobId/retry')
+  @Permissions('regulatory.report.job.retry')
+  retryRegulatoryReportJob(@CurrentUser() user: RequestUser, @Param('jobId') jobId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.retryRegulatoryReportJob(user.id, this.scope(user), jobId, dto, user.permissions);
+  }
+
+  @Post('reports/jobs/:jobId/cancel')
+  @Permissions('regulatory.report.job.cancel')
+  cancelRegulatoryReportJob(@CurrentUser() user: RequestUser, @Param('jobId') jobId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.cancelRegulatoryReportJob(user.id, this.scope(user), jobId, dto, user.permissions);
+  }
+
+  @Get('reports/packages')
+  @Permissions('regulatory.report.package.view')
+  regulatoryReportPackages(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportPackages(this.scope(user), query, user.permissions);
+  }
+
+  @Post('reports/packages')
+  @Permissions('regulatory.report.package.create')
+  createRegulatoryReportPackage(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.createRegulatoryReportPackage(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('reports/packages/:packageId')
+  @Permissions('regulatory.report.package.view')
+  regulatoryReportPackageDetail(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string) {
+    return this.regulatory.regulatoryReportPackageDetail(this.scope(user), packageId, user.permissions);
+  }
+
+  @Post('reports/packages/:packageId/prepare')
+  @Permissions('regulatory.report.package.prepare')
+  prepareRegulatoryReportPackage(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.prepareRegulatoryReportPackage(user.id, this.scope(user), packageId, dto, user.permissions);
+  }
+
+  @Patch('reports/packages/:packageId')
+  @Permissions('regulatory.report.package.create')
+  updateRegulatoryReportPackage(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string, @Body() dto: Record<string, any>) { return this.regulatory.updateRegulatoryReportPackage(user.id, this.scope(user), packageId, dto, user.permissions); }
+
+  @Post('reports/packages/:packageId/generate-report')
+  @Permissions('regulatory.report.generate')
+  generateRegulatoryReportFromPackage(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string, @Body() dto: Record<string, any>) { return this.regulatory.generateRegulatoryReportFromPackage(user.id, this.scope(user), packageId, dto, user.permissions); }
+
+  @Post('reports/packages/:packageId/archive')
+  @Permissions('regulatory.report.package.archive')
+  archiveRegulatoryReportPackage(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string, @Body() dto: Record<string, any>) { return this.regulatory.archiveRegulatoryReportPackage(user.id, this.scope(user), packageId, dto, user.permissions); }
+
+  @Get('reports/packages/:packageId/:section(overview|sources|evidence|manifest|files|history)')
+  @Permissions('regulatory.report.package.view')
+  regulatoryReportPackageSection(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string, @Param('section') section: string) { return this.regulatory.regulatoryReportPackageSection(this.scope(user), packageId, section, user.permissions); }
+
+  @Get('reports/access-log')
+  @Permissions('regulatory.report.access_log.view')
+  regulatoryReportAccessLog(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportAccessLog(this.scope(user), query, user.permissions);
+  }
+
+  @Get('reports/history')
+  @Permissions('regulatory.report.history.view')
+  regulatoryReportHistory(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.regulatoryReportHistory(this.scope(user), query, user.permissions);
+  }
+
+  @Get('reports/settings')
+  @Permissions('regulatory.settings.view')
+  regulatoryReportSettings(@CurrentUser() user: RequestUser) {
+    return this.regulatory.regulatoryReportSettings(this.scope(user));
+  }
+
+  @Patch('reports/settings')
+  @Permissions('regulatory.report.settings.edit')
+  updateRegulatoryReportSettings(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateRegulatoryReportSettings(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('reports/:reportId/:section(overview|source|snapshot|sections|evidence|gaps|actions|audit-mapping|review|files|versions|access-log|history)')
+  @Permissions('regulatory.report.view')
+  regulatoryReportSection(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Param('section') section: string) { return this.regulatory.regulatoryReportSection(this.scope(user), reportId, section, user.permissions); }
+
+  @Get('reports/:reportId')
+  @Permissions('regulatory.report.view')
+  regulatoryReportDetail(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string) {
+    return this.regulatory.regulatoryReportDetail(this.scope(user), reportId, user.permissions);
+  }
+
+  @Get('compliance-status/assessments/:assessmentId/reports')
+  @Permissions('regulatory.report.view')
+  complianceAssessmentReports(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Compliance Assessment', assessmentId, query, user.permissions); }
+
+  @Post('compliance-status/assessments/:assessmentId/reports/generate')
+  @Permissions('regulatory.report.generate')
+  generateComplianceAssessmentReport(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Body() dto: Record<string, any>) { return this.regulatory.generateSourceRegulatoryReport(user.id, this.scope(user), 'Compliance Assessment', assessmentId, dto, user.permissions); }
+
+  @Get('compliance-status/gaps/:gapId/reports')
+  @Permissions('regulatory.report.view')
+  complianceGapReports(@CurrentUser() user: RequestUser, @Param('gapId') gapId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Compliance Gap', gapId, query, user.permissions); }
+
+  @Get('evidence/packages/:packageId/reports')
+  @Permissions('regulatory.report.view')
+  evidencePackageReports(@CurrentUser() user: RequestUser, @Param('packageId') packageId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Evidence Package', packageId, query, user.permissions); }
+
+  @Get('audit-mapping/:mappingId/reports/export-foundation')
+  @Permissions('regulatory.report.view')
+  auditMappingReportsExportFoundation(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Audit Mapping', mappingId, query, user.permissions); }
+
+  @Get('actions/capa/:capaPackageId/reports')
+  @Permissions('regulatory.report.view')
+  capaPackageReports(@CurrentUser() user: RequestUser, @Param('capaPackageId') capaPackageId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'CAPA Package', capaPackageId, query, user.permissions); }
+
+  @Get('review-approval/packages/:approvalId/reports')
+  @Permissions('regulatory.report.view')
+  reviewPackageReports(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Review Package', approvalId, query, user.permissions); }
+
+  @Get('sites/:siteId/reports')
+  @Permissions('regulatory.report.register.view')
+  siteReports(@CurrentUser() user: RequestUser, @Param('siteId') siteId: string, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, siteId }, user.permissions); }
+
+  @Get('units/:unitId/reports')
+  @Permissions('regulatory.report.register.view')
+  unitReports(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, unitId }, user.permissions); }
+
+  @Get('areas/:areaId/reports')
+  @Permissions('regulatory.report.register.view')
+  areaReports(@CurrentUser() user: RequestUser, @Param('areaId') areaId: string, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, areaId }, user.permissions); }
+
+  @Get('equipment/:equipmentId/reports')
+  @Permissions('regulatory.report.register.view')
+  equipmentReports(@CurrentUser() user: RequestUser, @Param('equipmentId') equipmentId: string, @Query() query: Record<string, any>) { return this.regulatory.regulatoryReports(this.scope(user), { ...query, equipmentId }, user.permissions); }
+
+  @Patch('reports/:reportId')
+  @Permissions('regulatory.report.create')
+  updateRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateRegulatoryReport(user.id, this.scope(user), reportId, dto, user.permissions);
+  }
+
+  @Post('reports/:reportId/regenerate')
+  @Permissions('regulatory.report.regenerate')
+  regenerateRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.generateRegulatoryReport(user.id, this.scope(user), { ...dto, reportId }, user.permissions);
+  }
+
+  @Post('reports/:reportId/submit-approval')
+  @Permissions('regulatory.report.submit_approval')
+  submitRegulatoryReportApproval(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.submitRegulatoryReportApproval(user.id, this.scope(user), reportId, dto, user.permissions);
+  }
+
+  @Post('reports/:reportId/lock')
+  @Permissions('regulatory.report.lock')
+  lockRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.lockRegulatoryReport(user.id, this.scope(user), reportId, dto, user.permissions);
+  }
+
+  @Post('reports/:reportId/unlock')
+  @Permissions('regulatory.report.unlock')
+  unlockRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.unlockRegulatoryReport(user.id, this.scope(user), reportId, dto, user.permissions);
+  }
+
+  @Post('reports/:reportId/mark-historical')
+  @Permissions('regulatory.report.mark_historical')
+  markRegulatoryReportHistorical(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.markRegulatoryReportHistorical(user.id, this.scope(user), reportId, dto, user.permissions);
+  }
+
+  @Post('reports/:reportId/archive')
+  @Permissions('regulatory.report.archive')
+  archiveRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.archiveRegulatoryReport(user.id, this.scope(user), reportId, dto, user.permissions);
+  }
+
+  @Post('reports/:reportId/preview')
+  @Permissions('regulatory.report.preview')
+  previewRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string) {
+    return this.regulatory.accessRegulatoryReport(user.id, this.scope(user), reportId, 'Preview', user.permissions);
+  }
+
+  @Get('reports/:reportId/preview')
+  @Permissions('regulatory.report.preview')
+  previewRegulatoryReportGet(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string) {
+    return this.regulatory.accessRegulatoryReport(user.id, this.scope(user), reportId, 'Preview', user.permissions);
+  }
+
+  @Post('reports/:reportId/download')
+  @Permissions('regulatory.report.download')
+  downloadRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string) {
+    return this.regulatory.accessRegulatoryReport(user.id, this.scope(user), reportId, 'Download', user.permissions);
+  }
+
+  @Get('reports/:reportId/download')
+  @Permissions('regulatory.report.download')
+  downloadRegulatoryReportGet(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string) {
+    return this.regulatory.accessRegulatoryReport(user.id, this.scope(user), reportId, 'Download', user.permissions);
+  }
+
+  @Post('reports/:reportId/export')
+  @Permissions('regulatory.report.export')
+  exportRegulatoryReport(@CurrentUser() user: RequestUser, @Param('reportId') reportId: string) {
+    return this.regulatory.accessRegulatoryReport(user.id, this.scope(user), reportId, 'Export', user.permissions);
+  }
+
+  @Get('review-approval')
+  @Permissions('regulatory.review.view')
+  reviewApprovalRoot(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewApprovalDashboard(user.id, this.scope(user), query, user.permissions);
+  }
+
+  @Get('review-approval/dashboard')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalDashboard(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewApprovalDashboard(user.id, this.scope(user), query, user.permissions);
+  }
+
+  @Get('review-approval/dashboard/summary')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalDashboardSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewApprovalSummary(user.id, this.scope(user), query, user.permissions);
+  }
+
+  @Get('review-approval/dashboard/by-source-type')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalBySourceType(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewApprovalDashboard(user.id, this.scope(user), query, user.permissions).then((data) => data.bySourceType);
+  }
+
+  @Get('review-approval/dashboard/by-site')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalBySite(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewApprovalDashboard(user.id, this.scope(user), query, user.permissions).then((data) => data.bySite);
+  }
+
+  @Get('review-approval/dashboard/by-reviewer')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalByReviewer(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewApprovalDashboard(user.id, this.scope(user), query, user.permissions).then((data) => data.byReviewer);
+  }
+
+  @Get('review-approval/dashboard/overdue')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalDashboardOverdue(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewFiltered(user.id, this.scope(user), 'overdue', query, user.permissions);
+  }
+
+  @Get('review-approval/dashboard/stale')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalDashboardStale(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewFiltered(user.id, this.scope(user), 'stale', query, user.permissions);
+  }
+
+  @Get('review-approval/dashboard/recent')
+  @Permissions('regulatory.review.dashboard.view')
+  reviewApprovalDashboardRecent(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewPackages(this.scope(user), { ...query, limit: query.limit ?? 12 }, user.permissions);
+  }
+
+  @Get('review-approval/inbox')
+  @Permissions('regulatory.review.inbox.view')
+  reviewApprovalInbox(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewFiltered(user.id, this.scope(user), 'inbox', query, user.permissions);
+  }
+
+  @Get('review-approval/my-submissions')
+  @Permissions('regulatory.review.submission.view')
+  reviewApprovalMySubmissions(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewFiltered(user.id, this.scope(user), 'my-submissions', query, user.permissions);
+  }
+
+  @Get('review-approval/packages')
+  @Permissions('regulatory.review.package.view')
+  reviewApprovalPackages(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewPackages(this.scope(user), query, user.permissions);
+  }
+
+  @Post('review-approval/packages')
+  @Permissions('regulatory.review.package.create')
+  createReviewApprovalPackage(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.createReviewPackage(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('review-approval/packages/:approvalId')
+  @Permissions('regulatory.review.package.view')
+  reviewApprovalPackageDetail(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string) {
+    return this.regulatory.reviewPackageDetail(this.scope(user), approvalId, user.permissions);
+  }
+
+  @Patch('review-approval/packages/:approvalId')
+  @Permissions('regulatory.review.package.create')
+  updateReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateReviewPackage(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.submitReviewPackage(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/cancel')
+  @Permissions('regulatory.review.package.cancel')
+  cancelReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.cancelReviewPackage(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/resubmit')
+  @Permissions('regulatory.review.package.resubmit')
+  resubmitReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.submitReviewPackage(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/refresh-snapshot')
+  @Permissions('regulatory.review.package.refresh_snapshot')
+  refreshReviewApprovalSnapshot(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.refreshReviewSnapshot(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/run-validation')
+  @Permissions('regulatory.review.validation.run')
+  runReviewApprovalValidation(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.runReviewValidation(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/mark-stale')
+  @Permissions('regulatory.review.package.mark_stale')
+  markReviewApprovalStale(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.markReviewPackageStale(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/archive')
+  @Permissions('regulatory.review.package.archive')
+  archiveReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.archiveReviewPackage(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Get('review-approval/packages/:approvalId/:section')
+  @Permissions('regulatory.review.package.view')
+  reviewApprovalPackageSection(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Param('section') section: string) {
+    return this.regulatory.reviewSection(this.scope(user), approvalId, section, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/approve')
+  @Permissions('regulatory.review.decision.approve')
+  approveReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Approve', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/approve-with-conditions')
+  @Permissions('regulatory.review.decision.approve_with_conditions')
+  approveReviewApprovalPackageWithConditions(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Approve With Conditions', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/reject')
+  @Permissions('regulatory.review.decision.reject')
+  rejectReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Reject', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/return')
+  @Permissions('regulatory.review.decision.return')
+  returnReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Return For Correction', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/request-info')
+  @Permissions('regulatory.review.decision.request_info')
+  requestInfoReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Request Information', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/delegate')
+  @Permissions('regulatory.review.decision.delegate')
+  delegateReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Delegate', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/escalate')
+  @Permissions('regulatory.review.decision.escalate')
+  escalateReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.reviewDecision(user.id, this.scope(user), approvalId, 'Escalate', dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/e-sign')
+  @Permissions('regulatory.review.esign.sign')
+  eSignReviewApprovalPackage(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.eSignReviewPackage(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/conditions')
+  @Permissions('regulatory.review.condition.create')
+  createReviewApprovalCondition(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.createReviewCondition(user.id, this.scope(user), approvalId, dto, user.permissions);
+  }
+
+  @Patch('review-approval/packages/:approvalId/conditions/:conditionId')
+  @Permissions('regulatory.review.condition.edit')
+  updateReviewApprovalCondition(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Param('conditionId') conditionId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateReviewCondition(user.id, this.scope(user), approvalId, conditionId, dto, user.permissions);
+  }
+
+  @Post('review-approval/packages/:approvalId/conditions/:conditionId/close')
+  @Permissions('regulatory.review.condition.close')
+  closeReviewApprovalCondition(@CurrentUser() user: RequestUser, @Param('approvalId') approvalId: string, @Param('conditionId') conditionId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.closeReviewCondition(user.id, this.scope(user), approvalId, conditionId, dto, user.permissions);
+  }
+
+  @Get('review-approval/rules')
+  @Permissions('regulatory.review.rule.view')
+  reviewApprovalRules(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewRules(this.scope(user), query, user.permissions);
+  }
+
+  @Post('review-approval/rules')
+  @Permissions('regulatory.review.rule.create')
+  createReviewApprovalRule(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.createReviewRule(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('review-approval/rules/:ruleId')
+  @Permissions('regulatory.review.rule.view')
+  reviewApprovalRule(@CurrentUser() user: RequestUser, @Param('ruleId') ruleId: string) {
+    return this.regulatory.reviewRules(this.scope(user), { ruleId }, user.permissions).then((data) => data.rows.find((row: Record<string, any>) => row.id === ruleId) ?? null);
+  }
+
+  @Patch('review-approval/rules/:ruleId')
+  @Permissions('regulatory.review.rule.edit')
+  updateReviewApprovalRule(@CurrentUser() user: RequestUser, @Param('ruleId') ruleId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateReviewRule(user.id, this.scope(user), ruleId, dto, user.permissions);
+  }
+
+  @Post('review-approval/rules/:ruleId/archive')
+  @Permissions('regulatory.review.rule.archive')
+  archiveReviewApprovalRule(@CurrentUser() user: RequestUser, @Param('ruleId') ruleId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.archiveReviewRule(user.id, this.scope(user), ruleId, dto, user.permissions);
+  }
+
+  @Post('review-approval/rules/:ruleId/reactivate')
+  @Permissions('regulatory.review.rule.edit')
+  reactivateReviewApprovalRule(@CurrentUser() user: RequestUser, @Param('ruleId') ruleId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateReviewRule(user.id, this.scope(user), ruleId, { ...dto, rule_status: 'Active', archived_at: null, archived_by: null, archive_reason: null }, user.permissions);
+  }
+
+  @Get('review-approval/history')
+  @Permissions('regulatory.review.history.view')
+  reviewApprovalHistory(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewHistory(this.scope(user), query, user.permissions);
+  }
+
+  @Get('review-approval/settings')
+  @Permissions('regulatory.settings.view')
+  reviewApprovalSettings(@CurrentUser() user: RequestUser) {
+    return this.regulatory.settings(this.scope(user));
+  }
+
+  @Patch('review-approval/settings')
+  @Permissions('regulatory.review.settings.edit')
+  updateReviewApprovalSettings(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    return this.regulatory.updateSettings(user.id, this.scope(user), dto, user.permissions);
+  }
+
+  @Get('review-approval/:view')
+  @Permissions('regulatory.review.package.view')
+  reviewApprovalFiltered(@CurrentUser() user: RequestUser, @Param('view') view: string, @Query() query: Record<string, any>) {
+    return this.regulatory.reviewFiltered(user.id, this.scope(user), view, query, user.permissions);
   }
 
   @Get('dashboard/by-jurisdiction')
@@ -250,6 +882,14 @@ export class RegulatoryController {
   @Post('applicability/assessments/:assessmentId/submit-review')
   @Permissions('regulatory.applicability.assessment.submit')
   submitApplicabilityReview(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitApplicabilityReview(user.id, this.scope(user), assessmentId, dto, user.permissions); }
+
+  @Get('applicability/assessments/:assessmentId/review')
+  @Permissions('regulatory.review.view')
+  applicabilityAssessmentReview(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string) { return this.regulatory.sourceReview(this.scope(user), 'Applicability Assessment', assessmentId, user.permissions); }
+
+  @Post('applicability/assessments/:assessmentId/review/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitApplicabilityAssessmentReviewPackage(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitSourceReview(user.id, this.scope(user), 'Applicability Assessment', assessmentId, dto, user.permissions); }
 
   @Post('applicability/assessments/:assessmentId/mark-stale')
   @Permissions('regulatory.applicability.assessment.edit')
@@ -587,6 +1227,12 @@ export class RegulatoryController {
   @Permissions('regulatory.audit_mapping.create')
   createObligationAuditMapping(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string, @Body() dto: Record<string, any>) { return this.regulatory.createSourceAuditMapping(user.id, this.scope(user), 'obligation', obligationId, dto, user.permissions); }
 
+  @Post('obligations/:obligationId/spawn-audit-checklist')
+  @Permissions('regulatory.audit_mapping.create')
+  spawnObligationAuditChecklist(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.spawnAuditChecklistForObligation(user.id, this.scope(user), obligationId, dto, user.permissions);
+  }
+
   @Get('obligations/:obligationId/audit-mapping/coverage')
   @Permissions('regulatory.audit_mapping.coverage.view')
   obligationAuditMappingCoverage(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceAuditCoverage(this.scope(user), 'obligation', obligationId, query, user.permissions); }
@@ -625,11 +1271,19 @@ export class RegulatoryController {
 
   @Get('obligations/:obligationId/review')
   @Permissions('regulatory.review.view')
-  obligationReviewSection(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string) { return this.regulatory.obligationSection(this.scope(user), obligationId, 'review'); }
+  obligationReviewSection(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string) { return this.regulatory.sourceReview(this.scope(user), 'Obligation', obligationId, user.permissions); }
+
+  @Post('obligations/:obligationId/review/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitObligationReviewPackage(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitSourceReview(user.id, this.scope(user), 'Obligation', obligationId, dto, user.permissions); }
 
   @Get('obligations/:obligationId/reports')
   @Permissions('regulatory.report.view')
-  obligationReportsSection(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string) { return this.regulatory.obligationSection(this.scope(user), obligationId, 'reports'); }
+  obligationReportsSection(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Obligation', obligationId, query, user.permissions); }
+
+  @Post('obligations/:obligationId/reports/generate')
+  @Permissions('regulatory.report.generate')
+  generateObligationReport(@CurrentUser() user: RequestUser, @Param('obligationId') obligationId: string, @Body() dto: Record<string, any>) { return this.regulatory.generateSourceRegulatoryReport(user.id, this.scope(user), 'Obligation', obligationId, dto, user.permissions); }
 
   @Get('obligations/:obligationId/history')
   @Permissions('regulatory.obligation.history.view')
@@ -855,6 +1509,14 @@ export class RegulatoryController {
   @Permissions('regulatory.compliance.assessment.complete')
   submitComplianceReview(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitComplianceReview(user.id, this.scope(user), assessmentId, dto, user.permissions); }
 
+  @Get('compliance-status/assessments/:assessmentId/review')
+  @Permissions('regulatory.review.view')
+  complianceAssessmentReview(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string) { return this.regulatory.sourceReview(this.scope(user), 'Compliance Assessment', assessmentId, user.permissions); }
+
+  @Post('compliance-status/assessments/:assessmentId/review/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitComplianceAssessmentReviewPackage(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitSourceReview(user.id, this.scope(user), 'Compliance Assessment', assessmentId, dto, user.permissions); }
+
   @Post('compliance-status/assessments/:assessmentId/mark-stale')
   @Permissions('regulatory.compliance.stale.reassess')
   markComplianceAssessmentStale(@CurrentUser() user: RequestUser, @Param('assessmentId') assessmentId: string, @Body() dto: Record<string, any>) { return this.regulatory.markComplianceAssessmentStale(user.id, this.scope(user), assessmentId, dto, user.permissions); }
@@ -914,7 +1576,192 @@ export class RegulatoryController {
   @Get('history')
   @Permissions('regulatory.history.view')
   history(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
-    return this.regulatory.history(this.scope(user), query);
+    return this.historyTrends.unifiedHistory(user, query);
+  }
+
+  @Post('history/normalize')
+  @Permissions('regulatory.history.snapshot.create')
+  normalizeHistory(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.normalizeHistory(user, dto); }
+
+  @Get('history/dashboard')
+  @Permissions('regulatory.history.dashboard.view')
+  historyDashboard(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.dashboard(user, query); }
+
+  @Get('history/dashboard/summary')
+  @Permissions('regulatory.history.dashboard.view')
+  historyDashboardSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.dashboard(user, query).then((data) => data.summary); }
+
+  @Get('history/timeline')
+  @Permissions('regulatory.history.timeline.view')
+  historyTimeline(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, query); }
+
+  @Get('history/events')
+  @Permissions('regulatory.history.view')
+  historyEvents(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, query); }
+
+  @Get('history/snapshots')
+  @Permissions('regulatory.history.snapshot.view')
+  historySnapshots(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.historySnapshots(user, query); }
+
+  @Post('history/snapshots')
+  @Permissions('regulatory.history.snapshot.create')
+  createHistorySnapshot(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.createHistorySnapshot(user, dto); }
+
+  @Get('history/snapshots/:snapshotId')
+  @Permissions('regulatory.history.snapshot.view')
+  historySnapshot(@CurrentUser() user: RequestUser, @Param('snapshotId') snapshotId: string) { return this.historyTrends.historySnapshot(user, snapshotId); }
+
+  @Post('history/snapshots/:snapshotId/archive')
+  @Permissions('regulatory.history.snapshot.create')
+  archiveHistorySnapshot(@CurrentUser() user: RequestUser, @Param('snapshotId') snapshotId: string, @Body() dto: Record<string, any>) { return this.historyTrends.archiveHistorySnapshot(user, snapshotId, dto); }
+
+  @Get('history/:dimension(by-source|by-user|by-site|by-jurisdiction|by-regulatory-item|by-obligation)')
+  @Permissions('regulatory.history.view')
+  historyDimension(@CurrentUser() user: RequestUser, @Param('dimension') dimension: string, @Query() query: Record<string, any>) { return this.historyTrends.dimensionHistory(user, dimension, query); }
+
+  @Get('trends')
+  @Permissions('regulatory.trend.view')
+  trends(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, query); }
+
+  @Get('trends/dashboard')
+  @Permissions('regulatory.trend.dashboard.view')
+  trendDashboard(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.trendDashboard(user, query); }
+
+  @Get('trends/dashboard/summary')
+  @Permissions('regulatory.trend.dashboard.view')
+  trendDashboardSummary(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.trendDashboard(user, query).then((data) => data.summary); }
+
+  @Get('trends/runs')
+  @Permissions('regulatory.trend.run.view')
+  trendRuns(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, query); }
+
+  @Post('trends/runs')
+  @Permissions('regulatory.trend.run.create')
+  createTrendRun(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.createTrendRun(user, dto); }
+
+  @Get('trends/runs/:trendRunId')
+  @Permissions('regulatory.trend.run.view')
+  trendRun(@CurrentUser() user: RequestUser, @Param('trendRunId') trendRunId: string) { return this.historyTrends.trendRun(user, trendRunId); }
+
+  @Post('trends/runs/:trendRunId/recalculate')
+  @Permissions('regulatory.trend.run.recalculate')
+  recalculateTrendRun(@CurrentUser() user: RequestUser, @Param('trendRunId') trendRunId: string) { return this.historyTrends.recalculateTrendRun(user, trendRunId); }
+
+  @Post('trends/runs/:trendRunId/archive')
+  @Permissions('regulatory.trend.run.archive')
+  archiveTrendRun(@CurrentUser() user: RequestUser, @Param('trendRunId') trendRunId: string, @Body() dto: Record<string, any>) { return this.historyTrends.archiveTrendRun(user, trendRunId, dto); }
+
+  @Get('trends/runs/:trendRunId/:section(overview|input-snapshot|results|source-records|explainability|history)')
+  @Permissions('regulatory.trend.run.view')
+  trendRunSection(@CurrentUser() user: RequestUser, @Param('trendRunId') trendRunId: string, @Param('section') section: string) {
+    return this.historyTrends.trendRun(user, trendRunId).then((detail) => ({ overview: detail, 'input-snapshot': detail.inputSnapshot, results: detail.results, 'source-records': detail.sourceRecords, explainability: detail.explainability, history: detail.history })[section]);
+  }
+
+  @Get('trends/:trendType(compliance-status|obligations|evidence|gaps|actions-capa|audit-mapping|review-approval|reports|changes|stale-records)')
+  @Permissions('regulatory.trend.view')
+  trendTypeView(@CurrentUser() user: RequestUser, @Param('trendType') trendType: string, @Query() query: Record<string, any>) {
+    const map: Record<string, string> = { 'compliance-status': 'Compliance Status Trend', obligations: 'Obligation Overdue Trend', evidence: 'Evidence Readiness Trend', gaps: 'Compliance Gap Trend', 'actions-capa': 'Action / CAPA Overdue Trend', 'audit-mapping': 'Audit Mapping Coverage Trend', 'review-approval': 'Review Approval Cycle Trend', reports: 'Report Staleness Trend', changes: 'Regulatory Change Impact Trend', 'stale-records': 'Report Staleness Trend' };
+    return this.historyTrends.trendView(user, map[trendType] ?? 'Custom', query);
+  }
+
+  @Get('trends/repeat-gaps')
+  @Permissions('regulatory.repeat_gap.view')
+  repeatGaps(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.repeatGaps(user, query); }
+
+  @Post('trends/repeat-gaps/detect')
+  @Permissions('regulatory.repeat_gap.confirm')
+  detectRepeatGaps(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.detectRepeatGaps(user, dto); }
+
+  @Get('trends/repeat-gaps/:repeatId')
+  @Permissions('regulatory.repeat_gap.view')
+  repeatGap(@CurrentUser() user: RequestUser, @Param('repeatId') repeatId: string) { return this.historyTrends.repeatGap(user, repeatId); }
+
+  @Post('trends/repeat-gaps/:repeatId/confirm')
+  @Permissions('regulatory.repeat_gap.confirm')
+  confirmRepeatGap(@CurrentUser() user: RequestUser, @Param('repeatId') repeatId: string, @Body() dto: Record<string, any>) { return this.historyTrends.reviewRepeatGap(user, repeatId, 'confirm', dto); }
+
+  @Post('trends/repeat-gaps/:repeatId/reject')
+  @Permissions('regulatory.repeat_gap.reject')
+  rejectRepeatGap(@CurrentUser() user: RequestUser, @Param('repeatId') repeatId: string, @Body() dto: Record<string, any>) { return this.historyTrends.reviewRepeatGap(user, repeatId, 'reject', dto); }
+
+  @Post('trends/repeat-gaps/:repeatId/archive')
+  @Permissions('regulatory.repeat_gap.archive')
+  archiveRepeatGap(@CurrentUser() user: RequestUser, @Param('repeatId') repeatId: string, @Body() dto: Record<string, any>) { return this.historyTrends.reviewRepeatGap(user, repeatId, 'archive', dto); }
+
+  @Post('trends/repeat-gaps/:repeatId/create-action-foundation')
+  @Permissions('regulatory.management_review.candidate.create')
+  createRepeatActionFoundation(@CurrentUser() user: RequestUser, @Param('repeatId') repeatId: string, @Body() dto: Record<string, any>) { return this.historyTrends.createRepeatActionFoundation(user, repeatId, dto); }
+
+  @Get('trends/recurring-issues')
+  @Permissions('regulatory.recurring_issue.view')
+  recurringIssues(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.recurringIssues(user, query); }
+
+  @Post('trends/recurring-issues/detect')
+  @Permissions('regulatory.recurring_issue.manage')
+  detectRecurringIssues(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.detectRecurringIssues(user, dto); }
+
+  @Get('trends/recurring-issues/:clusterId')
+  @Permissions('regulatory.recurring_issue.view')
+  recurringIssue(@CurrentUser() user: RequestUser, @Param('clusterId') clusterId: string) { return this.historyTrends.recurringIssue(user, clusterId); }
+
+  @Patch('trends/recurring-issues/:clusterId')
+  @Permissions('regulatory.recurring_issue.manage')
+  updateRecurringIssue(@CurrentUser() user: RequestUser, @Param('clusterId') clusterId: string, @Body() dto: Record<string, any>) { return this.historyTrends.updateRecurringIssue(user, clusterId, dto); }
+
+  @Post('trends/recurring-issues/:clusterId/archive')
+  @Permissions('regulatory.recurring_issue.manage')
+  archiveRecurringIssue(@CurrentUser() user: RequestUser, @Param('clusterId') clusterId: string, @Body() dto: Record<string, any>) { return this.historyTrends.archiveRecurringIssue(user, clusterId, dto); }
+
+  @Get('management-review-readiness')
+  @Permissions('regulatory.management_review.view')
+  managementReviewReadiness(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.managementReviewCandidates(user, query); }
+
+  @Get('management-review-readiness/dashboard')
+  @Permissions('regulatory.management_review.dashboard.view')
+  managementReviewDashboard(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.managementReviewDashboard(user, query); }
+
+  @Get('management-review-readiness/register')
+  @Permissions('regulatory.management_review.view')
+  managementReviewRegister(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.managementReviewCandidates(user, query); }
+
+  @Post('management-review-readiness/candidates')
+  @Permissions('regulatory.management_review.candidate.create')
+  createManagementReviewCandidate(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.createManagementReviewCandidate(user, dto); }
+
+  @Patch('management-review-readiness/candidates/:candidateId')
+  @Permissions('regulatory.management_review.candidate.edit')
+  updateManagementReviewCandidate(@CurrentUser() user: RequestUser, @Param('candidateId') candidateId: string, @Body() dto: Record<string, any>) { return this.historyTrends.updateManagementReviewCandidate(user, candidateId, dto); }
+
+  @Post('management-review-readiness/candidates/:candidateId/remove')
+  @Permissions('regulatory.management_review.candidate.remove')
+  removeManagementReviewCandidate(@CurrentUser() user: RequestUser, @Param('candidateId') candidateId: string, @Body() dto: Record<string, any>) { return this.historyTrends.removeManagementReviewCandidate(user, candidateId, dto); }
+
+  @Get('management-review-readiness/:view(open-critical-items|repeat-gaps|stale-records|overdue-actions|pending-approvals|report-ready)')
+  @Permissions('regulatory.management_review.view')
+  managementReviewView(@CurrentUser() user: RequestUser, @Param('view') view: string, @Query() query: Record<string, any>) { return this.historyTrends.managementView(user, view, query); }
+
+  @Get('management-review-readiness/kpi-feed')
+  @Permissions('regulatory.kpi_feed.view')
+  kpiFeed(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) { return this.historyTrends.kpiFeed(user, query); }
+
+  @Post('management-review-readiness/kpi-feed/generate-snapshot')
+  @Permissions('regulatory.kpi_feed.generate')
+  generateKpiSnapshot(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.generateKpiSnapshot(user, dto); }
+
+  @Get('trends/settings')
+  @Permissions('regulatory.trend.view')
+  trendSettings(@CurrentUser() user: RequestUser) { return this.historyTrends.settings(user); }
+
+  @Patch('trends/settings')
+  @Permissions('regulatory.trend.settings.edit')
+  updateTrendSettings(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) { return this.historyTrends.updateSettings(user, dto); }
+
+  @Get('lookups/regulatory-trend/:kind(event-types|types|statuses|directions|confidence-levels|repeat-gap-statuses|recurring-issue-statuses|management-review-candidate-types|management-review-readiness-statuses)')
+  @Permissions('regulatory.trend.view')
+  trendLookups(@Param('kind') kind: string) {
+    const lookups = this.historyTrends.lookups();
+    const map: Record<string, unknown> = { 'event-types': [], types: lookups.trendTypes, statuses: lookups.trendStatuses, directions: lookups.trendDirections, 'confidence-levels': lookups.trendConfidenceLevels, 'repeat-gap-statuses': lookups.repeatGapStatuses, 'recurring-issue-statuses': lookups.recurringIssueStatuses, 'management-review-candidate-types': lookups.managementReviewCandidateTypes, 'management-review-readiness-statuses': lookups.managementReviewReadinessStatuses };
+    return map[kind] ?? [];
   }
 
   @Get('settings')
@@ -960,6 +1807,38 @@ export class RegulatoryController {
   @Get('lookups/review-statuses')
   @Permissions('regulatory.register.view')
   reviewStatuses() { return this.regulatory.lookup('reviewStatuses'); }
+
+  @Get('lookups/review-source-types')
+  @Permissions('regulatory.review.view')
+  reviewSourceTypes() { return { rows: ['Regulatory Item', 'Obligation', 'Applicability Assessment', 'Compliance Assessment', 'Evidence Link', 'Evidence Package', 'Audit Mapping', 'Action Link', 'CAPA Package'] }; }
+
+  @Get('lookups/review-stage-statuses')
+  @Permissions('regulatory.review.view')
+  reviewStageStatuses() { return this.regulatory.lookup('regulatoryReviewStageStatuses'); }
+
+  @Get('lookups/review-decision-types')
+  @Permissions('regulatory.review.view')
+  reviewDecisionTypes() { return this.regulatory.lookup('regulatoryReviewDecisionTypes'); }
+
+  @Get('lookups/review-validation-statuses')
+  @Permissions('regulatory.review.view')
+  reviewValidationStatuses() { return this.regulatory.lookup('regulatoryReviewValidationStatuses'); }
+
+  @Get('lookups/review-esign-statuses')
+  @Permissions('regulatory.review.view')
+  reviewESignStatuses() { return this.regulatory.lookup('regulatoryReviewESignStatuses'); }
+
+  @Get('lookups/review-condition-statuses')
+  @Permissions('regulatory.review.view')
+  reviewConditionStatuses() { return this.regulatory.lookup('regulatoryReviewConditionStatuses'); }
+
+  @Get('lookups/reviewer-selection-methods')
+  @Permissions('regulatory.review.view')
+  reviewerSelectionMethods() { return this.regulatory.lookup('regulatoryReviewerSelectionMethods'); }
+
+  @Get('lookups/review-trigger-events')
+  @Permissions('regulatory.review.view')
+  reviewTriggerEvents() { return this.regulatory.lookup('regulatoryReviewTriggerEvents'); }
 
   @Get('lookups/review-frequencies')
   @Permissions('regulatory.register.view')
@@ -1735,6 +2614,14 @@ export class RegulatoryController {
   @Permissions('regulatory.evidence.review.submit')
   submitEvidenceReview(@CurrentUser() user: RequestUser, @Param('evidenceLinkId') evidenceLinkId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitEvidenceReview(user.id, this.scope(user), evidenceLinkId, dto, user.permissions); }
 
+  @Get('evidence/links/:evidenceLinkId/review')
+  @Permissions('regulatory.review.view')
+  evidenceLinkReview(@CurrentUser() user: RequestUser, @Param('evidenceLinkId') evidenceLinkId: string) { return this.regulatory.sourceReview(this.scope(user), 'Evidence Link', evidenceLinkId, user.permissions); }
+
+  @Post('evidence/links/:evidenceLinkId/review/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitEvidenceLinkReviewPackage(@CurrentUser() user: RequestUser, @Param('evidenceLinkId') evidenceLinkId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitSourceReview(user.id, this.scope(user), 'Evidence Link', evidenceLinkId, dto, user.permissions); }
+
   @Post('evidence/links/:evidenceLinkId/verify')
   @Permissions('regulatory.evidence.review.verify')
   verifyEvidenceLink(@CurrentUser() user: RequestUser, @Param('evidenceLinkId') evidenceLinkId: string, @Body() dto: Record<string, any>) { return this.regulatory.reviewEvidenceLink(user.id, this.scope(user), evidenceLinkId, 'Verified Foundation', dto, user.permissions); }
@@ -2113,15 +3000,19 @@ export class RegulatoryController {
 
   @Get('audit-mapping/:mappingId/review')
   @Permissions('regulatory.audit_mapping.review.view')
-  auditMappingDetailReview(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string) { return this.regulatory.getAuditMapping(this.scope(user), mappingId, user.permissions, true); }
+  auditMappingDetailReview(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string) { return this.regulatory.sourceReview(this.scope(user), 'Audit Mapping', mappingId, user.permissions); }
 
   @Post('audit-mapping/:mappingId/review')
   @Permissions('regulatory.audit_mapping.review.submit')
   submitAuditMappingReview(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitAuditMappingReview(user.id, this.scope(user), mappingId, dto, user.permissions); }
 
+  @Post('audit-mapping/:mappingId/review/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitAuditMappingReviewPackage(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string, @Body() dto: Record<string, any>) { return this.regulatory.submitSourceReview(user.id, this.scope(user), 'Audit Mapping', mappingId, dto, user.permissions); }
+
   @Get('audit-mapping/:mappingId/reports')
   @Permissions('regulatory.report.view')
-  auditMappingDetailReports(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string) { return this.regulatory.auditMappingReports(this.scope(user), mappingId, user.permissions); }
+  auditMappingDetailReports(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string, @Query() query: Record<string, any>) { return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Audit Mapping', mappingId, query, user.permissions); }
 
   @Get('audit-mapping/:mappingId/history')
   @Permissions('regulatory.audit_mapping.history.view')
@@ -2138,6 +3029,12 @@ export class RegulatoryController {
   @Post('audit-mapping/:mappingId/link-checklist')
   @Permissions('regulatory.audit_mapping.link_checklist')
   auditMappingLinkChecklist(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string, @Body() dto: Record<string, any>) { return this.regulatory.linkAuditMappingTarget(user.id, this.scope(user), mappingId, 'Audit Checklist', dto, user.permissions); }
+
+  @Post('audit-mapping/:mappingId/spawn-checklist')
+  @Permissions('regulatory.audit_mapping.create')
+  spawnMappingAuditChecklist(@CurrentUser() user: RequestUser, @Param('mappingId') mappingId: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.spawnAuditChecklistForMapping(user.id, this.scope(user), mappingId, dto, user.permissions);
+  }
 
   @Post('audit-mapping/:mappingId/link-execution')
   @Permissions('regulatory.audit_mapping.link_execution')
@@ -2309,11 +3206,31 @@ export class RegulatoryController {
     return this.regulatory.scoped(this.scope(user), 'siteId', siteId, query);
   }
 
+  @Get('sites/:siteId/history')
+  @Permissions('regulatory.history.view')
+  siteHistory(@CurrentUser() user: RequestUser, @Param('siteId') siteId: string, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, { ...query, siteId }); }
+
+  @Get('sites/:siteId/trends')
+  @Permissions('regulatory.trend.view')
+  siteTrends(@CurrentUser() user: RequestUser, @Param('siteId') siteId: string, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, { ...query, siteId }); }
+
+  @Get('sites/:siteId/management-review-readiness')
+  @Permissions('regulatory.management_review.view')
+  siteManagementReviewReadiness(@CurrentUser() user: RequestUser, @Param('siteId') siteId: string, @Query() query: Record<string, any>) { return this.historyTrends.managementReviewCandidates(user, { ...query, siteId }); }
+
   @Get('units/:unitId')
   @Permissions('regulatory.register.view')
   byUnitScoped(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string, @Query() query: Record<string, any>) {
     return this.regulatory.scoped(this.scope(user), 'unitId', unitId, query);
   }
+
+  @Get('units/:unitId/history')
+  @Permissions('regulatory.history.view')
+  unitHistory(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, { ...query, unitId }); }
+
+  @Get('units/:unitId/trends')
+  @Permissions('regulatory.trend.view')
+  unitTrends(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, { ...query, unitId }); }
 
   @Get('areas/:areaId')
   @Permissions('regulatory.register.view')
@@ -2321,11 +3238,27 @@ export class RegulatoryController {
     return this.regulatory.scoped(this.scope(user), 'areaId', areaId, query);
   }
 
+  @Get('areas/:areaId/history')
+  @Permissions('regulatory.history.view')
+  areaHistory(@CurrentUser() user: RequestUser, @Param('areaId') areaId: string, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, { ...query, areaId }); }
+
+  @Get('areas/:areaId/trends')
+  @Permissions('regulatory.trend.view')
+  areaTrends(@CurrentUser() user: RequestUser, @Param('areaId') areaId: string, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, { ...query, areaId }); }
+
   @Get('equipment/:equipmentId')
   @Permissions('regulatory.register.view')
   byEquipmentScoped(@CurrentUser() user: RequestUser, @Param('equipmentId') equipmentId: string, @Query() query: Record<string, any>) {
     return this.regulatory.scoped(this.scope(user), 'equipmentId', equipmentId, query);
   }
+
+  @Get('equipment/:equipmentId/history')
+  @Permissions('regulatory.history.view')
+  equipmentHistory(@CurrentUser() user: RequestUser, @Param('equipmentId') equipmentId: string, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, { ...query, equipmentId }); }
+
+  @Get('equipment/:equipmentId/trends')
+  @Permissions('regulatory.trend.view')
+  equipmentTrends(@CurrentUser() user: RequestUser, @Param('equipmentId') equipmentId: string, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, { ...query, equipmentId }); }
 
   @Get(':regulationId')
   @Permissions('regulatory.item.view')
@@ -2481,6 +3414,12 @@ export class RegulatoryController {
   @Permissions('regulatory.audit_mapping.create')
   createItemAuditMapping(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Body() dto: Record<string, any>) { return this.regulatory.createSourceAuditMapping(user.id, this.scope(user), 'item', id, dto, user.permissions); }
 
+  @Post(':regulationId/spawn-audit-checklist')
+  @Permissions('regulatory.audit_mapping.create')
+  spawnRegulationAuditChecklist(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.spawnAuditChecklistForRegulation(user.id, this.scope(user), id, dto, user.permissions);
+  }
+
   @Get(':regulationId/audit-mapping/coverage')
   @Permissions('regulatory.audit_mapping.coverage.view')
   itemAuditMappingCoverage(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Query() query: Record<string, any>) { return this.regulatory.sourceAuditCoverage(this.scope(user), 'item', id, query, user.permissions); }
@@ -2519,15 +3458,39 @@ export class RegulatoryController {
 
   @Get(':regulationId/review')
   @Permissions('regulatory.review.view')
-  review(@CurrentUser() user: RequestUser, @Param('regulationId') id: string) { return this.regulatory.itemSection(this.scope(user), id, 'review'); }
+  review(@CurrentUser() user: RequestUser, @Param('regulationId') id: string) { return this.regulatory.sourceReview(this.scope(user), 'Regulatory Item', id, user.permissions); }
+
+  @Post(':regulationId/review/submit')
+  @Permissions('regulatory.review.package.submit')
+  submitItemReviewPackage(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Body() dto: Record<string, any>) { return this.regulatory.submitSourceReview(user.id, this.scope(user), 'Regulatory Item', id, dto, user.permissions); }
+
+  @Get(':regulationId/review/history')
+  @Permissions('regulatory.review.history.view')
+  itemReviewHistory(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Query() query: Record<string, any>) { return this.regulatory.reviewHistory(this.scope(user), { ...query, sourceType: 'Regulatory Item', sourceRecordId: id }, user.permissions); }
 
   @Get(':regulationId/reports')
   @Permissions('regulatory.report.view')
-  reports(@CurrentUser() user: RequestUser, @Param('regulationId') id: string) { return this.regulatory.itemSection(this.scope(user), id, 'reports'); }
+  reports(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Query() query: Record<string, any>) {
+    return this.regulatory.sourceRegulatoryReports(this.scope(user), 'Regulatory Item', id, query, user.permissions);
+  }
+
+  @Post(':regulationId/reports/generate')
+  @Permissions('regulatory.report.generate')
+  generateSourceReport(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Body() dto: Record<string, any>) {
+    return this.regulatory.generateSourceRegulatoryReport(user.id, this.scope(user), 'Regulatory Item', id, dto, user.permissions);
+  }
 
   @Get(':regulationId/history')
   @Permissions('regulatory.history.view')
   itemHistory(@CurrentUser() user: RequestUser, @Param('regulationId') id: string) { return this.regulatory.itemHistory(this.scope(user), id); }
+
+  @Get(':regulationId/history/unified')
+  @Permissions('regulatory.history.view')
+  itemUnifiedHistory(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Query() query: Record<string, any>) { return this.historyTrends.unifiedHistory(user, { ...query, regulatoryItemId: id }); }
+
+  @Get(':regulationId/trends')
+  @Permissions('regulatory.trend.view')
+  itemTrends(@CurrentUser() user: RequestUser, @Param('regulationId') id: string, @Query() query: Record<string, any>) { return this.historyTrends.trendRuns(user, { ...query, regulatoryItemId: id }); }
 
   @Get(':regulationId/links')
   @Permissions('regulatory.link.view')

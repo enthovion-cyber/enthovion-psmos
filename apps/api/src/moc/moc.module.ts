@@ -8,6 +8,7 @@ import { SearchModule } from '../search/search.module';
 import { TenantsModule } from '../tenants/tenants.module';
 import { WorkflowsModule } from '../workflows/workflows.module';
 import { PssrModule } from '../pssr/pssr.module';
+import { PsiModule } from '../psi/psi.module';
 import { MocController } from './moc.controller';
 import { MocClosureBlockerService } from './moc-closure-blocker.service';
 import { MocClosedLoopActionService } from './moc-closed-loop-action.service';
@@ -31,13 +32,14 @@ import { MocRiskWorkflowImpactService } from './moc-risk-workflow-impact.service
 import { MocStartupReadinessService } from './moc-startup-readiness.service';
 import { MocStartupBlockerService } from './moc-startup-blocker.service';
 import { MocTemporaryEmergencyService } from './moc-temporary-emergency.service';
+import { MocTemporaryExpiryWorker } from './moc-temporary-expiry.worker';
 import { MocWorkflowService } from './moc-workflow.service';
 import { MocService } from './moc.service';
 
 @Module({
-  imports: [SupabaseModule, AuditModule, NotificationsModule, PermissionsModule, SearchModule, TenantsModule, WorkflowsModule, ActionsModule, PssrModule],
+  imports: [SupabaseModule, AuditModule, NotificationsModule, PermissionsModule, SearchModule, TenantsModule, WorkflowsModule, ActionsModule, PssrModule, PsiModule],
   controllers: [MocController],
-  providers: [MocService, MocDashboardService, MocImpactAssessmentService, MocImpactAnswerService, MocImpactActionGeneratorService, MocImpactValidationService, MocStartupBlockerService, MocClosureBlockerService, MocRiskService, MocRiskCalculatorService, MocRiskValidationService, MocRiskWorkflowImpactService, MocRiskReviewRequirementService, MocRiskHistoryService, MocEngineeringPackageService, MocEngineeringRequirementService, MocClosedLoopActionService, MocClosureChecklistService, MocWorkflowService, MocTemporaryEmergencyService, MocStartupReadinessService, MocCommunicationTrainingService, MocHistoryService, MocAttachmentsService],
-  exports: [MocService, MocDashboardService, MocImpactAssessmentService, MocRiskService, MocEngineeringPackageService, MocClosedLoopActionService, MocWorkflowService, MocTemporaryEmergencyService, MocStartupReadinessService, MocCommunicationTrainingService, MocHistoryService, MocAttachmentsService]
+  providers: [MocService, MocDashboardService, MocImpactAssessmentService, MocImpactAnswerService, MocImpactActionGeneratorService, MocImpactValidationService, MocStartupBlockerService, MocClosureBlockerService, MocRiskService, MocRiskCalculatorService, MocRiskValidationService, MocRiskWorkflowImpactService, MocRiskReviewRequirementService, MocRiskHistoryService, MocEngineeringPackageService, MocEngineeringRequirementService, MocClosedLoopActionService, MocClosureChecklistService, MocWorkflowService, MocTemporaryEmergencyService, MocTemporaryExpiryWorker, MocStartupReadinessService, MocCommunicationTrainingService, MocHistoryService, MocAttachmentsService],
+  exports: [MocService, MocDashboardService, MocImpactAssessmentService, MocRiskService, MocEngineeringPackageService, MocClosedLoopActionService, MocWorkflowService, MocTemporaryEmergencyService, MocTemporaryExpiryWorker, MocStartupReadinessService, MocCommunicationTrainingService, MocHistoryService, MocAttachmentsService]
 })
 export class MocModule {}

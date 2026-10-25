@@ -1,0 +1,5 @@
+import Link from 'next/link';
+import type { ExecutiveAlert } from '../types/executive-kpi.types';
+import { ExecutiveEmpty, ExecutivePanel } from './ExecutivePanel';
+import { ExecutiveStatusBadge } from './shared/ExecutiveStatusBadge';
+export function ExecutiveAlertListPanel({ title, subtitle, rows }: { title: string; subtitle: string; rows: ExecutiveAlert[] }) { return <ExecutivePanel title={title} subtitle={subtitle}>{rows.length ? <ul className="space-y-2">{rows.map((row, index) => <li key={`${row.title}-${index}`}><Link href={row.drilldownRoute ?? '#'} className="flex items-center justify-between gap-3 rounded-md border border-[var(--psm-line)] p-3 hover:bg-[var(--psm-surface-2)]"><span className="min-w-0"><b className="block truncate text-sm text-[var(--psm-text)]">{row.title}</b><small className="text-[var(--psm-muted)]">{row.sourceModule}</small></span><ExecutiveStatusBadge status={row.status} /></Link></li>)}</ul> : <ExecutiveEmpty message="No permitted records require attention." />}</ExecutivePanel>; }

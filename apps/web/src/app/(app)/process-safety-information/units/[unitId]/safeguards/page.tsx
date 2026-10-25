@@ -1,2 +1,11 @@
 import { SafeguardRegistryPage } from '@/features/psi/safeguards/SafeguardRegistryPage';
-export default function UnitSafeguardsPage({ params }: { params: { unitId: string } }) { return <SafeguardRegistryPage unitId={params.unitId} />; }
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function UnitSafeguardsPage(props: { params: Promise<{ unitId: string }> }) {
+  const params = await props.params;
+  return <SafeguardRegistryPage unitId={params.unitId} />;
+}

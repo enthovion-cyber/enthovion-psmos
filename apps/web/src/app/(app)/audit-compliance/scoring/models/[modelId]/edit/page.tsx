@@ -1,2 +1,11 @@
 import { AuditScoringModelFormPage } from "@/features/audit/scoring/AuditScoringModelFormPage";
-export default function Page({ params }: { params: { modelId: string } }) { return <AuditScoringModelFormPage modelId={params.modelId} />; }
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function Page(props: { params: Promise<{ modelId: string }> }) {
+  const params = await props.params;
+  return <AuditScoringModelFormPage modelId={params.modelId} />;
+}

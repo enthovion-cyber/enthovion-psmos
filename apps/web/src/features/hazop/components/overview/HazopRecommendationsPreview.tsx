@@ -9,7 +9,7 @@ function badge(status?: string) {
   return <span className={`rounded px-2 py-1 text-[11px] font-semibold ${tone}`}>{value}</span>;
 }
 
-export function HazopRecommendationsPreview({ preview, canCreate, onNavigate }: { preview: any; canCreate?: boolean; onNavigate: (tab?: string) => void }) {
+export function HazopRecommendationsPreview({ preview, canCreate, onNavigate }: { preview: any; canCreate?: boolean | undefined; onNavigate: (tab?: string | undefined) => void }) {
   if (preview.restricted) return <Restricted title="5. Recommendations Preview" />;
   return (
     <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4">

@@ -7,7 +7,7 @@ import type { EngineeringDocumentValues } from '../../schemas/moc-engineering.sc
 
 const defaultValues: EngineeringDocumentValues = { documentType: 'P&ID redline / markup', title: '', description: '', controlledDocument: false, status: 'Uploaded', isRequired: false, requiredBeforeApproval: false, requiredBeforeStartup: false, requiredBeforeClosure: true };
 
-export function EngineeringDocumentUploadPanel({ documentTypes, onUpload, onLink, saving, readOnly }: { documentTypes: string[]; onUpload: (values: EngineeringDocumentValues & { file?: File }) => void; onLink: (values: EngineeringDocumentValues) => void; saving?: boolean; readOnly?: boolean }) {
+export function EngineeringDocumentUploadPanel({ documentTypes, onUpload, onLink, saving, readOnly }: { documentTypes: string[]; onUpload: (values: EngineeringDocumentValues & { file?: File | undefined }) => void; onLink: (values: EngineeringDocumentValues) => void; saving?: boolean | undefined; readOnly?: boolean | undefined }) {
   const [values, setValues] = useState<EngineeringDocumentValues>(defaultValues);
   const [file, setFile] = useState<File | undefined>();
   const update = (patch: Partial<EngineeringDocumentValues>) => setValues((current) => ({ ...current, ...patch }));

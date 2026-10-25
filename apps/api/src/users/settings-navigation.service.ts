@@ -25,7 +25,8 @@ export class SettingsNavigationService {
         card('domain', 'Domain settings', '/settings/company/domain', 'Allowed domains and auto-join controls.', ['company.domain.view', 'company.domain.manage', 'company.manage'], permissions),
         card('company-security', 'Security settings', '/settings/company/security', 'Authentication, MFA policy, and e-signature requirements.', ['settings.manage', 'company.manage'], permissions),
         card('branding', 'Branding', '/settings/company/branding', 'Logo, colors, and workspace visual identity.', ['company.manage', 'settings.manage'], permissions),
-        card('audit', 'Audit logs', '/settings/company/audit', 'Workspace audit trail and sensitive activity review.', ['audit.view', 'audit.export', 'audit:read'], permissions)
+        card('audit', 'Audit logs', '/settings/company/audit', 'Workspace audit trail and sensitive activity review.', ['audit.view', 'audit.export', 'audit:read'], permissions),
+        card('ai', 'AI & Intelligence', '/settings/ai', 'AI Copilot governance, approved models, and audit history.', ['settings.manage', 'settings.view'], permissions),
       ]),
       section('organization', 'Organization', [
         card('sites', 'Sites / Plants', '/settings/sites', 'Company sites, plants, and location hierarchy.', ['site.view', 'site.manage'], permissions),
@@ -139,3 +140,4 @@ function card(key: string, label: string, href: string, description: string, req
 function stringOrNull(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
+

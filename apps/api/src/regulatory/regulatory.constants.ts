@@ -121,6 +121,108 @@ export const regulatoryReviewStatuses = [
   'Rejected Foundation'
 ] as const;
 
+export const regulatoryReviewPackageStatuses = [
+  'Draft',
+  'Validation Failed',
+  'Pending Review',
+  'In Review',
+  'Returned For Correction',
+  'Request Info',
+  'Rejected',
+  'Approved',
+  'Approved With Conditions',
+  'Completed',
+  'Cancelled',
+  'Archived'
+] as const;
+
+export const regulatoryReviewStageStatuses = [
+  'Not Started',
+  'Pending',
+  'In Review',
+  'Delegated',
+  'Escalated',
+  'Approved',
+  'Approved With Conditions',
+  'Rejected',
+  'Returned',
+  'Request Info',
+  'Skipped',
+  'Completed',
+  'Overdue'
+] as const;
+
+export const regulatoryReviewDecisionTypes = [
+  'Approve',
+  'Approve With Conditions',
+  'Reject',
+  'Return For Correction',
+  'Request Information',
+  'Delegate',
+  'Escalate',
+  'Cancel',
+  'Resubmit',
+  'E-Sign'
+] as const;
+
+export const regulatoryReviewValidationStatuses = [
+  'Not Run',
+  'Passed',
+  'Passed With Warnings',
+  'Failed',
+  'Blocked',
+  'Override Accepted'
+] as const;
+
+export const regulatoryReviewESignStatuses = [
+  'Not Required',
+  'Required',
+  'Pending',
+  'Completed',
+  'Failed',
+  'Cancelled'
+] as const;
+
+export const regulatoryReviewConditionStatuses = [
+  'Open',
+  'In Progress',
+  'Overdue',
+  'Closed',
+  'Waived',
+  'Cancelled'
+] as const;
+
+export const regulatoryReviewStaleStatuses = [
+  'Current',
+  'Stale',
+  'Refresh Required',
+  'Resolved'
+] as const;
+
+export const regulatoryReviewerSelectionMethods = [
+  'Specific User',
+  'Required Role',
+  'Required Permission',
+  'Submitter Manager Foundation',
+  'Site Regulatory Owner',
+  'Company Regulatory Owner',
+  'Reviewer Group Foundation',
+  'Manual Selection'
+] as const;
+
+export const regulatoryReviewTriggerEvents = [
+  'Manual Submission',
+  'Regulatory Item Activation',
+  'Applicability Decision',
+  'Critical Applicability Decision',
+  'Obligation Approval',
+  'Compliance Status Change',
+  'Evidence Verification',
+  'Audit Mapping Verification',
+  'CAPA Closure',
+  'Source Changed'
+] as const;
+
 export const regulatoryReviewFrequencies = [
   'Monthly',
   'Quarterly',
@@ -951,6 +1053,121 @@ export const regulatoryCapaPackageStatuses = [
   'Archived'
 ] as const;
 
+export const regulatoryReportTypes = [
+  'Regulatory Register Report',
+  'Regulatory Item Detail Report',
+  'Regulatory Obligation Report',
+  'Regulatory Compliance Status Report',
+  'Regulatory Gap Report',
+  'Regulatory Evidence Register Report',
+  'Regulatory Evidence Package',
+  'Regulatory Audit Mapping Traceability Report',
+  'Regulatory CAPA / Action Remediation Report',
+  'Jurisdiction Coverage Report',
+  'Applicability Assessment Report',
+  'Non-Compliance Report',
+  'Overdue Obligations Report',
+  'Missing Evidence Report',
+  'Open Regulatory Actions Report',
+  'Review & Approval Decision Report',
+  'External Auditor Package Foundation',
+  'Regulator Submission Package Foundation',
+  'Management Review Package Foundation',
+  'Executive Regulatory Summary Foundation',
+  'Site Regulatory Compliance Report',
+  'Unit Regulatory Compliance Report',
+  'PSM-Critical Regulatory Report',
+  'Environmental Regulatory Report',
+  'Safety Regulatory Report',
+  'Custom'
+] as const;
+
+export const regulatoryChangeTypes = ['New Regulation', 'Regulation Amendment', 'Regulation Repeal', 'Standard Revision', 'Standard Withdrawal', 'Permit Condition Change', 'License Requirement Change', 'Corporate Requirement Change', 'Site Requirement Change', 'Jurisdiction Change', 'Authority Change', 'Effective Date Change', 'Compliance Deadline Change', 'Evidence Requirement Change', 'Reporting Requirement Change', 'Inspection Requirement Change', 'Training Requirement Change', 'PSM Requirement Change', 'Environmental Requirement Change', 'Safety Requirement Change', 'Manual Update', 'Custom'] as const;
+export const regulatoryChangeSourceTypes = ['Manual Entry', 'Official Authority Website Foundation', 'Government Gazette Foundation', 'Regulator Bulletin Foundation', 'Standards Body Notice Foundation', 'Permit / License Document', 'Corporate Standard Update', 'Site Procedure Update', 'Audit Finding Trigger', 'Legal Counsel Input Foundation', 'External Consultant Input Foundation', 'Internal Review', 'Custom'] as const;
+export const regulatoryChangeStatuses = ['Draft', 'New Update', 'Triage', 'Impact Assessment Pending', 'Impact Assessment In Progress', 'Under Review', 'Approved Foundation', 'Rejected Foundation', 'Implementation Pending', 'Implemented', 'Superseded', 'Cancelled', 'Archived'] as const;
+export const regulatoryChangeImpactStatuses = ['Not Assessed', 'No Impact', 'Low Impact', 'Medium Impact', 'High Impact', 'Critical Impact', 'Impact Review Required', 'Action Required', 'Evidence Update Required', 'Obligation Update Required', 'Applicability Review Required', 'Compliance Reassessment Required', 'Audit Mapping Review Required', 'Report Regeneration Required', 'Implemented Foundation', 'Stale'] as const;
+export const regulatoryChangeSourceStatuses = ['Active', 'Paused', 'Needs Review', 'Error Foundation', 'Archived'] as const;
+export const regulatoryChangeAffectedRecordTypes = ['Regulatory Item', 'Jurisdiction', 'Authority', 'Applicability Assessment', 'Regulatory Obligation', 'Compliance Assessment', 'Compliance Gap', 'Evidence Requirement', 'Evidence Link', 'Audit Mapping', 'Action Link', 'CAPA Package', 'Review Package', 'Report', 'Report Package', 'PSM Module Link Foundation', 'Custom'] as const;
+export const regulatoryChangeImpactActions = ['No Action Required', 'Review Required', 'Update Required', 'New Version Required', 'Mark Stale', 'Reassess Applicability', 'Update Obligation', 'Reassess Compliance', 'Update Evidence Requirement', 'Replace Evidence', 'Review Audit Mapping', 'Create Action', 'Create CAPA', 'Regenerate Report', 'Submit For Review', 'Archive / Supersede', 'Custom'] as const;
+
+export const regulatoryReportStatuses = [
+  'Draft',
+  'Queued',
+  'Generating',
+  'Generated',
+  'Generation Failed',
+  'Pending Approval',
+  'Approved',
+  'Approved With Conditions',
+  'Locked',
+  'Exported',
+  'Stale',
+  'Historical',
+  'Superseded',
+  'Archived'
+] as const;
+
+export const regulatoryReportReadinessStatuses = [
+  'Ready',
+  'Ready With Warnings',
+  'Not Ready',
+  'Missing Source',
+  'Missing Evidence',
+  'Restricted Evidence Blocked',
+  'Open Critical Gap',
+  'Open CAPA',
+  'Pending Approval',
+  'Stale Source',
+  'Template Missing',
+  'Export Adapter Unavailable',
+  'Permission Missing',
+  'Validation Failed'
+] as const;
+
+export const regulatoryReportStaleStatuses = ['Current', 'Stale', 'Potentially Stale', 'Resolved'] as const;
+
+export const regulatoryReportPackageTypes = [
+  'Regulatory Compliance Package',
+  'Evidence Package',
+  'External Auditor Package Foundation',
+  'Regulator Submission Package Foundation',
+  'Management Review Package Foundation',
+  'Site Compliance Package',
+  'Unit Compliance Package',
+  'PSM-Critical Package',
+  'Environmental Compliance Package',
+  'Safety Compliance Package',
+  'Custom'
+] as const;
+
+export const regulatoryReportPackageStatuses = ['Draft', 'Preparing', 'Prepared', 'Ready For Report', 'Stale', 'Archived'] as const;
+
+export const regulatoryReportExportFormats = ['PDF', 'DOCX', 'XLSX', 'CSV', 'ZIP Package', 'JSON Manifest Foundation'] as const;
+
+export const regulatoryReportAudiences = [
+  'Internal Compliance Team',
+  'Site Leadership',
+  'Corporate Leadership',
+  'Management Review',
+  'Internal Auditor',
+  'External Auditor Foundation',
+  'Regulator Foundation',
+  'Customer Foundation',
+  'Insurance / Loss Prevention Foundation',
+  'Custom'
+] as const;
+
+export const regulatoryReportConfidentialityLevels = [
+  'Internal',
+  'Restricted',
+  'Confidential',
+  'Legal Sensitive',
+  'External Auditor Only Foundation',
+  'Regulator Only Foundation'
+] as const;
+
+export const regulatoryReportJobStatuses = ['Queued', 'Preparing Snapshot', 'Validating', 'Generating', 'Uploading', 'Completed', 'Failed', 'Cancelled', 'Retry Pending'] as const;
+
 export const regulatoryPermissions = [
   'regulatory.view',
   'regulatory.dashboard.view',
@@ -1164,7 +1381,96 @@ export const regulatoryPermissions = [
   'regulatory.action.settings.edit',
   'regulatory.review.view',
   'regulatory.review.submit',
+  'regulatory.review.dashboard.view',
+  'regulatory.review.inbox.view',
+  'regulatory.review.submission.view',
+  'regulatory.review.package.view',
+  'regulatory.review.package.create',
+  'regulatory.review.package.submit',
+  'regulatory.review.package.cancel',
+  'regulatory.review.package.resubmit',
+  'regulatory.review.package.refresh_snapshot',
+  'regulatory.review.package.mark_stale',
+  'regulatory.review.package.archive',
+  'regulatory.review.validation.view',
+  'regulatory.review.validation.run',
+  'regulatory.review.decision.approve',
+  'regulatory.review.decision.approve_with_conditions',
+  'regulatory.review.decision.reject',
+  'regulatory.review.decision.return',
+  'regulatory.review.decision.request_info',
+  'regulatory.review.decision.override_validation',
+  'regulatory.review.decision.delegate',
+  'regulatory.review.decision.escalate',
+  'regulatory.review.esign.view',
+  'regulatory.review.esign.sign',
+  'regulatory.review.condition.view',
+  'regulatory.review.condition.create',
+  'regulatory.review.condition.edit',
+  'regulatory.review.condition.close',
+  'regulatory.review.rule.view',
+  'regulatory.review.rule.create',
+  'regulatory.review.rule.edit',
+  'regulatory.review.rule.archive',
+  'regulatory.review.source.lock',
+  'regulatory.review.source.reopen',
+  'regulatory.review.history.view',
+  'regulatory.review.settings.edit',
   'regulatory.report.view',
+  'regulatory.report.dashboard.view',
+  'regulatory.report.register.view',
+  'regulatory.report.create',
+  'regulatory.report.generate',
+  'regulatory.report.regenerate',
+  'regulatory.report.preview',
+  'regulatory.report.download',
+  'regulatory.report.export',
+  'regulatory.report.archive',
+  'regulatory.report.lock',
+  'regulatory.report.unlock',
+  'regulatory.report.mark_historical',
+  'regulatory.report.submit_approval',
+  'regulatory.report.template.view',
+  'regulatory.report.template.create',
+  'regulatory.report.template.edit',
+  'regulatory.report.template.archive',
+  'regulatory.report.package.view',
+  'regulatory.report.package.create',
+  'regulatory.report.package.prepare',
+  'regulatory.report.package.archive',
+  'regulatory.report.restricted_evidence.include',
+  'regulatory.report.restricted_evidence.view',
+  'regulatory.report.access_log.view',
+  'regulatory.report.version.view',
+  'regulatory.report.job.view',
+  'regulatory.report.job.retry',
+  'regulatory.report.job.cancel',
+  'regulatory.report.history.view',
+  'regulatory.report.settings.edit',
+  'regulatory.change.view',
+  'regulatory.change.dashboard.view',
+  'regulatory.change.register.view',
+  'regulatory.change.create',
+  'regulatory.change.edit',
+  'regulatory.change.archive',
+  'regulatory.change.implement',
+  'regulatory.change.compare_versions',
+  'regulatory.change.source.view',
+  'regulatory.change.source.create',
+  'regulatory.change.source.edit',
+  'regulatory.change.source.archive',
+  'regulatory.change.watchlist.view',
+  'regulatory.change.impact.view',
+  'regulatory.change.impact.create',
+  'regulatory.change.impact.edit',
+  'regulatory.change.impact.approve_foundation',
+  'regulatory.change.affected_records.view',
+  'regulatory.change.affected_records.manage',
+  'regulatory.change.mark_stale_records',
+  'regulatory.change.create_action_foundation',
+  'regulatory.change.submit_review',
+  'regulatory.change.history.view',
+  'regulatory.change.settings.edit',
   'regulatory.history.view',
   'regulatory.settings.view',
   'regulatory.settings.edit'

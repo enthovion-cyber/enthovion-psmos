@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { SiteGuard } from '../common/guards/site.guard';
 import { SupabaseModule } from '../database/supabase.module';
@@ -21,6 +21,7 @@ import { TenantsController } from './tenants.controller';
 import { TenantsService } from './tenants.service';
 import { WorkspaceController } from './workspace.controller';
 
+@Global()
 @Module({
   imports: [SupabaseModule, AuditModule, PermissionsModule],
   controllers: [TenantsController, WorkspaceController],

@@ -97,6 +97,18 @@ export function ActionCreateModal({ users, onClose }: { users: IamUser[]; onClos
             </select>
           </label>
           <Field required label="Due Date" type="date" value={form.dueDate} onChange={(dueDate) => setForm({ ...form, dueDate })} />
+          <label className="text-sm">
+            <span className="mb-2 block text-[var(--psm-muted)]">Startup Timing Gate</span>
+            <select
+              className="psm-input w-full px-3"
+              value={(form as any).timingGate ?? 'NOT_APPLICABLE'}
+              onChange={(event) => setForm({ ...form, timingGate: event.target.value } as any)}
+            >
+              <option value="NOT_APPLICABLE">Not Applicable (Standard CAPA)</option>
+              <option value="PRE_STARTUP">Pre-Startup Blocker (PSSR Hard Gate)</option>
+              <option value="POST_STARTUP">Post-Startup Action</option>
+            </select>
+          </label>
           <label className="text-sm md:col-span-2">
             <span className="mb-2 block text-[var(--psm-muted)]">Description *</span>
             <textarea required className="psm-input min-h-28 w-full p-3" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />

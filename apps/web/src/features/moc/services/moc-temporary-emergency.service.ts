@@ -17,5 +17,6 @@ export const mocTemporaryEmergencyService = {
   updateEmergency: (id: string, values: Record<string, any>) => api.patch(`/moc/${id}/emergency-control`, values).then(unwrap<any>),
   completeEmergencyReview: (id: string, values: Record<string, any>) => api.post(`/moc/${id}/emergency-control/complete-review`, values).then(unwrap<any>),
   createEmergencyFollowupAction: (id: string, values: Record<string, any>) => api.post(`/moc/${id}/emergency-control/create-follow-up-action`, values).then(unwrap<any>),
-  convertEmergencyToPermanent: (id: string, values: Record<string, any>) => api.post(`/moc/${id}/emergency-control/convert-to-permanent`, values).then(unwrap<any>)
+  convertEmergencyToPermanent: (id: string, values: Record<string, any>) => api.post(`/moc/${id}/emergency-control/convert-to-permanent`, values).then(unwrap<any>),
+  runExpiryCheck: () => api.post('/moc/temporary/run-expiry-check').then(unwrap<any>)
 };

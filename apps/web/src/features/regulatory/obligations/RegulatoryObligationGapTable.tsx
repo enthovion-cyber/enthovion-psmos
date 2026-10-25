@@ -7,7 +7,7 @@ export function RegulatoryObligationGapTable({ rows, onResolve }: { rows?: Regul
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-[var(--psm-line)] text-sm">
-        <thead className="bg-[var(--psm-surface-2)] text-left text-xs uppercase tracking-[.12em] text-[var(--psm-muted)]"><tr>{['Gap', 'Type', 'Severity', 'Criticality', 'Owner', 'Due Date', 'Status', 'Recommended Fix', 'Actions'].map((head) => <th key={head} className="px-3 py-3">{head}</th>)}</tr></thead>
+        <thead className="bg-[var(--psm-surface-2)] text-left text-xs uppercase tracking-[.12em] text-[var(--psm-muted)]"><tr>{['Gap', 'Type', 'Severity', 'Criticality', 'Owner', 'Due Date', 'Status', 'Universal Action', 'Recommended Fix', 'Actions'].map((head) => <th key={head} className="px-3 py-3">{head}</th>)}</tr></thead>
         <tbody className="divide-y divide-[var(--psm-line)]">
           {data.map((gap) => (
             <tr key={gap.id}>
@@ -18,6 +18,19 @@ export function RegulatoryObligationGapTable({ rows, onResolve }: { rows?: Regul
               <td className="px-3 py-3">{gap.owner_user_id ?? 'Unassigned'}</td>
               <td className="px-3 py-3">{gap.due_date ? new Date(gap.due_date).toLocaleDateString() : 'Not Set'}</td>
               <td className="px-3 py-3"><RegulatoryBadge tone={gap.gap_status === 'Resolved' ? 'good' : 'warn'}>{gap.gap_status}</RegulatoryBadge></td>
+              <td className="px-3 py-3">
+                {gap.universal_action_id || gap.action_id ? (
+                  <a
+                    href={`/actions?id=${gap.universal_action_id || gap.action_id}`}
+                    className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-700 hover:underline dark:bg-blue-500/20 dark:text-blue-300"
+                    title={`Universal Action ID: ${gap.universal_action_id || gap.action_id}`}
+                  >
+                    <span>🎯</span> {gap.action_number_snapshot || (String(gap.action_id).startsWith('ACT') ? gap.action_id : 'Universal Action')}
+                  </a>
+                ) : (
+                  <span className="text-xs text-[var(--psm-muted)]">-</span>
+                )}
+              </td>
               <td className="max-w-md px-3 py-3 text-[var(--psm-muted)]">{gap.recommended_fix ?? gap.gap_description ?? 'No recommendation entered'}</td>
               <td className="px-3 py-3">{onResolve && gap.gap_status !== 'Resolved' ? <RegulatoryButton variant="secondary" onClick={() => onResolve(gap)}>Resolve</RegulatoryButton> : null}</td>
             </tr>

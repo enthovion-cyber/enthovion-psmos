@@ -1180,6 +1180,12 @@ export class LopaController {
   @Permissions(PermissionKeys.LOPASilExport)
   exportSil(@CurrentUser() user: RequestUser, @Param('id') id: string) { return this.lopa.silDeterminationTab(user.tenantId, id, this.scope(user)); }
 
+  @Post(':id/sil-determination/sync-to-equipment-and-mi')
+  @Permissions(PermissionKeys.LOPASilDetermine)
+  syncSilToEquipmentAndMi(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.lopa.syncApprovedSifsAndIplsToEquipmentAndMi(user.tenantId, user.id, id, this.scope(user));
+  }
+
   @Get(':id/attachments')
   @Permissions(PermissionKeys.LOPAAttachmentsView)
   attachments(@CurrentUser() user: RequestUser, @Param('id') id: string, @Query() query: LopaAttachmentFilterDto) { return this.lopa.attachmentsTab(user.tenantId, id, query, this.scope(user)); }

@@ -18,11 +18,13 @@ import { RecordImpactUpdatePanel } from '../linked-records/RecordImpactUpdatePan
 import { RequiredLinksReadinessPanel } from '../linked-records/RequiredLinksReadinessPanel';
 import { SourceGeneratedRecordsPanel } from '../linked-records/SourceGeneratedRecordsPanel';
 import { TabStatePanel, errorText } from '../shared/IncidentTabPrimitives';
+import { SpawnMocModal } from '../shared/SpawnMocModal';
 
 export function LinkedRecordsTab({ incidentId }: { incidentId: string }) {
   const { data, isLoading, error, refetch } = useIncidentLinkedRecords(incidentId);
   const mutations = useIncidentLinkedRecordsMutations(incidentId);
   const [open, setOpen] = useState(false);
+  const [spawnMocOpen, setSpawnMocOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
   const [message, setMessage] = useState<string | null>(null);
   const saving = Object.values(mutations).some((mutation: any) => mutation.isPending);
@@ -168,7 +170,20 @@ export function LinkedRecordsTab({ incidentId }: { incidentId: string }) {
   };
 
   return <div className="grid gap-4">
-    <LinkedRecordsHeader data={data} saving={saving} message={message} onAdd={add} onAutoDetect={autoDetect} onCreateFollowup={() => createFollowup()} onRefreshStatus={refreshAll} onRequestReview={requestReview} onExport={exportIndex} onSaveChanges={() => setMessage('Open a linked record row to save detailed changes.')} onRefresh={() => refetch()} />
+    <LinkedRecordsHeader
+      data={data}
+      saving={saving}
+      message={message}
+      onAdd={add}
+      onSpawnMoc={() => setSpawnMocOpen(true)}
+      onAutoDetect={autoDetect}
+      onCreateFollowup={() => createFollowup()}
+      onRefreshStatus={refreshAll}
+      onRequestReview={requestReview}
+      onExport={exportIndex}
+      onSaveChanges={() => setMessage('Open a linked record row to save detailed changes.')}
+      onRefresh={() => refetch()}
+    />
     <LinkedRecordsSummaryCards cards={data.summaryCards ?? []} />
     <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
       <LinkedRecordsRegister rows={data.linkedRecordsRegister ?? []} onEdit={edit} onDelete={unlink} onRefresh={refreshRow} onImpact={updateImpact} onFollowup={createFollowup} />
@@ -193,6 +208,14 @@ export function LinkedRecordsTab({ incidentId }: { incidentId: string }) {
     </div>
     <LinkedRecordsChangeHistoryPanel rows={data.changeHistory ?? []} />
     <AddLinkRecordDrawer open={open} form={form} set={set} context={data.context} saving={saving} onClose={() => setOpen(false)} onSave={save} />
+    <SpawnMocModal
+      isOpen={spawnMocOpen}
+      onClose={() => setSpawnMocOpen(false)}
+      onSuccess={() => { refetch(); setMessage('Management of Change record spawned and linked successfully.'); }}
+      incidentId={incidentId}
+      incidentNumber={data?.header?.incidentNumber}
+      incidentTitle={data?.header?.incidentTitle}
+    />
   </div>;
 }
 

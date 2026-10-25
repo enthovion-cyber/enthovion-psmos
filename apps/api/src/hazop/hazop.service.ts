@@ -4532,11 +4532,11 @@ export class HazopService {
     });
     try {
       if (module === 'MOC') {
-        const row = await this.db.single<any>(this.db.from('moc_requests').select('*').eq('tenant_id', tenantId).eq('id', id).maybeSingle());
+        const row = await this.db.single<any>(this.db.from('mocs').select('*').eq('tenant_id', tenantId).eq('id', id).maybeSingle());
         return pick(row, ['status'], ['moc_number', 'change_number'], ['title', 'description']);
       }
       if (module === 'PSSR') {
-        const row = await this.db.single<any>(this.db.from('pssr_reviews').select('*').eq('tenant_id', tenantId).eq('id', id).maybeSingle());
+        const row = await this.db.single<any>(this.db.from('pssrs').select('*').eq('tenant_id', tenantId).eq('id', id).maybeSingle());
         return pick(row, ['status'], ['pssr_number'], ['title', 'description']);
       }
       if (module === 'PTW') {
@@ -4544,8 +4544,8 @@ export class HazopService {
         return pick(row, ['status'], ['permit_number'], ['work_description', 'title']);
       }
       if (module === 'Equipment') {
-        const row = await this.db.single<any>(this.db.from('equipment').select('*').eq('tenant_id', tenantId).eq('id', id).maybeSingle());
-        return pick(row, ['status', 'operational_status'], ['tag', 'equipment_tag'], ['name', 'description']);
+        const row = await this.db.single<any>(this.db.from('Equipment').select('*').eq('tenantId', tenantId).eq('id', id).maybeSingle());
+        return pick(row, ['status', 'operationalStatus'], ['tag'], ['name', 'description']);
       }
       if (module.includes('Document')) {
         const row = await this.db.single<any>(this.db.from('documents').select('*').eq('tenant_id', tenantId).eq('id', id).maybeSingle());
@@ -4563,10 +4563,10 @@ export class HazopService {
 
   private async linkedSearchSources(tenantId: string) {
     const [mocs, pssrs, permits, equipment, documents, actions, studies] = await Promise.all([
-      this.safeMany<any>(this.db.from('moc_requests').select('id,moc_number,title,description,status').eq('tenant_id', tenantId).limit(100)),
-      this.safeMany<any>(this.db.from('pssr_reviews').select('id,pssr_number,title,description,status').eq('tenant_id', tenantId).limit(100)),
+      this.safeMany<any>(this.db.from('mocs').select('id,moc_number,title,description,status').eq('tenant_id', tenantId).limit(100)),
+      this.safeMany<any>(this.db.from('pssrs').select('id,pssr_number,title,description,status').eq('tenant_id', tenantId).limit(100)),
       this.safeMany<any>(this.db.from('permits').select('id,permit_number,work_description,status').eq('tenant_id', tenantId).limit(100)),
-      this.safeMany<any>(this.db.from('equipment').select('id,tag,name,status,operational_status').eq('tenant_id', tenantId).limit(100)),
+      this.safeMany<any>(this.db.from('Equipment').select('id,tag,name,status').eq('tenantId', tenantId).limit(100)),
       this.safeMany<any>(this.db.from('documents').select('id,document_number,title,status').eq('tenant_id', tenantId).limit(100)),
       this.safeMany<any>(this.db.from('Action').select('id,actionNumber,title,status').eq('tenantId', tenantId).limit(100)),
       this.safeMany<any>(this.db.from('hazop_studies').select('id,study_number,title,status').eq('tenant_id', tenantId).limit(100))

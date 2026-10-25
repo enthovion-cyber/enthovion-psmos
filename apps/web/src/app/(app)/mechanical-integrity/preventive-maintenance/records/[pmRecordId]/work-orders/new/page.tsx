@@ -1,5 +1,11 @@
 import { WorkOrderFormPage } from '@/features/mechanical-integrity/work-orders/WorkOrderFormPage';
 
-export default function MechanicalIntegrityNewPmWorkOrderPage({ params }: { params: { pmRecordId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function MechanicalIntegrityNewPmWorkOrderPage(props: { params: Promise<{ pmRecordId: string }> }) {
+  const params = await props.params;
   return <WorkOrderFormPage preset={{ sourceModule: 'Preventive Maintenance', sourceRecordId: params.pmRecordId }} />;
 }

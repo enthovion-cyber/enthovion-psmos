@@ -16,6 +16,14 @@ export class MocCommunicationTrainingService {
     private readonly actions: ActionsService
   ) {}
 
+  private async safeWrite(promise: PromiseLike<any>) {
+    try {
+      return await promise;
+    } catch {
+      return null;
+    }
+  }
+
   async aggregate(tenantId: string, id: string, scope: Scope) {
     const moc = await this.getMoc(tenantId, id, scope);
     const [stakeholders, plan, logs, acknowledgements, requirements, assignments, blockers] = await Promise.all([
@@ -185,6 +193,25 @@ export class MocCommunicationTrainingService {
       const action = await this.actions.create(tenantId, actorId, { sourceModule: 'moc', sourceRecordId: id, sourceType: 'Training Requirement', title: row.title, description: row.description ?? row.training_topic, priority: 'HIGH', ownerId: row.owner_id ?? actorId, dueDate: row.due_date, siteId: moc.site_id, evidenceRequired: row.evidence_required, verificationRequired: row.verification_required } as any);
       await this.db.single(this.db.from('moc_training_requirements').update({ linked_action_id: action.id }).eq('tenant_id', tenantId).eq('id', row.id).select().single());
     }
+    // Synchronize to central Training & Competency module (training_moc_requirements)
+    await this.safeWrite(this.db.from('training_moc_requirements').upsert({
+      id: row.id,
+      company_id: moc.company_id ?? tenantId,
+      site_id: moc.site_id,
+      moc_id: id,
+      requirement_title: row.title,
+      requirement_source: 'MOC Communication & Training',
+      training_required: true,
+      training_required_reason: row.description ?? row.title,
+      safety_critical: Boolean(row.required_before_startup),
+      startup_blocker: Boolean(row.required_before_startup),
+      closure_blocker: Boolean(row.required_before_closure),
+      requirement_status: 'In Progress',
+      owner_user_id: row.owner_id,
+      due_date: row.due_date,
+      created_by: actorId,
+      updated_by: actorId
+    }));
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_REQUIREMENT_CREATED', row.title, null, row);
     return row;
   }
@@ -194,6 +221,17 @@ export class MocCommunicationTrainingService {
     const before = await this.db.single<any>(this.db.from('moc_training_requirements').select('*').eq('tenant_id', tenantId).eq('id', requirementId).maybeSingle());
     if (!before) throw new NotFoundException('Training requirement not found');
     const row = await this.db.single<any>(this.db.from('moc_training_requirements').update({ title: dto.title ?? before.title, description: dto.description ?? before.description, training_type: dto.trainingType ?? before.training_type, owner_id: dto.ownerId ?? before.owner_id, due_date: dto.dueDate ?? before.due_date, required_before_startup: dto.requiredBeforeStartup ?? before.required_before_startup, required_before_closure: dto.requiredBeforeClosure ?? before.required_before_closure, evidence_required: dto.evidenceRequired ?? before.evidence_required, verification_required: dto.verificationRequired ?? before.verification_required, status: dto.status ?? before.status, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', requirementId).select().single());
+    await this.safeWrite(this.db.from('training_moc_requirements').update({
+      requirement_title: row.title,
+      training_required_reason: row.description ?? row.title,
+      safety_critical: Boolean(row.required_before_startup),
+      startup_blocker: Boolean(row.required_before_startup),
+      closure_blocker: Boolean(row.required_before_closure),
+      owner_user_id: row.owner_id,
+      due_date: row.due_date,
+      updated_by: actorId,
+      updated_at: new Date().toISOString()
+    }).eq('id', requirementId));
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_REQUIREMENT_UPDATED', row.title, before, row);
     return row;
   }
@@ -201,6 +239,7 @@ export class MocCommunicationTrainingService {
   async deleteTrainingRequirement(tenantId: string, actorId: string, id: string, requirementId: string, scope: Scope) {
     const moc = await this.getMoc(tenantId, id, scope);
     const row = await this.db.single<any>(this.db.from('moc_training_requirements').delete().eq('tenant_id', tenantId).eq('id', requirementId).select().single());
+    await this.safeWrite(this.db.from('training_moc_requirements').delete().eq('id', requirementId));
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_REQUIREMENT_DELETED', row.title ?? row.training_topic, row, null);
     return { deleted: true, id: requirementId };
   }
@@ -217,6 +256,25 @@ export class MocCommunicationTrainingService {
     add(Boolean(answers.trainingRequired) && !rows.length, 'General MOC awareness training', 'General awareness', 'Affected roles');
     if (!rows.length) return [];
     const inserted = await this.db.many<any>(this.db.from('moc_training_requirements').insert(rows).select());
+    for (const r of inserted) {
+      await this.safeWrite(this.db.from('training_moc_requirements').upsert({
+        id: r.id,
+        company_id: moc.company_id ?? tenantId,
+        site_id: moc.site_id,
+        moc_id: id,
+        requirement_title: r.title,
+        requirement_source: 'MOC Impact Assessment',
+        training_required: true,
+        training_required_reason: r.description,
+        safety_critical: true,
+        startup_blocker: true,
+        closure_blocker: true,
+        requirement_status: 'In Progress',
+        owner_user_id: actorId,
+        created_by: actorId,
+        updated_by: actorId
+      }));
+    }
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_GENERATED_FROM_IMPACT', `${inserted.length} training requirement(s) generated`, null, inserted);
     return inserted;
   }
@@ -225,6 +283,20 @@ export class MocCommunicationTrainingService {
     const moc = await this.getMoc(tenantId, id, scope);
     const users = dto.userIds?.length ? dto.userIds : [dto.userId ?? null];
     const rows = await this.db.many<any>(this.db.from('moc_training_assignments').insert(users.map((userId: string | null) => ({ id: crypto.randomUUID(), tenant_id: tenantId, company_id: moc.company_id, site_id: moc.site_id, moc_id: id, training_requirement_id: requirementId, user_id: userId, role_id: dto.roleId ?? null, department_id: dto.departmentId ?? null, status: 'Assigned' }))).select());
+    for (const a of rows) {
+      await this.safeWrite(this.db.from('training_moc_assignments').upsert({
+        id: a.id,
+        company_id: moc.company_id ?? tenantId,
+        site_id: moc.site_id,
+        moc_id: id,
+        requirement_id: requirementId,
+        worker_id: a.user_id,
+        role_id: a.role_id,
+        assignment_status: a.status ?? 'Assigned',
+        completion_status: 'Assigned',
+        startup_blocker: true
+      }));
+    }
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_ASSIGNED', `${rows.length} training assignment(s) created`, null, rows);
     return rows;
   }
@@ -237,6 +309,11 @@ export class MocCommunicationTrainingService {
     const moc = await this.getMoc(tenantId, id, scope);
     const before = await this.db.single<any>(this.db.from('moc_training_assignments').select('*').eq('tenant_id', tenantId).eq('id', assignmentId).maybeSingle());
     const row = await this.db.single<any>(this.db.from('moc_training_assignments').update({ status: dto.status ?? before?.status, evidence_attachment_id: dto.evidenceAttachmentId ?? before?.evidence_attachment_id, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', assignmentId).select().single());
+    await this.safeWrite(this.db.from('training_moc_assignments').update({
+      assignment_status: row.status,
+      completion_status: row.status,
+      updated_at: new Date().toISOString()
+    }).eq('id', assignmentId));
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_ASSIGNMENT_UPDATED', 'Training assignment updated', before, row);
     return row;
   }
@@ -244,6 +321,10 @@ export class MocCommunicationTrainingService {
   completeAssignment(tenantId: string, actorId: string, id: string, assignmentId: string, dto: Record<string, any>, scope: Scope) {
     return this.updateTrainingAssignment(tenantId, actorId, id, assignmentId, { status: 'Completed', evidenceAttachmentId: dto.evidenceAttachmentId, completedAt: new Date().toISOString() }, scope).then(async (row) => {
       await this.db.single(this.db.from('moc_training_assignments').update({ completed_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', assignmentId).select().single());
+      await this.safeWrite(this.db.from('training_moc_assignments').update({
+        completion_status: 'Completed',
+        completed_at: new Date().toISOString()
+      }).eq('id', assignmentId));
       return row;
     });
   }
@@ -252,6 +333,17 @@ export class MocCommunicationTrainingService {
     const moc = await this.getMoc(tenantId, id, scope);
     const before = await this.db.single<any>(this.db.from('moc_training_assignments').select('*').eq('tenant_id', tenantId).eq('id', assignmentId).maybeSingle());
     const row = await this.db.single<any>(this.db.from('moc_training_assignments').update({ status: 'Verified', verified_by: actorId, verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', assignmentId).select().single());
+    await this.safeWrite(this.db.from('training_moc_assignments').update({
+      assignment_status: 'Verified',
+      completion_status: 'Verified',
+      verified_by: actorId,
+      verified_at: new Date().toISOString()
+    }).eq('id', assignmentId));
+    await this.safeWrite(this.db.from('training_moc_blockers').update({
+      blocker_status: 'Resolved',
+      resolved_by: actorId,
+      resolved_at: new Date().toISOString()
+    }).eq('assignment_id', assignmentId).eq('blocker_status', 'Open'));
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_VERIFIED', dto.comment ?? 'Training verified', before, row);
     return row;
   }
@@ -260,6 +352,17 @@ export class MocCommunicationTrainingService {
     if (!dto.reason) throw new BadRequestException('Waiver requires reason');
     const moc = await this.getMoc(tenantId, id, scope);
     const row = await this.db.single<any>(this.db.from('moc_training_assignments').update({ status: 'Waived', waiver_reason: dto.reason, waived_by: actorId, waived_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', assignmentId).select().single());
+    await this.safeWrite(this.db.from('training_moc_assignments').update({
+      assignment_status: 'Waived',
+      completion_status: 'Waived',
+      updated_at: new Date().toISOString()
+    }).eq('id', assignmentId));
+    await this.safeWrite(this.db.from('training_moc_blockers').update({
+      blocker_status: 'Waived',
+      resolved_by: actorId,
+      resolved_at: new Date().toISOString(),
+      closure_note: dto.reason
+    }).eq('assignment_id', assignmentId).eq('blocker_status', 'Open'));
     await this.history(tenantId, moc, actorId, 'Training', 'MOC_TRAINING_WAIVED', dto.reason, null, row);
     return row;
   }
@@ -285,7 +388,7 @@ export class MocCommunicationTrainingService {
   }
 
   private createAckForStakeholder(tenantId: string, moc: any, stakeholder: any, logId?: string) {
-    return this.db.single(this.db.from('moc_acknowledgements').insert({ id: crypto.randomUUID(), tenant_id: tenantId, company_id: moc.company_id, site_id: moc.site_id, moc_id: moc.id, communication_log_id: logId ?? null, stakeholder_id: stakeholder.id, user_id: stakeholder.user_id, role_id: stakeholder.role_id, status: stakeholder.acknowledgement_required ? 'Pending' : 'Not Required' }).select().single()).catch(() => null);
+    return this.db.single(this.db.from('moc_acknowledgements').insert({ id: crypto.randomUUID(), tenant_id: tenantId, company_id: moc.company_id, site_id: moc.site_id, moc_id: moc.id, communication_log_id: logId ?? null, stakeholder_id: stakeholder.id, user_id: stakeholder.user_id, role_id: stakeholder.role_id, status: stakeholder.acknowledgement_required ? 'Pending' : 'Not Required' }).select().single()).then(null, () => null);
   }
 
   private async getMoc(tenantId: string, id: string, scope: Scope) {

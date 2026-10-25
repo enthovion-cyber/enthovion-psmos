@@ -25,30 +25,30 @@ export function PermitSidebarList({ selectedId }: { selectedId: string }) {
   }, [query.data, search, status]);
 
   return (
-    <aside className="psm-card sticky top-6 flex h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface-1,inherit)] shadow-sm backdrop-blur-sm">
+    <aside className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1829] shadow-xs dark:shadow-xl">
       {/* Header & Filter Controls */}
-      <div className="flex-shrink-0 border-b border-[var(--psm-line)] p-4 bg-[var(--psm-surface-1,inherit)]/80 backdrop-blur-md z-10">
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 p-3 bg-white/95 dark:bg-[#0c1829]/95 backdrop-blur-md z-10">
+        <div className="flex items-center justify-between mb-2.5">
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--psm-muted)]">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Active Permits
             </h2>
-            <p className="mt-0.5 text-xs font-medium text-[var(--psm-muted)]/80">
+            <p className="mt-0.5 text-[11px] font-medium text-slate-400">
               {permits.length} matching
             </p>
           </div>
-          <div className="p-1.5 rounded-md bg-[var(--psm-surface-2)] border border-[var(--psm-line)]/50">
-            <Filter size={14} className="text-[var(--psm-muted)]" />
+          <div className="p-1 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <Filter size={13} className="text-slate-500 dark:text-slate-400" />
           </div>
         </div>
 
         {/* Search Input */}
-        <label className="flex items-center gap-2 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 py-2 text-sm focus-within:ring-1 focus-within:ring-primary/40 focus-within:border-primary/50 transition-all duration-200">
-          <Search size={14} className="text-[var(--psm-muted)] shrink-0" />
+        <label className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs focus-within:ring-1 focus-within:ring-primary/40 focus-within:border-primary/50 transition-all duration-200">
+          <Search size={13} className="text-slate-400 shrink-0" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="w-full bg-transparent outline-none placeholder:text-[var(--psm-muted)]/60 text-sm font-medium"
+            className="w-full bg-transparent outline-none placeholder:text-slate-400 text-xs font-medium text-slate-800 dark:text-slate-200"
             placeholder="Search permit, equipment..."
           />
         </label>
@@ -57,7 +57,7 @@ export function PermitSidebarList({ selectedId }: { selectedId: string }) {
         <select
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          className="mt-2.5 w-full rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 py-2 text-sm font-medium outline-none cursor-pointer focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all duration-200"
+          className="mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 outline-none cursor-pointer focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all duration-200"
         >
           <option value="">All statuses</option>
           {[

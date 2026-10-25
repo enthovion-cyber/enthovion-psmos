@@ -22,16 +22,16 @@ export function MOCPSSRStartupReadinessTab({ moc }: { moc: any }) {
   const data = readiness.data;
   const readOnly = ['Closed', 'Cancelled'].includes(moc.status);
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-6">
       <StartupReadinessSummaryCard data={data} />
-      <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid min-w-0 grid-cols-1 gap-6 2xl:grid-cols-[0.8fr_1.2fr]">
         <PSSRRequirementPanel pssr={data?.pssr} />
         <LinkedPSSRRecordPanel linked={data?.linkedPssr} onTrigger={() => mutations.triggerPssr.mutate({ triggerReason: 'Triggered from startup readiness tab' })} onSync={() => mutations.syncPssr.mutate({ pssrStatus: data?.pssr?.pssr_status ?? data?.pssr?.status ?? 'Required' })} />
       </div>
       <StartupBlockersPanel blockers={data?.blockers ?? []} />
       <ReadinessChecklist checklist={data?.checklist ?? []} />
       <RequiredActionsBeforeStartup actions={data?.requiredActionsBeforeStartup ?? []} onCreate={() => mutations.createBlockerAction.mutate({ title: 'Startup readiness blocker action', description: 'Created from PSSR / Startup Readiness tab' })} />
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 2xl:grid-cols-3">
         <TrainingReadinessPanel readiness={data?.trainingReadiness} />
         <DocumentReadinessPanel readiness={data?.documentReadiness} />
         <EngineeringReadinessPanel readiness={data?.engineeringReadiness} />

@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PermissionsService } from '../../permissions/permissions.service';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import { RequestUser } from '../decorators/current-user.decorator';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -17,20 +18,268 @@ export class PermissionsGuard implements CanActivate {
     ]);
     if (!required?.length) return true;
 
-    const request = context.switchToHttp().getRequest<{ user?: { id?: string; tenantId?: string; permissions?: string[] } }>();
-    const tokenPermissions = request.user?.permissions ?? [];
-    const livePermissions = request.user?.id && request.user?.tenantId
-      ? await this.permissions.listForUser(request.user.id, request.user.tenantId)
+    const request = context.switchToHttp().getRequest<{ user?: RequestUser }>();
+    const user = request.user;
+    if (user?.isSuperAdmin || user?.isCompanyAdmin) {
+      return true;
+    }
+
+    const tokenPermissions = user?.permissions ?? [];
+    const hasLiveTenantContext = Boolean(user?.tenantContext);
+    const livePermissions = !hasLiveTenantContext && user?.id && user?.tenantId
+      ? await this.permissions.listForUser(user.id, user.tenantId)
       : [];
     const granted = new Set(expandPermissionAliases([...tokenPermissions, ...livePermissions]));
-    return required.every((permission) => hasPermissionGrant(granted, permission));
+    if (user) user.permissions = [...granted];
+    return required.every((permission) => hasPermissionGrant(granted, permission, user));
   }
 }
 
-function hasPermissionGrant(granted: Set<string>, permission: string) {
+function isManagementUser(user?: RequestUser) {
+  if (!user) return false;
+  if (user.isSuperAdmin || user.isCompanyAdmin || user.isSiteAdmin || user.corporateView) return true;
+  const managementRoles = new Set([
+    'super_admin',
+    'platform_admin',
+    'corporate_admin',
+    'company_admin',
+    'site_admin',
+    'administrator',
+    'admin',
+    'hse_manager',
+    'plant_manager',
+    'process_safety_lead',
+    'process_safety_engineer',
+    'executive',
+    'auditor',
+    'lead_auditor',
+    'audit_manager',
+    'compliance_manager',
+    'compliance_officer',
+    'psm_coordinator',
+    'safety_officer',
+    'operations_manager',
+    'unit_manager',
+    'area_manager',
+    'maintenance_manager'
+  ]);
+  return (user.roles ?? []).some((role) => {
+    const raw = String(role).toLowerCase().trim();
+    const normalized = raw.replace(/\s+/g, '_');
+    return (
+      managementRoles.has(raw) ||
+      managementRoles.has(normalized) ||
+      managementRoles.has(normalized.replace(/^role_/, ''))
+    );
+  });
+}
+
+function isExecutiveReadPermission(permission: string) {
+  if (!permission.startsWith('executive.')) return false;
+  return (
+    permission === 'executive.view' ||
+    permission === 'executive.dashboard.view' ||
+    permission.endsWith('.view') ||
+    permission.endsWith('.register.view') ||
+    permission.endsWith('.dashboard.view') ||
+    permission.endsWith('.detail.view') ||
+    permission.endsWith('.history.view') ||
+    permission.endsWith('.rule.view')
+  );
+}
+
+function isTrainingReadPermission(permission: string) {
+  if (!permission.startsWith('training.')) return false;
+  return (
+    permission === 'training.view' ||
+    permission === 'training.dashboard.view' ||
+    permission.endsWith('.view') ||
+    permission.endsWith('.dashboard.view') ||
+    permission.endsWith('.register.view') ||
+    permission.endsWith('.detail.view') ||
+    permission.endsWith('.history.view') ||
+    permission.endsWith('.summary.view') ||
+    permission.endsWith('.preview') ||
+    permission.endsWith('.download') ||
+    permission.endsWith('.export')
+  );
+}
+
+function hasAnyTrainingPermission(granted: Set<string>): boolean {
+  for (const g of granted) {
+    if (g.startsWith('training.') || g.startsWith('training:')) return true;
+  }
+  return false;
+}
+
+function hasAnyAuditPermission(granted: Set<string>): boolean {
+  for (const g of granted) {
+    if (g.startsWith('audit.') || g.startsWith('audit:')) return true;
+  }
+  return false;
+}
+
+function hasPermissionGrant(granted: Set<string>, permission: string, user?: RequestUser) {
   if (granted.has(permission)) return true;
-  if (permission.startsWith('audit.') && (granted.has('audit:manage') || granted.has('audit.manage'))) return true;
-  if (isAuditReadPermission(permission) && (granted.has('audit:read') || granted.has('audit.view'))) return true;
+  if (user?.isSuperAdmin || user?.isCompanyAdmin) return true;
+
+  // Any authenticated user can read their own workspace context and switch between their assigned workspaces/sites
+  if (
+    permission === 'tenant.context.view' ||
+    permission === 'tenant.switch_company' ||
+    permission === 'tenant.switch_site' ||
+    permission === 'ai.copilot.use' ||
+    permission === 'ai.use' ||
+    permission === 'ai.view'
+  ) {
+    return true;
+  }
+
+  const isMgmt = isManagementUser(user);
+
+  // Training & Competency read permissions
+  if (isTrainingReadPermission(permission)) {
+    if (
+      isMgmt ||
+      granted.has('training.view') ||
+      granted.has('training.dashboard.view') ||
+      granted.has('training:read') ||
+      granted.has('training:manage') ||
+      granted.has('training.manage') ||
+      granted.has('dashboard.view') ||
+      hasAnyTrainingPermission(granted)
+    ) {
+      return true;
+    }
+  }
+
+  if (permission.startsWith('training.') && (granted.has('training:manage') || granted.has('training.manage') || isMgmt)) {
+    if (isTrainingReadPermission(permission)) {
+      return true;
+    }
+  }
+
+  // The executive overview permission grants read-only access to its linked
+  // intelligence screens. Mutating/report-release permissions stay explicit.
+  if (isExecutiveReadPermission(permission)) {
+    if (
+      isMgmt ||
+      granted.has('executive.dashboard.view') ||
+      granted.has('dashboard.view') ||
+      granted.has('executive.view') ||
+      granted.has('executive:read') ||
+      granted.has('executive:manage') ||
+      granted.has('executive.overview.view')
+    ) {
+      return true;
+    }
+  }
+
+  // Specifically for overdue actions register / view
+  if (permission.startsWith('executive.overdue_action.')) {
+    if (
+      isMgmt ||
+      granted.has('actions.view') ||
+      granted.has('actions:read') ||
+      granted.has('actions:manage') ||
+      granted.has('executive.dashboard.view') ||
+      granted.has('dashboard.view') ||
+      granted.has('executive.view') ||
+      granted.has('executive:read')
+    ) {
+      return true;
+    }
+  }
+
+  // Specifically for escalations register / view
+  if (permission.startsWith('executive.escalation.')) {
+    if (
+      isMgmt ||
+      granted.has('workflows.view') ||
+      granted.has('workflow.view') ||
+      granted.has('actions.view') ||
+      granted.has('actions:read') ||
+      granted.has('notifications.view') ||
+      granted.has('notifications:read') ||
+      granted.has('executive.dashboard.view') ||
+      granted.has('dashboard.view') ||
+      granted.has('executive.view') ||
+      granted.has('executive:read')
+    ) {
+      return true;
+    }
+  }
+
+  // Specifically for leadership attention view
+  if (permission.startsWith('executive.leadership_attention.')) {
+    if (
+      isMgmt ||
+      granted.has('executive.dashboard.view') ||
+      granted.has('dashboard.view') ||
+      granted.has('executive.view') ||
+      granted.has('executive:read') ||
+      granted.has('actions.view')
+    ) {
+      return true;
+    }
+  }
+
+  // Audit & Compliance read permissions
+  if (isAuditReadPermission(permission)) {
+    if (
+      isMgmt ||
+      granted.has('audit.view') ||
+      granted.has('audit.dashboard.view') ||
+      granted.has('audit:read') ||
+      granted.has('audit:manage') ||
+      granted.has('audit.manage') ||
+      granted.has('dashboard.view') ||
+      hasAnyAuditPermission(granted)
+    ) {
+      return true;
+    }
+  }
+
+  if (permission.startsWith('audit.') && (granted.has('audit:manage') || granted.has('audit.manage') || isMgmt)) {
+    if (isAuditReadPermission(permission)) {
+      return true;
+    }
+  }
+
+  // Operating Procedures & Contractor Safety permissions
+  if (permission.startsWith('op.')) {
+    if (
+      isMgmt ||
+      granted.has('op.view') ||
+      granted.has('op.dashboard.view') ||
+      granted.has('op:read') ||
+      granted.has('op:manage') ||
+      granted.has('op.manage') ||
+      granted.has('dashboard.view') ||
+      granted.has('documents.view') ||
+      granted.has('psi.view') ||
+      granted.has('ptw.view')
+    ) {
+      return true;
+    }
+  }
+
+  if (permission.startsWith('csm.')) {
+    if (
+      isMgmt ||
+      granted.has('csm.view') ||
+      granted.has('csm.dashboard.view') ||
+      granted.has('csm:read') ||
+      granted.has('csm:manage') ||
+      granted.has('csm.manage') ||
+      granted.has('dashboard.view') ||
+      granted.has('ptw.view') ||
+      granted.has('training.view')
+    ) {
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -38,14 +287,17 @@ function isAuditReadPermission(permission: string) {
   if (!permission.startsWith('audit.')) return false;
   return (
     permission === 'audit.view' ||
+    permission === 'audit.dashboard.view' ||
     permission.endsWith('.view') ||
     permission.endsWith('.dashboard.view') ||
     permission.endsWith('.register.view') ||
     permission.endsWith('.calendar.view') ||
     permission.endsWith('.history.view') ||
     permission.endsWith('.settings.view') ||
+    permission.endsWith('.summary.view') ||
     permission.endsWith('.preview') ||
-    permission.endsWith('.download')
+    permission.endsWith('.download') ||
+    permission.endsWith('.export')
   );
 }
 
@@ -712,8 +964,154 @@ const regulatoryManagePermissions = [
   'regulatory.capa.close_foundation',
   'regulatory.capa.reopen',
   'regulatory.review.submit',
+  'regulatory.review.dashboard.view',
+  'regulatory.review.inbox.view',
+  'regulatory.review.submission.view',
+  'regulatory.review.package.view',
+  'regulatory.review.package.create',
+  'regulatory.review.package.submit',
+  'regulatory.review.package.cancel',
+  'regulatory.review.package.resubmit',
+  'regulatory.review.package.refresh_snapshot',
+  'regulatory.review.package.mark_stale',
+  'regulatory.review.package.archive',
+  'regulatory.review.validation.view',
+  'regulatory.review.validation.run',
+  'regulatory.review.decision.approve',
+  'regulatory.review.decision.approve_with_conditions',
+  'regulatory.review.decision.reject',
+  'regulatory.review.decision.return',
+  'regulatory.review.decision.request_info',
+  'regulatory.review.decision.override_validation',
+  'regulatory.review.decision.delegate',
+  'regulatory.review.decision.escalate',
+  'regulatory.review.esign.view',
+  'regulatory.review.esign.sign',
+  'regulatory.review.condition.view',
+  'regulatory.review.condition.create',
+  'regulatory.review.condition.edit',
+  'regulatory.review.condition.close',
+  'regulatory.review.rule.view',
+  'regulatory.review.rule.create',
+  'regulatory.review.rule.edit',
+  'regulatory.review.rule.archive',
+  'regulatory.review.source.lock',
+  'regulatory.review.source.reopen',
+  'regulatory.review.history.view',
+  'regulatory.review.settings.edit',
   'regulatory.settings.edit'
 ];
+  const auditReadPermissions = [
+    'audit.view',
+    'audit.dashboard.view',
+    'audit.program.view',
+    'audit.plan.view',
+    'audit.plan.dashboard.view',
+    'audit.plan.calendar.view',
+    'audit.plan.conflict.view',
+    'audit.plan.history.view',
+    'audit.plan.settings.view',
+    'audit.checklist.view',
+    'audit.checklist.dashboard.view',
+    'audit.checklist.template.view',
+    'audit.checklist.assignment.view',
+    'audit.checklist.question_bank.view',
+    'audit.checklist.history.view',
+    'audit.checklist.settings.view',
+    'audit.execution.view',
+    'audit.execution.dashboard.view',
+    'audit.execution.register.view',
+    'audit.execution.workspace.view',
+    'audit.execution.response.view',
+    'audit.execution.evidence.view',
+    'audit.execution.note.view',
+    'audit.execution.interview.view',
+    'audit.execution.walkthrough.view',
+    'audit.execution.history.view',
+    'audit.execution.settings.view',
+    'audit.field_finding.view',
+    'audit.finding.view',
+    'audit.finding.dashboard.view',
+    'audit.finding.register.view',
+    'audit.finding.evidence.view',
+    'audit.finding.capa_foundation.view',
+    'audit.finding.history.view',
+    'audit.finding.settings.view',
+    'audit.capa.view',
+    'audit.capa.dashboard.view',
+    'audit.capa.register.view',
+    'audit.capa.action.view',
+    'audit.capa.containment.view',
+    'audit.capa.evidence.view',
+    'audit.capa.verification.view',
+    'audit.capa.effectiveness.view',
+    'audit.capa.history.view',
+    'audit.capa.settings.view',
+    'audit.evidence.view',
+    'audit.evidence.dashboard.view',
+    'audit.evidence.register.view',
+    'audit.evidence.preview',
+    'audit.evidence.download',
+    'audit.evidence.view_restricted',
+    'audit.evidence.requirement.view',
+    'audit.evidence.request.view',
+    'audit.evidence.review.view',
+    'audit.evidence.chain_of_custody.view',
+    'audit.evidence.access_log.view',
+    'audit.evidence.package.view',
+    'audit.evidence.gap.view',
+    'audit.evidence.history.view',
+    'audit.evidence.settings.view',
+    'audit.scoring.view',
+    'audit.scoring.dashboard.view',
+    'audit.scoring.register.view',
+    'audit.scoring.run.view',
+    'audit.scoring.model.view',
+    'audit.scoring.rule.view',
+    'audit.scoring.adjustment.view',
+    'audit.scoring.explainability.view',
+    'audit.scoring.traceability.view',
+    'audit.scoring.stale.view',
+    'audit.scoring.history.view',
+    'audit.scoring.settings.view',
+    'audit.standards_mapping.view',
+    'audit.standards_mapping.dashboard.view',
+    'audit.standards_mapping.register.view',
+    'audit.standards_mapping.standard.view',
+    'audit.standards_mapping.clause.view',
+    'audit.standards_mapping.mapping.view',
+    'audit.standards_mapping.coverage.view',
+    'audit.standards_mapping.traceability.view',
+    'audit.standards_mapping.gap.view',
+    'audit.standards_mapping.stale.view',
+    'audit.standards_mapping.history.view',
+    'audit.standards_mapping.settings.view',
+    'audit.review.view',
+    'audit.review.dashboard.view',
+    'audit.review.inbox.view',
+    'audit.review.submission.view',
+    'audit.review.package.view',
+    'audit.review.condition.view',
+    'audit.review.validation.view',
+    'audit.review.rule.view',
+    'audit.review.history.view',
+    'audit.review.settings.view',
+    'audit.report.view',
+    'audit.report.dashboard.view',
+    'audit.report.register.view',
+    'audit.report.preview',
+    'audit.report.download',
+    'audit.report.template.view',
+    'audit.report.package.view',
+    'audit.report.restricted.view',
+    'audit.report.access_log.view',
+    'audit.report.download_log.view',
+    'audit.report.approval.view',
+    'audit.report.history.view',
+    'audit.report.settings.view',
+    'audit.history.view',
+    'audit.settings.view'
+  ];
   const aliases: Record<string, string[]> = {
     'users:read': ['users.view'],
     'roles:manage': ['roles.view', 'roles.create', 'roles.edit', 'roles.assign', 'roles.manage', 'permissions.view', 'permissions.edit'],
@@ -723,9 +1121,78 @@ const regulatoryManagePermissions = [
     'users.edit': ['users.view'],
     'users.create': ['users.view'],
     'users.manage': ['users.view', 'users.create', 'users.edit', 'users.deactivate', 'users.reset_password', 'users.bulk_upload', 'users.invite', 'users.export'],
-    'audit:read': ['audit.view', 'audit.dashboard.view'],
-    'audit.view': ['audit:read', 'audit.dashboard.view'],
-    'audit.dashboard.view': ['audit.view'],
+    'dashboard.view': [
+      'training.view',
+      'training.dashboard.view',
+      'audit.view',
+      'audit.dashboard.view',
+      'op.view',
+      'op.dashboard.view',
+      'op.register.view',
+      'op.procedure.view',
+      'csm.view',
+      'csm.dashboard.view',
+      'csm.contractor.view',
+      'executive.dashboard.view',
+      'executive.overdue_action.dashboard.view',
+      'executive.overdue_action.register.view',
+      'executive.overdue_action.detail.view',
+      'executive.escalation.dashboard.view',
+      'executive.escalation.register.view',
+      'executive.escalation.history.view',
+      'executive.escalation.rule.view',
+      'executive.leadership_attention.view',
+    ],
+    'executive.dashboard.view': [
+      'executive.overdue_action.dashboard.view',
+      'executive.overdue_action.register.view',
+      'executive.overdue_action.detail.view',
+      'executive.escalation.dashboard.view',
+      'executive.escalation.register.view',
+      'executive.escalation.history.view',
+      'executive.escalation.rule.view',
+      'executive.leadership_attention.view',
+    ],
+    'executive:read': [
+      'executive.dashboard.view',
+      'executive.view',
+      'executive.overdue_action.dashboard.view',
+      'executive.overdue_action.register.view',
+      'executive.overdue_action.detail.view',
+      'executive.escalation.dashboard.view',
+      'executive.escalation.register.view',
+      'executive.escalation.history.view',
+      'executive.escalation.rule.view',
+      'executive.leadership_attention.view',
+    ],
+    'audit:read': auditReadPermissions,
+    'audit.view': ['audit:read', 'audit.dashboard.view', ...auditReadPermissions],
+    'audit.dashboard.view': ['audit.view', ...auditReadPermissions],
+    'audit:manage': ['audit.view', 'audit.dashboard.view', 'audit:read', ...auditReadPermissions],
+    'audit.manage': ['audit.view', 'audit.dashboard.view', 'audit:read', ...auditReadPermissions],
+    'audit.program.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.plan.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.plan.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.checklist.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.checklist.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.execution.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.execution.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.finding.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.finding.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.capa.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.capa.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.evidence.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.evidence.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.scoring.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.scoring.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.standards_mapping.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.standards_mapping.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.review.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.review.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.report.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.report.dashboard.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.history.view': ['audit.view', 'audit.dashboard.view'],
+    'audit.settings.view': ['audit.view', 'audit.dashboard.view'],
     'training:read': ['training.view', 'training.dashboard.view', 'training.workforce.view', 'training.history.view', 'training.matrix.view', 'training.matrix.dashboard.view', 'training.competency.view', 'training.competency.dashboard.view', 'training.competency.profile.view', 'training.competency.library.view', 'training.competency.assignment.view', 'training.competency.gap.view', 'training.competency.settings.view', 'training.required.view', 'training.required.dashboard.view', 'training.required.library.view', 'training.required.history.view', 'training.required.settings.view', 'training.records.view', 'training.records.dashboard.view', 'training.records.session.view', 'training.records.roster.view', 'training.records.attendance.view', 'training.records.completion.view', 'training.records.history.view', 'training.records.settings.view', 'training.certifications.view', 'training.certifications.dashboard.view', 'training.certifications.settings.view', 'training.assessments.view', 'training.assessments.dashboard.view', 'training.assessments.library.view', 'training.assessments.settings.view', 'training.sop_ack.view', 'training.sop_ack.dashboard.view', 'training.sop_ack.requirement.view', 'training.sop_ack.assignment.view', 'training.sop_ack.waiver.view', 'training.sop_ack.history.view', 'training.sop_ack.settings.view', 'training.reports.view', 'training.reports.dashboard.view', 'training.reports.template.view', 'training.reports.package.view', 'training.reports.scheduled.view', 'training.reports.audit_evidence.view', 'training.reports.history.view', 'training.reports.settings.view', 'training.review.view', 'training.review.dashboard.view', 'training.review.inbox.view', 'training.review.submission.view', 'training.review.request.view', 'training.review.rule.view', 'training.review.history.view', 'training.review.settings.view'],
     'training.view': ['training.dashboard.view', 'training.workforce.view', 'training.history.view', 'training.matrix.view', 'training.matrix.dashboard.view', 'training.competency.view', 'training.competency.dashboard.view', 'training.competency.profile.view', 'training.competency.library.view', 'training.competency.assignment.view', 'training.competency.gap.view', 'training.competency.settings.view', 'training.required.view', 'training.required.dashboard.view', 'training.required.library.view', 'training.required.history.view', 'training.required.settings.view', 'training.records.view', 'training.records.dashboard.view', 'training.records.session.view', 'training.records.roster.view', 'training.records.attendance.view', 'training.records.completion.view', 'training.records.history.view', 'training.records.settings.view', 'training.certifications.view', 'training.certifications.dashboard.view', 'training.certifications.settings.view', 'training.assessments.view', 'training.assessments.dashboard.view', 'training.assessments.library.view', 'training.assessments.settings.view', 'training.sop_ack.view', 'training.sop_ack.dashboard.view', 'training.sop_ack.requirement.view', 'training.sop_ack.assignment.view', 'training.sop_ack.waiver.view', 'training.sop_ack.history.view', 'training.sop_ack.settings.view', 'training.reports.view', 'training.reports.dashboard.view', 'training.reports.template.view', 'training.reports.package.view', 'training.reports.scheduled.view', 'training.reports.audit_evidence.view', 'training.reports.history.view', 'training.reports.settings.view', 'training.review.view', 'training.review.dashboard.view', 'training.review.inbox.view', 'training.review.submission.view', 'training.review.request.view', 'training.review.rule.view', 'training.review.history.view', 'training.review.settings.view'],
     'training.dashboard.view': ['training.view', 'training.workforce.view', 'training.matrix.view', 'training.competency.view'],
@@ -742,12 +1209,55 @@ const regulatoryManagePermissions = [
     'training.records.dashboard.view': ['training.view', 'training.records.view', 'training.records.session.view', 'training.records.completion.view'],
     'training.records.session.view': ['training.view', 'training.records.view', 'training.records.roster.view', 'training.records.attendance.view', 'training.records.completion.view'],
     'training.records.completion.view': ['training.view', 'training.records.view', 'training.records.evidence.link'],
+    'training.required.view': ['training.view', 'training.dashboard.view'],
+    'training.required.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.certifications.view': ['training.view', 'training.dashboard.view'],
+    'training.certifications.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.assessments.view': ['training.view', 'training.dashboard.view'],
+    'training.assessments.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.sop_ack.view': ['training.view', 'training.dashboard.view'],
+    'training.sop_ack.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.sop_acknowledgement.view': ['training.view', 'training.dashboard.view'],
+    'training.moc.view': ['training.view', 'training.dashboard.view'],
+    'training.moc.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.pssr.view': ['training.view', 'training.dashboard.view'],
+    'training.pssr.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.ptw_authorization.view': ['training.view', 'training.dashboard.view'],
+    'training.ptw_authorization.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.reports.view': ['training.view', 'training.dashboard.view'],
+    'training.reports.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training.review.view': ['training.view', 'training.dashboard.view'],
+    'training.review.dashboard.view': ['training.view', 'training.dashboard.view'],
+    'training:manage': ['training.view', 'training.dashboard.view', 'training:read'],
+    'training.manage': ['training.view', 'training.dashboard.view', 'training:read'],
     'equipment:read': ['equipment.view', 'mechanical_integrity.dashboard.view', 'mechanical_integrity.equipment.view', 'mechanical_integrity.technical_data.view', 'mechanical_integrity.technical_data.revision.view', 'mechanical_integrity.criticality.view', 'mechanical_integrity.readiness.view', 'mechanical_integrity.linked_records.view', 'mechanical_integrity.linked_record.view', 'mechanical_integrity.documents.view', 'mechanical_integrity.document_link.view', 'mechanical_integrity.document_requirement.view', 'mechanical_integrity.history.view', 'mechanical_integrity.report.view', 'mechanical_integrity.export.view', 'mechanical_integrity.cml.view', 'mechanical_integrity.cml_reading.view', 'mechanical_integrity.cml_calculation.view', 'mechanical_integrity.cml_alert.view', ...miInspectionReadPermissions],
     'equipment.view': ['mechanical_integrity.dashboard.view', 'mechanical_integrity.equipment.view', 'mechanical_integrity.technical_data.view', 'mechanical_integrity.technical_data.revision.view', 'mechanical_integrity.criticality.view', 'mechanical_integrity.readiness.view', 'mechanical_integrity.linked_records.view', 'mechanical_integrity.linked_record.view', 'mechanical_integrity.documents.view', 'mechanical_integrity.document_link.view', 'mechanical_integrity.document_requirement.view', 'mechanical_integrity.history.view', 'mechanical_integrity.report.view', 'mechanical_integrity.export.view', 'mechanical_integrity.cml.view', 'mechanical_integrity.cml_reading.view', 'mechanical_integrity.cml_calculation.view', 'mechanical_integrity.cml_alert.view', ...miInspectionReadPermissions],
     'equipment:manage': ['equipment.create', 'equipment.edit', 'equipment.upload', 'equipment.qr.generate', 'mechanical_integrity.equipment.create', 'mechanical_integrity.equipment.edit', 'mechanical_integrity.equipment.archive', 'mechanical_integrity.equipment.import', 'mechanical_integrity.equipment.export', 'mechanical_integrity.technical_data.edit', 'mechanical_integrity.technical_data.revision.view', 'mechanical_integrity.criticality.edit', 'mechanical_integrity.readiness.edit', 'mechanical_integrity.linked_records.manage', 'mechanical_integrity.linked_record.create', 'mechanical_integrity.linked_record.edit', 'mechanical_integrity.linked_record.remove', 'mechanical_integrity.documents.manage', 'mechanical_integrity.document_link.create', 'mechanical_integrity.document_link.remove', 'mechanical_integrity.document_requirement.manage', 'mechanical_integrity.report.generate', 'mechanical_integrity.report.export', 'mechanical_integrity.export.create', 'mechanical_integrity.export.download', 'mechanical_integrity.cml.create', 'mechanical_integrity.cml.edit', 'mechanical_integrity.cml.archive', 'mechanical_integrity.cml.import', 'mechanical_integrity.cml.export', 'mechanical_integrity.cml_reading.create', 'mechanical_integrity.cml_reading.edit', 'mechanical_integrity.cml_reading.review', 'mechanical_integrity.cml_reading.approve', 'mechanical_integrity.cml_reading.import', 'mechanical_integrity.cml_calculation.recalculate', 'mechanical_integrity.cml_calculation.override', 'mechanical_integrity.cml_alert.acknowledge', 'mechanical_integrity.cml_alert.resolve', 'mechanical_integrity.export', ...miInspectionManagePermissions],
     'mechanical_integrity:read': ['mechanical_integrity.dashboard.view', 'mechanical_integrity.equipment.view', 'mechanical_integrity.technical_data.view', 'mechanical_integrity.technical_data.revision.view', 'mechanical_integrity.criticality.view', 'mechanical_integrity.readiness.view', 'mechanical_integrity.linked_records.view', 'mechanical_integrity.linked_record.view', 'mechanical_integrity.documents.view', 'mechanical_integrity.document_link.view', 'mechanical_integrity.document_requirement.view', 'mechanical_integrity.history.view', 'mechanical_integrity.history.view_audit', 'mechanical_integrity.report.view', 'mechanical_integrity.export.view', 'mechanical_integrity.cml.view', 'mechanical_integrity.cml_reading.view', 'mechanical_integrity.cml_calculation.view', 'mechanical_integrity.cml_alert.view', ...miInspectionReadPermissions],
     'mechanical_integrity:manage': ['mechanical_integrity.dashboard.view', 'mechanical_integrity.equipment.view', 'mechanical_integrity.equipment.create', 'mechanical_integrity.equipment.edit', 'mechanical_integrity.equipment.archive', 'mechanical_integrity.equipment.import', 'mechanical_integrity.equipment.export', 'mechanical_integrity.equipment.history.view', 'mechanical_integrity.technical_data.view', 'mechanical_integrity.technical_data.edit', 'mechanical_integrity.technical_data.revision.view', 'mechanical_integrity.criticality.view', 'mechanical_integrity.criticality.edit', 'mechanical_integrity.readiness.view', 'mechanical_integrity.readiness.edit', 'mechanical_integrity.linked_records.view', 'mechanical_integrity.linked_records.manage', 'mechanical_integrity.linked_record.view', 'mechanical_integrity.linked_record.create', 'mechanical_integrity.linked_record.edit', 'mechanical_integrity.linked_record.remove', 'mechanical_integrity.documents.view', 'mechanical_integrity.documents.manage', 'mechanical_integrity.document_link.view', 'mechanical_integrity.document_link.create', 'mechanical_integrity.document_link.remove', 'mechanical_integrity.document_requirement.view', 'mechanical_integrity.document_requirement.manage', 'mechanical_integrity.history.view', 'mechanical_integrity.history.view_audit', 'mechanical_integrity.history.export', 'mechanical_integrity.report.view', 'mechanical_integrity.report.generate', 'mechanical_integrity.report.manage_templates', 'mechanical_integrity.report.schedule', 'mechanical_integrity.report.export', 'mechanical_integrity.export.view', 'mechanical_integrity.export.create', 'mechanical_integrity.export.download', 'mechanical_integrity.export.include_documents', 'mechanical_integrity.export.include_audit', 'mechanical_integrity.export.site_export', 'mechanical_integrity.export.admin_all', 'mechanical_integrity.export', ...miInspectionManagePermissions],
-    'actions:read': ['actions.view'],
+    'actions:read': [
+      'actions.view',
+      'executive.overdue_action.dashboard.view',
+      'executive.overdue_action.register.view',
+      'executive.overdue_action.detail.view',
+    ],
+    'actions.view': [
+      'executive.overdue_action.dashboard.view',
+      'executive.overdue_action.register.view',
+      'executive.overdue_action.detail.view',
+    ],
+    'workflows.view': [
+      'executive.escalation.dashboard.view',
+      'executive.escalation.register.view',
+      'executive.escalation.history.view',
+      'executive.escalation.rule.view',
+    ],
+    'workflow.view': [
+      'executive.escalation.dashboard.view',
+      'executive.escalation.register.view',
+      'executive.escalation.history.view',
+      'executive.escalation.rule.view',
+    ],
     'actions:manage': ['actions.create', 'actions.edit', 'actions.assign', 'actions.close', 'actions.verify', 'actions.delete', 'actions.export'],
     'documents:read': ['documents.view'],
     'documents:manage': ['documents.upload', 'documents.edit', 'documents.delete', 'documents.approve', 'documents.archive', 'documents.download', 'documents.link', 'documents.comment'],
@@ -967,6 +1477,41 @@ const regulatoryManagePermissions = [
     'regulatory.capa.close_foundation': ['regulatory.capa.view', 'regulatory.action.closure_readiness.view'],
     'regulatory.capa.reopen': ['regulatory.capa.view'],
     'regulatory.review.submit': ['regulatory.review.view'],
+    'regulatory.review.dashboard.view': ['regulatory.review.view'],
+    'regulatory.review.inbox.view': ['regulatory.review.view'],
+    'regulatory.review.submission.view': ['regulatory.review.view'],
+    'regulatory.review.package.view': ['regulatory.review.view'],
+    'regulatory.review.package.create': ['regulatory.review.package.view'],
+    'regulatory.review.package.submit': ['regulatory.review.package.view'],
+    'regulatory.review.package.cancel': ['regulatory.review.package.view'],
+    'regulatory.review.package.resubmit': ['regulatory.review.package.submit'],
+    'regulatory.review.package.refresh_snapshot': ['regulatory.review.package.view'],
+    'regulatory.review.package.mark_stale': ['regulatory.review.package.view'],
+    'regulatory.review.package.archive': ['regulatory.review.package.view'],
+    'regulatory.review.validation.view': ['regulatory.review.package.view'],
+    'regulatory.review.validation.run': ['regulatory.review.validation.view'],
+    'regulatory.review.decision.approve': ['regulatory.review.package.view'],
+    'regulatory.review.decision.approve_with_conditions': ['regulatory.review.decision.approve'],
+    'regulatory.review.decision.reject': ['regulatory.review.package.view'],
+    'regulatory.review.decision.return': ['regulatory.review.package.view'],
+    'regulatory.review.decision.request_info': ['regulatory.review.package.view'],
+    'regulatory.review.decision.override_validation': ['regulatory.review.decision.approve'],
+    'regulatory.review.decision.delegate': ['regulatory.review.package.view'],
+    'regulatory.review.decision.escalate': ['regulatory.review.package.view'],
+    'regulatory.review.esign.view': ['regulatory.review.package.view'],
+    'regulatory.review.esign.sign': ['regulatory.review.esign.view'],
+    'regulatory.review.condition.view': ['regulatory.review.package.view'],
+    'regulatory.review.condition.create': ['regulatory.review.condition.view'],
+    'regulatory.review.condition.edit': ['regulatory.review.condition.view'],
+    'regulatory.review.condition.close': ['regulatory.review.condition.view'],
+    'regulatory.review.rule.view': ['regulatory.review.view'],
+    'regulatory.review.rule.create': ['regulatory.review.rule.view'],
+    'regulatory.review.rule.edit': ['regulatory.review.rule.view'],
+    'regulatory.review.rule.archive': ['regulatory.review.rule.view'],
+    'regulatory.review.source.lock': ['regulatory.review.package.view'],
+    'regulatory.review.source.reopen': ['regulatory.review.source.lock'],
+    'regulatory.review.history.view': ['regulatory.review.view'],
+    'regulatory.review.settings.edit': ['regulatory.settings.view'],
     'regulatory.settings.edit': ['regulatory.settings.view'],
     'workflows:manage': ['workflows.create', 'workflows.approve', 'workflow.view', 'workflow.create', 'workflow.edit', 'workflow.approve', 'workflow.reject', 'workflow.override', 'workflow.manage_templates']
   };
@@ -1031,6 +1576,9 @@ const regulatoryManagePermissions = [
       ...ptwAuthorizationPermissions,
       ...trainingReportsPermissions,
       ...trainingReviewPermissions);
+  }
+  if (expanded.some((permission) => ['audit:read', 'audit.view', 'audit.dashboard.view', 'audit:manage', 'audit.manage'].includes(permission) || permission.startsWith('audit.'))) {
+    expanded.push('audit.view', 'audit.dashboard.view');
   }
   const materialCompatibilityManagePermissions = [
     'psi.material_compatibility.view',
@@ -1290,6 +1838,9 @@ const regulatoryManagePermissions = [
   }
   if (permissions.includes('incidents:manage')) {
     expanded.push('incidents.final_report.view', 'incidents.final_report.configure', 'incidents.final_report.preview', 'incidents.final_report.generate', 'incidents.final_report.download', 'incidents.final_report.export', 'incidents.final_report.mark_official', 'incidents.final_report.publish', 'incidents.final_report.supersede', 'incidents.final_report.archive', 'incidents.final_report.review.request', 'incidents.final_report.review.approve', 'incidents.final_report.review.reject', 'incidents.evidence.export_package');
+  }
+  if (permissions.some((p) => p.startsWith('ptw.') || p.startsWith('moc.') || p.startsWith('op.') || p.startsWith('audit.') || p.includes('admin'))) {
+    expanded.push('csm.view', 'csm.dashboard.view', 'csm.contractor.view', 'csm.contractor.create', 'csm.contractor.edit');
   }
   return expanded;
 }

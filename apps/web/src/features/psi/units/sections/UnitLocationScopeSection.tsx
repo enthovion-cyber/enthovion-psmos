@@ -1,19 +1,20 @@
 import type { ChangeEvent } from 'react';
 import { PsiCard } from '../../shared/PsiUi';
 
-interface OptionItem {
-  id: string | number;
-  label?: string;
-  name?: string;
+export interface OptionItem {
+  id?: string | number | null | undefined;
+  label?: string | undefined;
+  name?: string | undefined;
+  [key: string]: any;
 }
 
 interface ScopeProps {
   value: Record<string, any>;
   onChange: (patch: Record<string, any>) => void;
-  sites?: OptionItem[];
-  departments?: OptionItem[];
-  areas?: OptionItem[];
-  loading?: boolean;
+  sites?: OptionItem[] | undefined;
+  departments?: OptionItem[] | undefined;
+  areas?: OptionItem[] | undefined;
+  loading?: boolean | undefined;
 }
 
 export function UnitLocationScopeSection({

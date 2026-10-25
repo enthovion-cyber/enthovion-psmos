@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, ChevronsUpDown, Factory } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTenantContext } from '../context/useTenantContext';
@@ -11,6 +11,7 @@ import { ContextSwitchLoadingOverlay } from './ContextSwitchLoadingOverlay';
 const moduleQueryRoots = ['dashboard', 'equipment', 'actions', 'documents', 'notifications', 'search', 'ptw', 'moc', 'pssr', 'hazop', 'lopa', 'incidents', 'reports', 'settings', 'foundation', 'workspace', 'iam'];
 
 export function CompanySwitcher() {
+  const [mounted, setMounted] = useState(false);
   const queryClient = useQueryClient();
   const contextQuery = useTenantContext();
   const setSelectedSite = useAuthStore((state) => state.setSelectedSite);
@@ -20,6 +21,10 @@ export function CompanySwitcher() {
   const companies = contextQuery.data?.companies ?? [];
   const activeCompanyId = contextQuery.data?.activeCompanyId ?? contextQuery.data?.companyIds?.[0] ?? null;
   const activeCompany = companies.find((company) => company.id === activeCompanyId) ?? companies[0] ?? null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function switchCompany(companyId: string) {
     setError(null);
@@ -36,7 +41,7 @@ export function CompanySwitcher() {
     }
   }
 
-  if (contextQuery.isLoading) {
+  if (!mounted || contextQuery.isLoading) {
     return <div className="hidden h-11 w-52 animate-pulse rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] xl:block" />;
   }
 

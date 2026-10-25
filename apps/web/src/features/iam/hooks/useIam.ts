@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { iamService, type CreateUserInput } from '@/services/iam.service';
+import { hasLocalSession } from '@/services/api';
 
 export function useIamUsers() {
   return useQuery({ queryKey: ['iam', 'users'], queryFn: () => iamService.users() });
@@ -20,23 +21,23 @@ export function useIamPermissions() {
 }
 
 export function useMyPermissions() {
-  return useQuery({ queryKey: ['iam', 'me', 'permissions'], queryFn: () => iamService.mePermissions() });
+  return useQuery({ queryKey: ['iam', 'me', 'permissions'], queryFn: () => iamService.mePermissions(), enabled: hasLocalSession() });
 }
 
 export function useMyEffectivePermissions() {
-  return useQuery({ queryKey: ['iam', 'me', 'effective-permissions'], queryFn: () => iamService.meEffectivePermissions(), staleTime: 60_000 });
+  return useQuery({ queryKey: ['iam', 'me', 'effective-permissions'], queryFn: () => iamService.meEffectivePermissions(), staleTime: 60_000, enabled: hasLocalSession() });
 }
 
 export function useMyNavigation() {
-  return useQuery({ queryKey: ['iam', 'me', 'navigation'], queryFn: () => iamService.meNavigation(), staleTime: 60_000 });
+  return useQuery({ queryKey: ['iam', 'me', 'navigation'], queryFn: () => iamService.meNavigation(), staleTime: 60_000, enabled: hasLocalSession() });
 }
 
 export function useMe() {
-  return useQuery({ queryKey: ['iam', 'me'], queryFn: () => iamService.me() });
+  return useQuery({ queryKey: ['iam', 'me'], queryFn: () => iamService.me(), enabled: hasLocalSession() });
 }
 
 export function useProfileInvitations() {
-  return useQuery({ queryKey: ['iam', 'me', 'invitations'], queryFn: () => iamService.profileInvitations() });
+  return useQuery({ queryKey: ['iam', 'me', 'invitations'], queryFn: () => iamService.profileInvitations(), enabled: hasLocalSession() });
 }
 
 export function useIamAccessReference() {

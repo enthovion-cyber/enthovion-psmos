@@ -30,7 +30,11 @@ export const psiIntegrationService = {
 export const mocPsiImpactService = {
   get: (mocId: string) => get<PsiMocImpact>(`/moc/${mocId}/psi-impact`),
   run: (mocId: string, data?: Record<string, unknown>) => post<PsiMocImpact>(`/moc/${mocId}/psi-impact/run`, data),
-  updateItem: (mocId: string, itemId: string, data: Record<string, unknown>) => patch<Record<string, unknown>>(`/moc/${mocId}/psi-impact/items/${itemId}`, data)
+  updateItem: (mocId: string, itemId: string, data: Record<string, unknown>) => patch<Record<string, unknown>>(`/moc/${mocId}/psi-impact/items/${itemId}`, data),
+  getImpact: (mocId: string) => get<Record<string, unknown>>(`/process-safety-information/integrations/moc/${mocId}/impact`),
+  runImpact: (mocId: string, data?: Record<string, unknown>) => post<Record<string, unknown>>(`/process-safety-information/integrations/moc/${mocId}/run-impact`, data),
+  lock: (mocId: string, data?: Record<string, unknown>) => post<Record<string, unknown>>(`/process-safety-information/integrations/moc/${mocId}/lock`, data),
+  applyBaseline: (mocId: string, data?: Record<string, unknown>) => post<Record<string, unknown>>(`/process-safety-information/integrations/moc/${mocId}/apply-baseline`, data)
 };
 
 export const pssrPsiReadinessService = {

@@ -12,17 +12,15 @@ export function ExpiringPermitsPanel({ data }: ExpiringPermitsPanelProps) {
   const expiredRows = data?.expired ?? [];
   const withinThirtyMinutes = data?.withinThirtyMinutes ?? [];
 
-  // Calculate the single closest upcoming target expiration timestamp for the center countdown
   const nextExpiringPermit = useMemo(() => {
     if (!withinTwoHours.length) return null;
-    return [...withinTwoHours].sort((a, b) => 
+    return [...withinTwoHours].sort((a, b) =>
       new Date(a.planned_end_at).getTime() - new Date(b.planned_end_at).getTime()
     )[0];
   }, [withinTwoHours]);
 
-  // 1. Structure 3 distinct datasets for the 3 separate concentric layers
   const outerExpiredRing = useMemo(() => [
-    { name: 'Expired', value: expiredRows.length || 0.001 }, // micro fallback prevents Recharts render anomalies on 0
+    { name: 'Expired', value: expiredRows.length || 0.001 },
     { name: 'Track', value: expiredRows.length ? 0 : 100 }
   ], [expiredRows]);
 
@@ -32,7 +30,6 @@ export function ExpiringPermitsPanel({ data }: ExpiringPermitsPanelProps) {
   ], [withinThirtyMinutes]);
 
   const innerWarningRing = useMemo(() => {
-    // Prevent double counting: warning represents the outer window excluding immediate 30m criticals
     const warningCount = Math.max(0, withinTwoHours.length - withinThirtyMinutes.length);
     return [
       { name: 'Warning', value: warningCount || 0.001 },
@@ -40,145 +37,134 @@ export function ExpiringPermitsPanel({ data }: ExpiringPermitsPanelProps) {
     ];
   }, [withinTwoHours, withinThirtyMinutes]);
 
-  // Combine datasets cleanly for the unified scroll list
   const unifiedStream = useMemo(() => {
     return [...expiredRows, ...withinTwoHours];
   }, [withinTwoHours, expiredRows]);
 
   return (
-    <section className="w-full max-w-lg rounded-xl border border-[#1e293b] bg-[#0f172a] p-5 shadow-lg select-none">
-      
+    <section className="w-full h-full flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1829] p-3.5 sm:p-4 shadow-xs dark:shadow-xl select-none transition-all">
       {/* Top Header Row */}
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-white tracking-wide">
+      <div className="mb-2.5 flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
           Expiring Permits Status
         </h3>
-        <a 
-          href="/ptw?expiringWithin=2" 
-          className="text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+        <a
+          href="/ptw?expiringWithin=2"
+          className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline transition-colors cursor-pointer"
         >
           View expiring →
         </a>
       </div>
 
       {/* Main Multi-Ring Interface Layout */}
-      <div className="flex flex-col sm:flex-row items-center gap-6 pb-4 border-b border-slate-800/60">
-        
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 pb-2 border-b border-slate-100 dark:border-slate-800/60">
         {/* Left Side: 3-Ring Concentric Circular Target System */}
-        <div className="relative flex h-[220px] w-full flex-1 items-center justify-center sm:max-w-[240px]">
+        <div className="relative flex h-[125px] w-[125px] shrink-0 items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               {/* Ring 1 (Outer): Expired Track */}
               <Pie
                 data={outerExpiredRing}
                 dataKey="value"
-                innerRadius={84}
-                outerRadius={94}
+                innerRadius={48}
+                outerRadius={56}
                 stroke="none"
                 startAngle={90}
                 endAngle={-270}
               >
-                <Cell fill={expiredRows.length > 0 ? '#ef4444' : '#1e293b/30'} />
-                <Cell fill="rgba(30, 41, 59, 0.15)" />
+                <Cell fill={expiredRows.length > 0 ? '#ef4444' : 'rgba(148, 163, 184, 0.2)'} />
+                <Cell fill="rgba(148, 163, 184, 0.1)" />
               </Pie>
 
               {/* Ring 2 (Middle): Critical (<30m) Track */}
               <Pie
                 data={middleCriticalRing}
                 dataKey="value"
-                innerRadius={68}
-                outerRadius={78}
+                innerRadius={38}
+                outerRadius={45}
                 stroke="none"
                 startAngle={90}
                 endAngle={-270}
               >
-                <Cell fill={withinThirtyMinutes.length > 0 ? '#f43f5e' : '#1e293b/30'} />
-                <Cell fill="rgba(30, 41, 59, 0.15)" />
+                <Cell fill={withinThirtyMinutes.length > 0 ? '#f43f5e' : 'rgba(148, 163, 184, 0.2)'} />
+                <Cell fill="rgba(148, 163, 184, 0.1)" />
               </Pie>
 
               {/* Ring 3 (Inner): Warning (<2h) Track */}
               <Pie
                 data={innerWarningRing}
                 dataKey="value"
-                innerRadius={52}
-                outerRadius={62}
+                innerRadius={28}
+                outerRadius={35}
                 stroke="none"
                 startAngle={90}
                 endAngle={-270}
               >
-                <Cell fill={(withinTwoHours.length - withinThirtyMinutes.length) > 0 ? '#eab308' : '#1e293b/30'} />
-                <Cell fill="rgba(30, 41, 59, 0.15)" />
+                <Cell fill={(withinTwoHours.length - withinThirtyMinutes.length) > 0 ? '#eab308' : 'rgba(148, 163, 184, 0.2)'} />
+                <Cell fill="rgba(148, 163, 184, 0.1)" />
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          
-          {/* Centered Ring Core: Real-Time Active Countdown Timer */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Next Expiry In
+
+          {/* Centered Ring Core */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-2 pointer-events-none">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 block leading-tight">
+              Next Expiry
             </span>
-            <LiveCenterTicker targetPermit={nextExpiringPermit} fallbackValue={expiredRows.length ? 'EXPIRED' : '--:--:--'} />
+            <LiveCenterTicker targetPermit={nextExpiringPermit ?? null} fallbackValue={expiredRows.length ? 'EXPIRED' : '--:--'} />
           </div>
         </div>
 
         {/* Right Side: Consolidated Quick Stats Metrics Column */}
-        <div className="flex w-full flex-col justify-center space-y-2.5 sm:w-[220px]">
-          <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 px-1">
-            Risk Quantities
-          </h4>
-          
-          <div className="flex items-center justify-between text-[13px] bg-red-950/20 p-2 rounded-md border border-red-900/30">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-red-500" />
-              <span className="font-medium text-slate-300">Expired</span>
+        <div className="flex w-full flex-1 flex-col justify-center space-y-1.5 min-w-0">
+          <div className="flex items-center justify-between text-xs bg-red-50/70 dark:bg-red-950/20 px-2 py-1.5 rounded-lg border border-red-200/80 dark:border-red-900/30">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">Expired</span>
             </div>
-            <span className="font-bold text-red-400">{expiredRows.length}</span>
+            <span className="font-bold font-mono text-red-600 dark:text-red-400 text-xs">{expiredRows.length}</span>
           </div>
 
-          <div className="flex items-center justify-between text-[13px] bg-rose-950/20 p-2 rounded-md border border-rose-900/30">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between text-xs bg-rose-50/70 dark:bg-rose-950/20 px-2 py-1.5 rounded-lg border border-rose-200/80 dark:border-rose-900/30">
+            <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-500" />
-              <span className="font-medium text-slate-300">Critical (&lt;30m)</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">Critical (&lt;30m)</span>
             </div>
-            <span className="font-bold text-rose-400">{withinThirtyMinutes.length}</span>
+            <span className="font-bold font-mono text-rose-600 dark:text-rose-400 text-xs">{withinThirtyMinutes.length}</span>
           </div>
 
-          <div className="flex items-center justify-between text-[13px] bg-amber-950/20 p-2 rounded-md border border-amber-900/30">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between text-xs bg-amber-50/70 dark:bg-amber-950/20 px-2 py-1.5 rounded-lg border border-amber-200/80 dark:border-amber-900/30">
+            <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
-              <span className="font-medium text-slate-300">Warning (&lt;2h)</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">Warning (&lt;2h)</span>
             </div>
-            <span className="font-bold text-amber-400">{withinTwoHours.length}</span>
+            <span className="font-bold font-mono text-amber-600 dark:text-amber-400 text-xs">{withinTwoHours.length}</span>
           </div>
         </div>
       </div>
 
       {/* Bottom Real-Time Queue Timeline Stream */}
-      <div className="mt-4">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-2.5">
+      <div className="mt-3">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mb-2">
           <Clock size={12} /> Expiry Schedule Activity Queue
         </div>
 
-        <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent hover:scrollbar-thumb-slate-600 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-800 hover:[&::-webkit-scrollbar-thumb]:bg-slate-700">
+        <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
           {unifiedStream.length > 0 ? (
             unifiedStream.map((permit) => (
               <LiveStreamRow key={permit.id} permit={permit} isTarget={nextExpiringPermit?.id === permit.id} />
             ))
           ) : (
-            <div className="py-6 text-center text-xs text-slate-500 italic">
+            <div className="py-6 text-center text-xs text-slate-400 dark:text-slate-500 italic">
               No immediate permit expiries monitored.
             </div>
           )}
         </div>
       </div>
-
     </section>
   );
 }
 
-/**
- * Center Clock Countdown Component (Prevents panel layout lag)
- */
 function LiveCenterTicker({ targetPermit, fallbackValue }: { targetPermit: Permit | null; fallbackValue: string }) {
   const [displayTime, setDisplayTime] = useState(fallbackValue);
 
@@ -195,7 +181,7 @@ function LiveCenterTicker({ targetPermit, fallbackValue }: { targetPermit: Permi
         return;
       }
       const hrs = Math.floor(diff / (1000 * 60 * 60));
-      const mins = Math.floor((diff / (1000 * 60)) % 60);
+      const mins = Math.floor((diff % (1000 * 60)) % 60);
       const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
       const hStr = hrs > 0 ? `${hrs}h ` : '';
@@ -208,15 +194,12 @@ function LiveCenterTicker({ targetPermit, fallbackValue }: { targetPermit: Permi
   }, [targetPermit, fallbackValue]);
 
   return (
-    <span className="text-[20px] font-black font-mono text-white tracking-wide mt-1 block drop-shadow-sm min-w-[110px]">
+    <span className="text-base sm:text-lg font-black font-mono text-slate-900 dark:text-white tracking-tight mt-0.5 block min-w-[90px]">
       {displayTime}
     </span>
   );
 }
 
-/**
- * Activity Queue Row Component
- */
 function LiveStreamRow({ permit, isTarget }: { permit: Permit; isTarget: boolean }) {
   const [timeText, setTimeText] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
@@ -232,25 +215,31 @@ function LiveStreamRow({ permit, isTarget }: { permit: Permit; isTarget: boolean
       }
       setIsUrgent(Math.floor(diff / (1000 * 60)) < 30);
       const hrs = Math.floor(diff / (1000 * 60 * 60));
-      const mins = Math.floor((diff / (1000 * 60)) % 60);
+      const mins = Math.floor((diff % (1000 * 60)) % 60);
       setTimeText(`${hrs > 0 ? `${hrs}h ` : ''}${mins}m left`);
     };
     calc();
-    const timer = setInterval(calc, 60000); // Efficient 1-minute ticking for sub-rows
+    const timer = setInterval(calc, 60000);
     return () => clearInterval(timer);
   }, [permit.planned_end_at]);
 
   return (
-    <div className={`flex items-center justify-between p-2 rounded-md border text-[12px] transition-all ${
-      isPast ? 'border-red-500/20 bg-red-950/10 text-red-400' :
-      isUrgent ? 'border-rose-500/20 bg-rose-950/10 text-rose-400 animate-pulse' :
-      isTarget ? 'border-amber-500/40 bg-amber-950/20 text-amber-300' : 'border-slate-800/60 bg-slate-900/40 text-slate-300'
-    }`}>
+    <div
+      className={`flex items-center justify-between p-2 rounded-lg border text-xs transition-all ${
+        isPast
+          ? 'border-red-200 dark:border-red-500/20 bg-red-50/70 dark:bg-red-950/20 text-red-700 dark:text-red-400'
+          : isUrgent
+            ? 'border-rose-200 dark:border-rose-500/20 bg-rose-50/70 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400 animate-pulse'
+            : isTarget
+              ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 font-semibold'
+              : 'border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300'
+      }`}
+    >
       <div className="flex items-center gap-2 truncate">
-        {(isUrgent || isPast) && <AlertTriangle size={12} />}
-        <span className="font-mono font-semibold truncate">{permit.permit_number}</span>
+        {(isUrgent || isPast) && <AlertTriangle size={12} className="shrink-0" />}
+        <span className="font-mono font-bold truncate">{permit.permit_number}</span>
       </div>
-      <span className="font-mono text-[11px] font-bold bg-slate-950/40 px-2 py-0.5 rounded border border-slate-800/30">
+      <span className="font-mono text-[10px] font-bold bg-white/80 dark:bg-slate-950/40 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800/40 shrink-0">
         {timeText}
       </span>
     </div>

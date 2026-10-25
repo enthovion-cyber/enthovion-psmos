@@ -71,7 +71,7 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] p-1 space-y-6 text-slate-100 antialiased">
+    <div className="mx-auto w-full max-w-[1600px] p-1 space-y-5 text-[var(--psm-text)] antialiased">
       {/* Alert Banners System */}
       <div className="space-y-3">
         {readonly && (
@@ -91,43 +91,43 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
       </div>
 
       {/* Modern Dashboard Header */}
-      <div className="flex flex-col gap-4 border-b border-slate-800 pb-5 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+      <div className="flex flex-col gap-3 border-b border-[var(--psm-line)] pb-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-0.5">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--psm-text)] flex items-center gap-2">
             Team & Sessions Workspace
           </h2>
-          <p className="text-sm text-slate-400 max-w-2xl">
+          <p className="text-xs sm:text-sm text-[var(--psm-muted)] max-w-2xl">
             Monitor study discipline coverage, evaluate real-time session schedules, log attendance, sign-offs, and track localized actionable items.
           </p>
         </div>
         
         {/* Universal Management Control Group */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {can('hazop.sessions.export') && (
             <button 
               onClick={exportReport}
               disabled={teamMutations.exportReport.isPending}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/60 px-3.5 py-2 text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800 hover:text-white disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--psm-text)] transition-all hover:bg-[var(--psm-surface-2)] disabled:opacity-50"
             >
-              <Download size={14} />
+              <Download size={13} />
               {teamMutations.exportReport.isPending ? 'Exporting...' : 'Export Matrix'}
             </button>
           )}
           {can('hazop.team.manage') && !readonly && (
             <button 
               onClick={() => setAddingMember(true)} 
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-indigo-500 hover:shadow active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-indigo-500 active:scale-[0.98]"
             >
-              <Plus size={14} />
+              <Plus size={13} />
               Add Team Member
             </button>
           )}
           {can('hazop.sessions.create') && !readonly && (
             <button 
               onClick={() => setAddingSession(true)} 
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 hover:shadow active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.98]"
             >
-              <Plus size={14} />
+              <Plus size={13} />
               Schedule Session
             </button>
           )}
@@ -135,7 +135,7 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
       </div>
 
       {/* KPI Overview Summary Bar */}
-      <div className="bg-slate-900/40 rounded-xl border border-slate-850 p-1">
+      <div className="bg-[var(--psm-surface)] rounded-xl border border-[var(--psm-line)] p-1">
         <HazopTeamSummaryCards 
           summary={team.summary.data} 
           loading={team.summary.isLoading} 
@@ -150,15 +150,15 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
       </div>
 
       {/* Main Structural Layout Grid */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px]">
+      <div className="grid gap-5 xl:grid-cols-[1fr_360px] 2xl:grid-cols-[1fr_390px]">
         {/* Left Interactive Panel: Core Registries */}
-        <main className="space-y-8 min-w-0">
+        <main className="space-y-6 min-w-0">
           
           {/* Section A: Team Management Node */}
-          <section className="rounded-xl border border-slate-800/80 bg-slate-900/20 p-4 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800/60 pb-3">
-              <Users size={16} className="text-indigo-400" />
-              <h3 className="font-semibold text-slate-200 text-sm tracking-wide uppercase">Study Team Register</h3>
+          <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3.5 sm:p-4 space-y-3.5">
+            <div className="flex items-center gap-2 border-b border-[var(--psm-line)] pb-2.5">
+              <Users size={16} className="text-indigo-500" />
+              <h3 className="font-semibold text-[var(--psm-text)] text-xs sm:text-sm tracking-wide uppercase">Study Team Register</h3>
             </div>
             <HazopTeamFilters 
               filters={teamFilters} 
@@ -167,7 +167,7 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
               onExport={undefined} /* Moved to primary top command layout */
               exporting={false} 
             />
-            <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/40">
+            <div className="overflow-hidden rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)]/30">
               <HazopStudyTeamRegister 
                 rows={members} 
                 loading={team.members.isLoading} 
@@ -188,17 +188,17 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
           </section>
 
           {/* Section B: Session Operations Node */}
-          <section className="rounded-xl border border-slate-800/80 bg-slate-900/20 p-4 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800/60 pb-3">
-              <Calendar size={16} className="text-emerald-400" />
-              <h3 className="font-semibold text-slate-200 text-sm tracking-wide uppercase">HAZOP Timeline & Sessions</h3>
+          <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3.5 sm:p-4 space-y-3.5">
+            <div className="flex items-center gap-2 border-b border-[var(--psm-line)] pb-2.5">
+              <Calendar size={16} className="text-emerald-500" />
+              <h3 className="font-semibold text-[var(--psm-text)] text-xs sm:text-sm tracking-wide uppercase">HAZOP Timeline & Sessions</h3>
             </div>
             <HazopSessionFilters 
               filters={sessionFilters} 
               context={context} 
               onChange={setSessionFilters} 
             />
-            <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-950/40">
+            <div className="overflow-hidden rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)]/30">
               <HazopSessionSchedulePanel 
                 rows={sessionRows} 
                 loading={sessions.sessions.isLoading} 
@@ -219,16 +219,16 @@ export function HazopTeamSessionsTab({ study }: { study: any }) {
         </main>
 
         {/* Right Sticky Sidebar: Matrix Coverage & Readiness Metrics */}
-        <aside className="space-y-5 h-fit lg:sticky lg:top-6">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-4 space-y-1">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Discipline Coverage</h4>
-            <p className="text-xs text-slate-500 pb-2">Assures cross-functional compliance during safety assessments.</p>
+        <aside className="space-y-4 h-fit xl:sticky xl:top-6">
+          <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3.5 space-y-1">
+            <h4 className="text-xs font-bold text-[var(--psm-text)] uppercase tracking-wider">Discipline Coverage</h4>
+            <p className="text-xs text-[var(--psm-muted)] pb-2">Assures cross-functional compliance during safety assessments.</p>
             <HazopDisciplineCoveragePanel rows={team.coverage.data ?? []} />
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-4 space-y-1">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sign-off Verification</h4>
-            <p className="text-xs text-slate-500 pb-2">Review overall assessment finalization readiness thresholds.</p>
+          <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3.5 space-y-1">
+            <h4 className="text-xs font-bold text-[var(--psm-text)] uppercase tracking-wider">Sign-off Verification</h4>
+            <p className="text-xs text-[var(--psm-muted)] pb-2">Review overall assessment finalization readiness thresholds.</p>
             <HazopTeamSignoffReadinessPanel readiness={team.readiness.data} />
           </div>
         </aside>

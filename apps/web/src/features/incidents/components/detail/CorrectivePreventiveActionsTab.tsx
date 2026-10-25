@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useIncidentCapa, useIncidentCapaMutations } from '../../hooks/useIncidentCapa';
+import { incidentCapaService } from '../../services/incident-capa.service';
 import { ActionClassificationPriorityPanel } from '../corrective-preventive-actions/ActionClassificationPriorityPanel';
 import { AddEditCapaDrawer } from '../corrective-preventive-actions/AddEditCapaDrawer';
 import { CapaChangeHistoryPanel } from '../corrective-preventive-actions/CapaChangeHistoryPanel';
@@ -19,12 +20,15 @@ import { OverdueEscalationPanel } from '../corrective-preventive-actions/Overdue
 import { OwnerDueDateAssignmentPanel } from '../corrective-preventive-actions/OwnerDueDateAssignmentPanel';
 import { SourceMappingPanel } from '../corrective-preventive-actions/SourceMappingPanel';
 import { TabStatePanel, errorText } from '../shared/IncidentTabPrimitives';
+import { SpawnMocModal } from '../shared/SpawnMocModal';
 
 export function CorrectivePreventiveActionsTab({ incidentId }: { incidentId: string }) {
   const { data, isLoading, error, refetch } = useIncidentCapa(incidentId);
   const mutations = useIncidentCapaMutations(incidentId);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
+  const [spawnMocOpen, setSpawnMocOpen] = useState(false);
+  const [selectedCapaForMoc, setSelectedCapaForMoc] = useState<any | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const saving = Object.values(mutations).some((mutation: any) => mutation.isPending);
 
@@ -57,16 +61,69 @@ export function CorrectivePreventiveActionsTab({ incidentId }: { incidentId: str
   const approveReview = async () => { try { await mutations.approveReview.mutateAsync({ comments: 'CAPA review approved from tab' }); setMessage('CAPA review approved.'); } catch (event) { setMessage(errorText(event)); } };
   const rejectReview = async () => { const reason = window.prompt('Reason for rejecting CAPA review'); if (!reason) return; try { await mutations.rejectReview.mutateAsync({ reason }); setMessage('CAPA review rejected.'); } catch (event) { setMessage(errorText(event)); } };
 
+  const handleSpawnMoc = (capaItem?: any) => {
+    setSelectedCapaForMoc(capaItem ?? null);
+    setSpawnMocOpen(true);
+  };
+
+  const handleSyncAction = async (row: any) => {
+    try {
+      await incidentCapaService.syncAction(incidentId, row.id);
+      setMessage(`CAPA item ${row.capa_number || row.id} successfully synchronized with Universal Action Center.`);
+      refetch();
+    } catch (event) {
+      setMessage(errorText(event));
+    }
+  };
+
   return <div className="grid gap-4">
-    <CapaHeader data={data} saving={saving} message={message} onAdd={add} onGenerateRca={() => mutations.generateFromRca.mutateAsync({ reason: 'Generated from CAPA tab' }).then(() => setMessage('CAPA generated from RCA root causes.')).catch((event) => setMessage(errorText(event)))} onGenerateBarriers={() => mutations.generateFromBarriers.mutateAsync({ reason: 'Generated from CAPA tab' }).then(() => setMessage('CAPA generated from barrier failures.')).catch((event) => setMessage(errorText(event)))} onLinkExisting={() => linkAction()} onRequestReview={requestReview} onExport={() => mutations.export.mutateAsync().then(() => setMessage('CAPA register export generated.')).catch((event) => setMessage(errorText(event)))} onSaveChanges={() => setMessage('Open a CAPA row to save detailed changes.')} onRefresh={() => refetch()} />
+    <CapaHeader
+      data={data}
+      saving={saving}
+      message={message}
+      onAdd={add}
+      onSpawnMoc={() => handleSpawnMoc(null)}
+      onGenerateRca={() => mutations.generateFromRca.mutateAsync({ reason: 'Generated from CAPA tab' }).then(() => setMessage('CAPA generated from RCA root causes.')).catch((event) => setMessage(errorText(event)))}
+      onGenerateBarriers={() => mutations.generateFromBarriers.mutateAsync({ reason: 'Generated from CAPA tab' }).then(() => setMessage('CAPA generated from barrier failures.')).catch((event) => setMessage(errorText(event)))}
+      onLinkExisting={() => linkAction()}
+      onRequestReview={requestReview}
+      onExport={() => mutations.export.mutateAsync().then(() => setMessage('CAPA register export generated.')).catch((event) => setMessage(errorText(event)))}
+      onSaveChanges={() => setMessage('Open a CAPA row to save detailed changes.')}
+      onRefresh={() => refetch()}
+    />
     <CapaSummaryCards cards={data.summaryCards ?? []} />
-    <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]"><CapaRegister rows={data.capaRegister ?? []} onEdit={edit} onDelete={cancel} onComplete={complete} onVerify={verify} onReject={reject} onEvidence={linkEvidence} onSource={linkSource} onEscalate={escalate} onLinkAction={linkAction} /><CapaSourceReadinessPanel data={data.sourceReadiness} /></div>
+    <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+      <CapaRegister
+        rows={data.capaRegister ?? []}
+        onEdit={edit}
+        onDelete={cancel}
+        onComplete={complete}
+        onVerify={verify}
+        onReject={reject}
+        onEvidence={linkEvidence}
+        onSource={linkSource}
+        onEscalate={escalate}
+        onLinkAction={linkAction}
+        onSpawnMoc={handleSpawnMoc}
+        onSyncAction={handleSyncAction}
+      />
+      <CapaSourceReadinessPanel data={data.sourceReadiness} />
+    </div>
     <div className="grid gap-4 xl:grid-cols-2"><SourceMappingPanel data={data.sourceMapping} /><ActionClassificationPriorityPanel data={data.classificationPriority} /></div>
     <div className="grid gap-4 xl:grid-cols-3"><OwnerDueDateAssignmentPanel data={data.ownerDueDateAssignment} /><ImplementationPlanPanel data={data.implementationPlan} /><EvidenceOfCompletionPanel data={data.evidenceOfCompletion} /></div>
     <div className="grid gap-4 xl:grid-cols-3"><EffectivenessVerificationPanel data={data.effectivenessVerification} /><OverdueEscalationPanel data={data.overdueEscalation} /><CapaCoverageMatrixPanel data={data.coverageMatrix} /></div>
     <div className="grid gap-4 xl:grid-cols-2"><CapaReviewPanel review={data.review} onRequest={requestReview} onApprove={approveReview} onReject={rejectReview} /><CapaReadinessPanel readiness={data.readiness} /></div>
     <CapaChangeHistoryPanel rows={data.changeHistory ?? []} />
     <AddEditCapaDrawer open={open} form={form} set={set} context={data.context} saving={saving} onClose={() => setOpen(false)} onSave={save} />
+    <SpawnMocModal
+      isOpen={spawnMocOpen}
+      onClose={() => setSpawnMocOpen(false)}
+      onSuccess={() => { refetch(); setMessage('Management of Change record spawned and linked successfully.'); }}
+      incidentId={incidentId}
+      incidentNumber={data?.header?.incidentNumber}
+      incidentTitle={data?.header?.incidentTitle}
+      capaItem={selectedCapaForMoc}
+    />
   </div>;
 }
 

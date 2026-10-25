@@ -4,7 +4,7 @@ import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import { DetailCard, Field, detailTextarea } from '../moc-detail-ui';
 import type { MOCRiskValues } from '../../schemas/moc-risk.schema';
 
-export function RiskRationaleForm({ register, errors, disabled }: { register: UseFormRegister<MOCRiskValues>; errors: FieldErrors<MOCRiskValues>; disabled?: boolean }) {
+export function RiskRationaleForm({ register, errors, disabled }: { register: UseFormRegister<MOCRiskValues>; errors: FieldErrors<MOCRiskValues>; disabled?: boolean | undefined }) {
   return (
     <DetailCard title="Risk Rationale">
       <div className="grid gap-4">
@@ -37,6 +37,6 @@ export function RiskRationaleForm({ register, errors, disabled }: { register: Us
   );
 }
 
-function TextArea({ label, field, register, disabled, error }: { label: string; field: Parameters<UseFormRegister<MOCRiskValues>>[0]; register: UseFormRegister<MOCRiskValues>; disabled?: boolean; error?: string }) {
+function TextArea({ label, field, register, disabled, error }: { label: string; field: Parameters<UseFormRegister<MOCRiskValues>>[0]; register: UseFormRegister<MOCRiskValues>; disabled?: boolean | undefined; error?: string | undefined }) {
   return <Field label={label}><textarea disabled={disabled} className={`${detailTextarea} disabled:opacity-60`} {...register(field)} />{error ? <p className="mt-1 text-xs font-bold text-red-200">{error}</p> : null}</Field>;
 }

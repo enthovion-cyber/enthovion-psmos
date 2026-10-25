@@ -34,6 +34,10 @@ import { PsiModule } from './psi/psi.module';
 import { TrainingCompetencyModule } from './training-competency/training-competency.module';
 import { AuditComplianceModule } from './audit-compliance/audit-compliance.module';
 import { RegulatoryModule } from './regulatory/regulatory.module';
+import { OperatingProceduresModule } from './operating-procedures/operating-procedures.module';
+import { ContractorSafetyModule } from './contractor-safety/contractor-safety.module';
+import { ExecutiveModule } from './executive/executive.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -75,9 +79,15 @@ import { RegulatoryModule } from './regulatory/regulatory.module';
     TrainingCompetencyModule,
     AuditComplianceModule,
     RegulatoryModule,
+    OperatingProceduresModule,
+    ContractorSafetyModule,
+    ExecutiveModule,
+    AiModule,
     BillingModule,
     SignaturesModule,
     SearchModule
   ]
 })
 export class AppModule {}
+
+

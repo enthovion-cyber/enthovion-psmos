@@ -1,2 +1,11 @@
 import { TrainingExportJobDetailPage } from '@/features/training/reports/jobs/TrainingExportJobDetailPage';
-export default function Page({ params }: { params: { jobId: string } }) { return <TrainingExportJobDetailPage jobId={params.jobId} />; }
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function Page(props: { params: Promise<{ jobId: string }> }) {
+  const params = await props.params;
+  return <TrainingExportJobDetailPage jobId={params.jobId} />;
+}

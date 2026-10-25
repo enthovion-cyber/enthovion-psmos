@@ -23,6 +23,7 @@ export const hazopScenarioService = {
   close: (studyId: string, scenarioId: string) => api.post(`/hazop/${studyId}/scenarios/${scenarioId}/close`).then(unwrap<any>),
   markLopaRequired: (studyId: string, scenarioId: string, reason: string) => api.post(`/hazop/${studyId}/scenarios/${scenarioId}/mark-lopa-required`, hazopLopaReasonSchema.parse({ reason })).then(unwrap<any>),
   clearLopaRequired: (studyId: string, scenarioId: string, reason: string) => api.post(`/hazop/${studyId}/scenarios/${scenarioId}/clear-lopa-required`, hazopLopaReasonSchema.parse({ reason })).then(unwrap<any>),
+  escalateToLopa: (studyId: string, scenarioId: string, values: Record<string, any> = {}) => api.post(`/hazop/${studyId}/scenarios/${scenarioId}/escalate-to-lopa`, values).then(unwrap<any>),
   addSafeguard: (studyId: string, scenarioId: string, values: Record<string, any>) => api.post(`/hazop/${studyId}/scenarios/${scenarioId}/safeguards`, hazopSafeguardSchema.parse(values)).then(unwrap<any>),
   updateRisk: (studyId: string, scenarioId: string, values: Record<string, any>) => api.patch(`/hazop/${studyId}/scenarios/${scenarioId}/risk`, hazopRiskUpdateSchema.parse(values)).then(unwrap<any>),
   recalculateRisk: (studyId: string, scenarioId: string) => api.post(`/hazop/${studyId}/scenarios/${scenarioId}/risk/recalculate`).then(unwrap<any>),

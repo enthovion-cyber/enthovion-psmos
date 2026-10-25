@@ -1,5 +1,11 @@
 import { SafeguardRegistryPage } from '@/features/psi/safeguards/SafeguardRegistryPage';
 
-export default function UnitSafeOperatingLimitSafeguardsPage({ params }: { params: { unitId: string; limitId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function UnitSafeOperatingLimitSafeguardsPage(props: { params: Promise<{ unitId: string; limitId: string }> }) {
+  const params = await props.params;
   return <SafeguardRegistryPage unitId={params.unitId} preset={{ sourceModule: 'Safe Operating Limits', sourceRecordId: params.limitId }} />;
 }

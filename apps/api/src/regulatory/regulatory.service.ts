@@ -2,6 +2,8 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { ActionsService } from '../actions/actions.service';
 import { AuditService } from '../audit/audit.service';
 import { SupabaseService } from '../database/supabase.service';
+import { StorageService } from '../storage/storage.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   regulatoryApplicabilityStatuses,
   regulatoryApplicabilityAssessmentMethods,
@@ -69,8 +71,34 @@ import {
   regulatoryObligationTriggerEvents,
   regulatoryObligationTypes,
   regulatoryRegisterStatuses,
+  regulatoryReportAudiences,
+  regulatoryReportConfidentialityLevels,
+  regulatoryReportExportFormats,
+  regulatoryReportJobStatuses,
+  regulatoryReportPackageStatuses,
+  regulatoryReportPackageTypes,
+  regulatoryReportReadinessStatuses,
+  regulatoryReportStaleStatuses,
+  regulatoryReportStatuses,
+  regulatoryReportTypes,
+  regulatoryChangeAffectedRecordTypes,
+  regulatoryChangeImpactActions,
+  regulatoryChangeImpactStatuses,
+  regulatoryChangeSourceStatuses,
+  regulatoryChangeSourceTypes,
+  regulatoryChangeStatuses,
+  regulatoryChangeTypes,
   regulatoryReviewFrequencies,
+  regulatoryReviewConditionStatuses,
+  regulatoryReviewDecisionTypes,
+  regulatoryReviewESignStatuses,
+  regulatoryReviewerSelectionMethods,
+  regulatoryReviewPackageStatuses,
+  regulatoryReviewStageStatuses,
   regulatoryReviewStatuses,
+  regulatoryReviewStaleStatuses,
+  regulatoryReviewTriggerEvents,
+  regulatoryReviewValidationStatuses,
   regulatorySourceTypes
 } from './regulatory.constants';
 
@@ -91,7 +119,7 @@ const obligationReadOnlyStatuses = new Set(['Archived', 'Superseded', 'Cancelled
 
 @Injectable()
 export class RegulatoryService {
-  constructor(private readonly db: SupabaseService, private readonly audit: AuditService, private readonly actions: ActionsService) {}
+  constructor(private readonly db: SupabaseService, private readonly audit: AuditService, private readonly actions: ActionsService, private readonly storage: StorageService, private readonly notifications: NotificationsService) {}
 
   async dashboard(userId: string, scope: Scope, query: Row = {}) {
     const register = await this.register(scope, { ...query, limit: 5000 });
@@ -911,6 +939,28 @@ export class RegulatoryService {
       'auto_notify_owner_on_verification_failed',
       'action_due_soon_days',
       'action_overdue_escalation_days',
+      'require_review_for_active_regulatory_item',
+      'require_review_for_applicability_decision',
+      'require_review_for_critical_applicability_decision',
+      'require_review_for_critical_obligation',
+      'require_review_for_compliance_status_change',
+      'require_review_for_critical_compliance_status',
+      'require_review_for_non_compliance_closure',
+      'require_review_for_evidence_verification',
+      'require_review_for_critical_evidence_verification',
+      'require_review_for_audit_mapping_verification',
+      'require_review_for_regulatory_capa_closure',
+      'require_esign_for_critical_approval',
+      'require_esign_for_compliance_status_approval',
+      'require_separation_of_duties',
+      'block_approval_if_package_stale',
+      'block_approval_if_validation_failed',
+      'auto_lock_source_after_final_approval',
+      'allow_approval_with_conditions',
+      'allow_delegate_review',
+      'allow_review_escalation',
+      'review_due_soon_days',
+      'review_overdue_escalation_days',
       'settings_json'
     ]);
     const existing = before.id;
@@ -991,13 +1041,543 @@ export class RegulatoryService {
       regulatoryActionVerificationStatuses,
       regulatoryActionEffectivenessStatuses,
       regulatoryCapaPackageTypes,
-      regulatoryCapaPackageStatuses
+      regulatoryCapaPackageStatuses,
+      regulatoryReportTypes,
+      regulatoryReportStatuses,
+      regulatoryReportReadinessStatuses,
+      regulatoryReportStaleStatuses,
+      regulatoryReportPackageTypes,
+      regulatoryReportPackageStatuses,
+      regulatoryReportExportFormats,
+      regulatoryReportAudiences,
+      regulatoryReportConfidentialityLevels,
+      regulatoryReportJobStatuses,
+      regulatoryReviewPackageStatuses,
+      regulatoryReviewStageStatuses,
+      regulatoryReviewDecisionTypes,
+      regulatoryReviewValidationStatuses,
+      regulatoryReviewESignStatuses,
+      regulatoryReviewConditionStatuses,
+      regulatoryReviewStaleStatuses,
+      regulatoryReviewerSelectionMethods,
+      regulatoryReviewTriggerEvents
     };
   }
 
   lookup(key: string) {
     const lookups = this.lookups() as Row;
     return { rows: lookups[key] ?? [] };
+  }
+
+  async reviewApprovalDashboard(userId: string, scope: Scope, query: Row = {}, permissions: string[] = []) {
+    const packages = await this.reviewPackages(scope, { ...query, limit: 5000 }, permissions);
+    const rows = packages.allRows ?? packages.rows ?? [];
+    return {
+      header: { title: 'Regulatory Review & Approval', subtitle: 'Formal review packages, validation, immutable snapshots, e-signature tracking, conditions, SLA and source locking foundation.', generatedAt: new Date().toISOString() },
+      summary: this.reviewSummary(rows, userId),
+      bySourceType: this.groupRows(rows, 'source_type'),
+      bySite: this.groupRows(rows, 'site_id'),
+      byReviewer: this.groupRows(rows, 'current_reviewer_user_id'),
+      byStatus: this.groupRows(rows, 'review_status'),
+      byStaleStatus: this.groupRows(rows, 'stale_status'),
+      inboxPreview: rows.filter((row) => row.current_reviewer_user_id === userId && this.isOpenReviewStatus(row.review_status)).slice(0, 8),
+      submissionPreview: rows.filter((row) => row.submitted_by === userId || row.created_by === userId).slice(0, 8),
+      overduePreview: rows.filter((row) => this.isOverdue(row)).slice(0, 8),
+      stalePreview: rows.filter((row) => row.stale_status && row.stale_status !== 'Current').slice(0, 8),
+      validationFailures: rows.filter((row) => ['Failed', 'Blocked', 'Validation Failed'].includes(row.validation_status ?? row.review_status)).slice(0, 8),
+      recent: rows.slice(0, 12),
+      permissions: this.reviewPermissionState(permissions)
+    };
+  }
+
+  async reviewApprovalSummary(userId: string, scope: Scope, query: Row = {}, permissions: string[] = []) {
+    const dashboard = await this.reviewApprovalDashboard(userId, scope, query, permissions);
+    return dashboard.summary;
+  }
+
+  async reviewPackages(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.view');
+    const limit = Math.min(Number(query.limit ?? 50), 5000);
+    let q = this.db.from('regulatory_review_packages').select('*').eq('company_id', scope.companyId);
+    if (scope.selectedSiteId && !scope.corporateView) q = q.or(`site_id.is.null,site_id.eq.${scope.selectedSiteId}`);
+    if (query.siteId) q = q.eq('site_id', query.siteId);
+    if (query.sourceType) q = q.eq('source_type', query.sourceType);
+    if (query.reviewStatus) q = q.eq('review_status', query.reviewStatus);
+    if (query.staleStatus) q = q.eq('stale_status', query.staleStatus);
+    if (query.currentReviewerUserId) q = q.eq('current_reviewer_user_id', query.currentReviewerUserId);
+    if (query.submittedBy) q = q.eq('submitted_by', query.submittedBy);
+    if (query.search) q = q.or(`package_code.ilike.%${query.search}%,package_title.ilike.%${query.search}%,source_record_number.ilike.%${query.search}%`);
+    const allRows = await this.db.many<Row>(q.order('updated_at', { ascending: false }).limit(limit)).catch(() => []);
+    const rows = this.filterReviewPackagesByView(allRows, String(query.view ?? 'all'), query);
+    return { rows, allRows, total: rows.length, filters: query, permissions: this.reviewPermissionState(permissions) };
+  }
+
+  async reviewFiltered(userId: string, scope: Scope, view: string, query: Row = {}, permissions: string[] = []) {
+    if (view === 'inbox') return this.reviewPackages(scope, { ...query, currentReviewerUserId: userId, view: 'open' }, permissions);
+    if (view === 'my-submissions') return this.reviewPackages(scope, { ...query, submittedBy: userId }, permissions);
+    return this.reviewPackages(scope, { ...query, view }, permissions);
+  }
+
+  async createReviewPackage(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requireAnyPermission(permissions, ['regulatory.review.package.create', 'regulatory.review.package.submit']);
+    const source = await this.resolveReviewSource(scope, dto.sourceType ?? dto.source_type, dto.sourceRecordId ?? dto.source_record_id ?? dto.regulatoryItemId ?? dto.obligationId);
+    const validation = this.validateReviewSource(source);
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const packageCode = await this.nextRegulatoryCode(scope, 'regulatory_review_packages', 'package_code', 'RRA');
+    const eSignatureRequired = Boolean(dto.eSignatureRequired ?? dto.e_signature_required ?? this.isCriticalReviewSource(source.row));
+    const row = await this.db.single<Row>(this.db.from('regulatory_review_packages').insert({
+      id,
+      company_id: scope.companyId,
+      site_id: source.row.site_id ?? scope.selectedSiteId ?? null,
+      unit_id: source.row.unit_id ?? null,
+      area_id: source.row.area_id ?? null,
+      equipment_id: source.row.equipment_id ?? null,
+      package_code: packageCode,
+      package_title: dto.packageTitle ?? dto.package_title ?? `${source.label} review - ${source.title}`,
+      package_description: dto.packageDescription ?? dto.package_description ?? null,
+      source_type: source.type,
+      source_record_id: source.id,
+      source_record_number: source.number,
+      regulatory_item_id: source.type === 'Regulatory Item' ? source.id : source.row.regulatory_item_id ?? null,
+      obligation_id: source.type === 'Obligation' ? source.id : source.row.obligation_id ?? null,
+      applicability_assessment_id: source.type === 'Applicability Assessment' ? source.id : null,
+      compliance_assessment_id: source.type === 'Compliance Assessment' ? source.id : null,
+      evidence_link_id: source.type === 'Evidence Link' ? source.id : null,
+      evidence_package_id: source.type === 'Evidence Package' ? source.id : null,
+      audit_mapping_id: source.type === 'Audit Mapping' ? source.id : null,
+      action_link_id: source.type === 'Action Link' ? source.id : null,
+      capa_package_id: source.type === 'CAPA Package' ? source.id : null,
+      source_snapshot_json: source.snapshot,
+      validation_status: validation.status,
+      validation_summary_json: validation,
+      review_status: dto.submitNow ? (validation.blocking ? 'Validation Failed' : 'Pending Review') : 'Draft',
+      current_reviewer_user_id: dto.reviewerUserId ?? dto.currentReviewerUserId ?? null,
+      decision: null,
+      criticality: source.row.criticality ?? source.row.priority ?? null,
+      e_signature_required: eSignatureRequired,
+      e_signature_status: eSignatureRequired ? 'Required' : 'Not Required',
+      stale_status: 'Current',
+      source_locked: false,
+      submitted_by: dto.submitNow ? userId : null,
+      submitted_at: dto.submitNow ? now : null,
+      due_date: dto.dueDate ?? dto.due_date ?? this.reviewDueDate(dto.slaDays ?? dto.sla_days),
+      created_by: userId,
+      updated_by: userId,
+      created_at: now,
+      updated_at: now
+    }).select().single());
+    await this.createReviewStage(scope, row, userId, dto);
+    await this.replaceReviewValidation(scope, row, validation);
+    await this.writeReviewMutation(scope, userId, dto.submitNow ? 'Review package submitted' : 'Review package created', null, row, dto.reason ?? 'Regulatory review package created', { packageId: row.id, sourceType: source.type, sourceRecordId: source.id });
+    return this.reviewPackageDetail(scope, row.id, permissions);
+  }
+
+  async reviewPackageDetail(scope: Scope, approvalId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.view');
+    const row = await this.getReviewPackage(scope, approvalId);
+    const [stages, decisions, conditions, validation, signatures, history] = await Promise.all([
+      this.db.many<Row>(this.db.from('regulatory_review_stages').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).order('stage_number')).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_review_decisions').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).order('decided_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_review_conditions').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).order('created_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_review_validation_results').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).order('created_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_review_esignature_links').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).order('created_at', { ascending: false })).catch(() => []),
+      this.reviewHistory(scope, { packageId: approvalId }, permissions).then((data) => data.rows).catch(() => [])
+    ]);
+    return { package: row, overview: this.reviewPackageOverview(row, stages, decisions, conditions, validation, signatures), source: row.source_snapshot_json, snapshot: row.source_snapshot_json, validation, stages, decisions, conditions, eSignatures: signatures, history, permissions: this.reviewPermissionState(permissions) };
+  }
+
+  async updateReviewPackage(userId: string, scope: Scope, approvalId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.create');
+    const before = await this.getReviewPackage(scope, approvalId);
+    if (['Approved', 'Approved With Conditions', 'Completed', 'Archived'].includes(before.review_status)) throw new BadRequestException('Approved or archived review packages are immutable. Use resubmit/new package flow.');
+    const patch = this.pick(dto, ['package_title', 'package_description', 'current_reviewer_user_id', 'due_date', 'criticality']);
+    if (dto.packageTitle) patch.package_title = dto.packageTitle;
+    if (dto.packageDescription) patch.package_description = dto.packageDescription;
+    if (dto.reviewerUserId) patch.current_reviewer_user_id = dto.reviewerUserId;
+    patch.updated_by = userId;
+    patch.updated_at = new Date().toISOString();
+    const after = await this.db.single<Row>(this.db.from('regulatory_review_packages').update(patch).eq('company_id', scope.companyId).eq('id', approvalId).select().single());
+    await this.writeReviewMutation(scope, userId, 'Review package updated', before, after, dto.reason ?? 'Review package updated', { packageId: approvalId });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async submitReviewPackage(userId: string, scope: Scope, approvalId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.submit');
+    const before = await this.getReviewPackage(scope, approvalId);
+    const validation = await this.runReviewValidation(userId, scope, approvalId, dto, permissions);
+    const blocking = (validation.validation ?? []).some((item: Row) => item.blocking && !['Passed', 'Override Accepted'].includes(item.validation_status));
+    const status = blocking && !permissions.includes('regulatory.review.decision.override_validation') ? 'Validation Failed' : 'Pending Review';
+    const after = await this.patchReviewPackage(scope, approvalId, { review_status: status, validation_status: blocking ? 'Failed' : 'Passed', submitted_by: userId, submitted_at: new Date().toISOString(), updated_by: userId });
+    await this.writeReviewMutation(scope, userId, 'Review package submitted', before, after, dto.reason ?? 'Submitted for regulatory review', { packageId: approvalId });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async runReviewValidation(userId: string, scope: Scope, approvalId: string, dto: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.validation.run');
+    const before = await this.getReviewPackage(scope, approvalId);
+    const source = { type: before.source_type, id: before.source_record_id, row: before.source_snapshot_json ?? {}, snapshot: before.source_snapshot_json ?? {}, label: before.source_type, title: before.package_title, number: before.source_record_number };
+    const validation = this.validateReviewSource(source);
+    await this.replaceReviewValidation(scope, before, validation);
+    const after = await this.patchReviewPackage(scope, approvalId, { validation_status: validation.status, validation_summary_json: validation, updated_by: userId });
+    await this.writeReviewMutation(scope, userId, 'Review validation run', before, after, dto.reason ?? validation.message, { packageId: approvalId });
+    return { package: after, validation: validation.checks };
+  }
+
+  async reviewDecision(userId: string, scope: Scope, approvalId: string, decision: string, dto: Row = {}, permissions: string[] = []) {
+    const permission = decision === 'Approve' ? 'regulatory.review.decision.approve' : decision === 'Approve With Conditions' ? 'regulatory.review.decision.approve_with_conditions' : decision === 'Reject' ? 'regulatory.review.decision.reject' : decision === 'Return For Correction' ? 'regulatory.review.decision.return' : decision === 'Request Information' ? 'regulatory.review.decision.request_info' : decision === 'Delegate' ? 'regulatory.review.decision.delegate' : 'regulatory.review.decision.escalate';
+    this.requirePermission(permissions, permission);
+    if (['Reject', 'Return For Correction', 'Request Information'].includes(decision) && !dto.reason && !dto.decisionReason) throw new BadRequestException(`${decision} requires a reason.`);
+    if (decision === 'Approve With Conditions' && !dto.conditionTitle && !dto.conditions?.length) throw new BadRequestException('Approve with conditions requires at least one condition.');
+    const before = await this.getReviewPackage(scope, approvalId);
+    if (before.stale_status && before.stale_status !== 'Current' && ['Approve', 'Approve With Conditions'].includes(decision)) throw new BadRequestException('Stale review packages cannot be approved. Refresh snapshot or resubmit first.');
+    const stageId = before.current_stage_id ?? null;
+    const decisionRow = await this.db.single<Row>(this.db.from('regulatory_review_decisions').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: before.site_id ?? null, package_id: approvalId, stage_id: stageId, decision, decision_comment: dto.comment ?? null, decision_reason: dto.reason ?? dto.decisionReason ?? null, decided_by: userId, decided_at: new Date().toISOString(), e_signature_required: before.e_signature_required, e_signature_status: before.e_signature_required ? 'Pending' : 'Not Required', validation_override: Boolean(dto.validationOverride), validation_override_reason: dto.validationOverrideReason ?? null }).select().single());
+    if (decision === 'Approve With Conditions') await this.createReviewCondition(userId, scope, approvalId, { ...dto, decisionId: decisionRow.id }, permissions);
+    const patch: Row = { decision, updated_by: userId, current_reviewer_user_id: dto.delegateToUserId ?? before.current_reviewer_user_id ?? null };
+    if (decision === 'Approve') Object.assign(patch, { review_status: before.e_signature_required ? 'In Review' : 'Approved', completed_at: before.e_signature_required ? null : new Date().toISOString(), source_locked: !before.e_signature_required });
+    if (decision === 'Approve With Conditions') Object.assign(patch, { review_status: 'Approved With Conditions', completed_at: new Date().toISOString(), source_locked: true });
+    if (decision === 'Reject') Object.assign(patch, { review_status: 'Rejected', completed_at: new Date().toISOString() });
+    if (decision === 'Return For Correction') Object.assign(patch, { review_status: 'Returned For Correction' });
+    if (decision === 'Request Information') Object.assign(patch, { review_status: 'Request Info' });
+    if (decision === 'Delegate') Object.assign(patch, { review_status: 'In Review' });
+    if (decision === 'Escalate') Object.assign(patch, { review_status: 'In Review' });
+    const after = await this.patchReviewPackage(scope, approvalId, patch);
+    await this.writeReviewMutation(scope, userId, `Review decision: ${decision}`, before, after, dto.reason ?? dto.comment ?? decision, { packageId: approvalId, decisionId: decisionRow.id });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async eSignReviewPackage(userId: string, scope: Scope, approvalId: string, dto: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.esign.sign');
+    const before = await this.getReviewPackage(scope, approvalId);
+    if (!before.e_signature_required) throw new BadRequestException('E-signature is not required for this review package.');
+    const signature = await this.db.single<Row>(this.db.from('regulatory_review_esignature_links').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: before.site_id ?? null, package_id: approvalId, decision_id: dto.decisionId ?? null, stage_id: before.current_stage_id ?? null, e_signature_id: dto.eSignatureId ?? crypto.randomUUID(), signer_user_id: userId, signature_status: 'Completed', signature_meaning: dto.signatureMeaning ?? 'Regulatory review approval', signature_reason: dto.reason ?? dto.signatureReason ?? null, signed_at: new Date().toISOString() }).select().single());
+    const after = await this.patchReviewPackage(scope, approvalId, { e_signature_status: 'Completed', review_status: 'Approved', completed_at: new Date().toISOString(), source_locked: true, source_locked_at: new Date().toISOString(), updated_by: userId });
+    await this.writeReviewMutation(scope, userId, 'Review package e-signed', before, after, dto.reason ?? 'Regulatory review e-signature captured through foundation adapter.', { packageId: approvalId, signatureId: signature.id });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async cancelReviewPackage(userId: string, scope: Scope, approvalId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.cancel');
+    if (!dto.reason) throw new BadRequestException('Cancel submission requires reason.');
+    const before = await this.getReviewPackage(scope, approvalId);
+    const after = await this.patchReviewPackage(scope, approvalId, { review_status: 'Cancelled', cancelled_by: userId, cancelled_at: new Date().toISOString(), cancel_reason: dto.reason, updated_by: userId });
+    await this.writeReviewMutation(scope, userId, 'Review package cancelled', before, after, dto.reason, { packageId: approvalId });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async markReviewPackageStale(userId: string, scope: Scope, approvalId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.mark_stale');
+    const before = await this.getReviewPackage(scope, approvalId);
+    const after = await this.patchReviewPackage(scope, approvalId, { stale_status: 'Stale', stale_reason: dto.reason ?? 'Source changed after submission', updated_by: userId });
+    await this.db.single(this.db.from('regulatory_review_staleness_events').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: after.site_id ?? null, package_id: approvalId, stale_trigger_type: dto.triggerType ?? 'Source Changed', source_module: after.source_type, source_record_id: after.source_record_id, stale_reason: after.stale_reason, detected_at: new Date().toISOString() }).select('id').single()).catch(() => null);
+    await this.writeReviewMutation(scope, userId, 'Review package marked stale', before, after, after.stale_reason, { packageId: approvalId });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async refreshReviewSnapshot(userId: string, scope: Scope, approvalId: string, dto: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.refresh_snapshot');
+    const before = await this.getReviewPackage(scope, approvalId);
+    const source = await this.resolveReviewSource(scope, before.source_type, before.source_record_id);
+    const validation = this.validateReviewSource(source);
+    const after = await this.patchReviewPackage(scope, approvalId, { source_snapshot_json: source.snapshot, validation_status: validation.status, validation_summary_json: validation, stale_status: 'Current', stale_reason: null, updated_by: userId });
+    await this.replaceReviewValidation(scope, after, validation);
+    await this.writeReviewMutation(scope, userId, 'Review snapshot refreshed', before, after, dto.reason ?? 'Review snapshot refreshed from current source record', { packageId: approvalId });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async archiveReviewPackage(userId: string, scope: Scope, approvalId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.package.archive');
+    if (!dto.reason) throw new BadRequestException('Archive requires reason.');
+    const before = await this.getReviewPackage(scope, approvalId);
+    const after = await this.patchReviewPackage(scope, approvalId, { review_status: 'Archived', archived_at: new Date().toISOString(), archived_by: userId, archive_reason: dto.reason, updated_by: userId });
+    await this.writeReviewMutation(scope, userId, 'Review package archived', before, after, dto.reason, { packageId: approvalId });
+    return this.reviewPackageDetail(scope, approvalId, permissions);
+  }
+
+  async reviewSection(scope: Scope, approvalId: string, section: string, permissions: string[] = []) {
+    const detail = await this.reviewPackageDetail(scope, approvalId, permissions);
+    if (section === 'overview') return detail.overview;
+    if (section === 'source') return detail.source;
+    if (section === 'snapshot') return detail.snapshot;
+    if (section === 'validation') return { rows: detail.validation };
+    if (section === 'evidence') return { rows: this.arrayFromSnapshot(detail.package.source_snapshot_json, ['evidence', 'evidenceLinks']) };
+    if (section === 'gaps') return { rows: this.arrayFromSnapshot(detail.package.source_snapshot_json, ['gaps', 'complianceGaps']) };
+    if (section === 'actions') return { rows: this.arrayFromSnapshot(detail.package.source_snapshot_json, ['actions', 'capaActions']) };
+    if (section === 'audit-mapping') return { rows: this.arrayFromSnapshot(detail.package.source_snapshot_json, ['auditMappings', 'audit_mapping']) };
+    if (section === 'stages') return { rows: detail.stages };
+    if (section === 'decisions') return { rows: detail.decisions };
+    if (section === 'e-signatures') return { rows: detail.eSignatures };
+    if (section === 'conditions') return { rows: detail.conditions };
+    if (section === 'history') return { rows: detail.history };
+    return detail;
+  }
+
+  async createReviewCondition(userId: string, scope: Scope, approvalId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.condition.create');
+    const pkg = await this.getReviewPackage(scope, approvalId);
+    const row = await this.db.single<Row>(this.db.from('regulatory_review_conditions').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: pkg.site_id ?? null, package_id: approvalId, decision_id: dto.decisionId ?? dto.decision_id ?? null, condition_title: dto.conditionTitle ?? dto.condition_title ?? 'Approval condition', condition_description: dto.conditionDescription ?? dto.condition_description ?? dto.condition ?? null, condition_status: 'Open', owner_user_id: dto.ownerUserId ?? null, due_date: dto.dueDate ?? null, evidence_required_foundation: Boolean(dto.evidenceRequired), action_required_foundation: Boolean(dto.actionRequired), verification_required_foundation: Boolean(dto.verificationRequired), created_by: userId }).select().single());
+    await this.writeReviewMutation(scope, userId, 'Review condition created', null, row, dto.reason ?? 'Review condition created', { packageId: approvalId, conditionId: row.id });
+    return row;
+  }
+
+  async updateReviewCondition(userId: string, scope: Scope, approvalId: string, conditionId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.condition.edit');
+    const before = await this.db.single<Row>(this.db.from('regulatory_review_conditions').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).eq('id', conditionId).single());
+    const patch = this.pick(dto, ['condition_title', 'condition_description', 'condition_status', 'owner_user_id', 'due_date', 'evidence_required_foundation', 'action_required_foundation', 'verification_required_foundation']);
+    if (dto.conditionTitle) patch.condition_title = dto.conditionTitle;
+    if (dto.conditionDescription) patch.condition_description = dto.conditionDescription;
+    patch.updated_at = new Date().toISOString();
+    const after = await this.db.single<Row>(this.db.from('regulatory_review_conditions').update(patch).eq('company_id', scope.companyId).eq('id', conditionId).select().single());
+    await this.writeReviewMutation(scope, userId, 'Review condition updated', before, after, dto.reason ?? 'Review condition updated', { packageId: approvalId, conditionId });
+    return after;
+  }
+
+  async closeReviewCondition(userId: string, scope: Scope, approvalId: string, conditionId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.condition.close');
+    if (!dto.closureNote && !dto.reason) throw new BadRequestException('Condition closure requires closure note.');
+    const before = await this.db.single<Row>(this.db.from('regulatory_review_conditions').select('*').eq('company_id', scope.companyId).eq('package_id', approvalId).eq('id', conditionId).single());
+    const after = await this.db.single<Row>(this.db.from('regulatory_review_conditions').update({ condition_status: 'Closed', closure_note: dto.closureNote ?? dto.reason, closed_by: userId, closed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', conditionId).select().single());
+    await this.writeReviewMutation(scope, userId, 'Review condition closed', before, after, dto.reason ?? dto.closureNote, { packageId: approvalId, conditionId });
+    return after;
+  }
+
+  async reviewRules(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.rule.view');
+    let q = this.db.from('regulatory_review_rules').select('*').eq('company_id', scope.companyId);
+    if (scope.selectedSiteId && !scope.corporateView) q = q.or(`site_id.is.null,site_id.eq.${scope.selectedSiteId}`);
+    if (query.sourceType) q = q.eq('source_type', query.sourceType);
+    if (query.ruleStatus) q = q.eq('rule_status', query.ruleStatus);
+    const rows = await this.db.many<Row>(q.order('updated_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 100), 500))).catch(() => []);
+    return { rows };
+  }
+
+  async createReviewRule(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.rule.create');
+    const row = await this.db.single<Row>(this.db.from('regulatory_review_rules').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: dto.siteId ?? scope.selectedSiteId ?? null, rule_code: dto.ruleCode ?? await this.nextRegulatoryCode(scope, 'regulatory_review_rules', 'rule_code', 'RRR'), rule_title: dto.ruleTitle ?? dto.rule_title, source_type: dto.sourceType ?? dto.source_type ?? 'Regulatory Item', trigger_event: dto.triggerEvent ?? dto.trigger_event ?? 'Manual Submission', scope_json: dto.scope ?? null, applicable_criticalities_json: dto.applicableCriticalities ?? null, applicable_categories_json: dto.applicableCategories ?? null, applicable_psm_elements_json: dto.applicablePsmElements ?? null, reviewer_selection_method: dto.reviewerSelectionMethod ?? dto.reviewer_selection_method ?? 'Manual Selection', required_role_id: dto.requiredRoleId ?? null, required_permission: dto.requiredPermission ?? null, specific_reviewer_user_id: dto.specificReviewerUserId ?? null, reviewer_group_foundation: dto.reviewerGroupFoundation ?? null, e_signature_required: Boolean(dto.eSignatureRequired), separation_of_duties_required: dto.separationOfDutiesRequired ?? true, sla_days: dto.slaDays ?? null, escalation_rule_foundation_json: dto.escalationRuleFoundation ?? null, auto_lock_source_after_approval: dto.autoLockSourceAfterApproval ?? true, auto_mark_compliance_ready_after_approval: Boolean(dto.autoMarkComplianceReadyAfterApproval), rule_status: dto.ruleStatus ?? 'Active', notes: dto.notes ?? null, created_by: userId, updated_by: userId }).select().single());
+    await this.writeReviewMutation(scope, userId, 'Review rule created', null, row, dto.reason ?? 'Regulatory review rule created', { ruleId: row.id });
+    return row;
+  }
+
+  async updateReviewRule(userId: string, scope: Scope, ruleId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.rule.edit');
+    const before = await this.db.single<Row>(this.db.from('regulatory_review_rules').select('*').eq('company_id', scope.companyId).eq('id', ruleId).single());
+    const patch: Row = { ...dto, updated_by: userId, updated_at: new Date().toISOString() };
+    delete patch.reason;
+    const after = await this.db.single<Row>(this.db.from('regulatory_review_rules').update(patch).eq('company_id', scope.companyId).eq('id', ruleId).select().single());
+    await this.writeReviewMutation(scope, userId, 'Review rule updated', before, after, dto.reason ?? 'Regulatory review rule updated', { ruleId });
+    return after;
+  }
+
+  async archiveReviewRule(userId: string, scope: Scope, ruleId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.rule.archive');
+    if (!dto.reason) throw new BadRequestException('Archive requires reason.');
+    return this.updateReviewRule(userId, scope, ruleId, { rule_status: 'Archived', archived_at: new Date().toISOString(), archived_by: userId, archive_reason: dto.reason, reason: dto.reason }, permissions);
+  }
+
+  async sourceReview(scope: Scope, sourceType: string, sourceRecordId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.view');
+    const source = await this.resolveReviewSource(scope, sourceType, sourceRecordId);
+    const packages = await this.reviewPackages(scope, { sourceType: source.type, search: source.number, limit: 100 }, permissions).catch(() => ({ rows: [] }));
+    return { source, validation: this.validateReviewSource(source), packages: (packages.rows ?? []).filter((row: Row) => row.source_record_id === source.id), submitAllowed: permissions.includes('regulatory.review.package.create') || permissions.includes('regulatory.manage'), disabledReason: permissions.includes('regulatory.review.package.create') || permissions.includes('regulatory.manage') ? null : 'Missing permission: regulatory.review.package.create' };
+  }
+
+  async submitSourceReview(userId: string, scope: Scope, sourceType: string, sourceRecordId: string, dto: Row, permissions: string[] = []) {
+    return this.createReviewPackage(userId, scope, { ...dto, sourceType, sourceRecordId, submitNow: true }, permissions);
+  }
+
+  private reviewSummary(rows: Row[], userId: string) {
+    const openConditions = rows.reduce((count, row) => count + Number(row.open_condition_count ?? 0), 0);
+    return {
+      totalReviewPackages: rows.length,
+      pendingMyReview: rows.filter((row) => row.current_reviewer_user_id === userId && this.isOpenReviewStatus(row.review_status)).length,
+      mySubmissions: rows.filter((row) => row.submitted_by === userId || row.created_by === userId).length,
+      pendingReview: rows.filter((row) => row.review_status === 'Pending Review').length,
+      inReview: rows.filter((row) => row.review_status === 'In Review').length,
+      overdueReviews: rows.filter((row) => this.isOverdue(row)).length,
+      returnedForCorrection: rows.filter((row) => row.review_status === 'Returned For Correction').length,
+      rejected: rows.filter((row) => row.review_status === 'Rejected').length,
+      approved: rows.filter((row) => row.review_status === 'Approved').length,
+      approvedWithConditions: rows.filter((row) => row.review_status === 'Approved With Conditions').length,
+      completed: rows.filter((row) => row.review_status === 'Completed').length,
+      escalated: rows.filter((row) => row.escalation_status === 'Escalated').length,
+      stalePackages: rows.filter((row) => row.stale_status && row.stale_status !== 'Current').length,
+      validationFailures: rows.filter((row) => ['Failed', 'Blocked', 'Validation Failed'].includes(row.validation_status ?? row.review_status)).length,
+      eSignaturesPending: rows.filter((row) => row.e_signature_status === 'Pending' || row.e_signature_status === 'Required').length,
+      eSignaturesCompleted: rows.filter((row) => row.e_signature_status === 'Completed').length,
+      conditionsOpen: openConditions,
+      conditionsOverdue: rows.reduce((count, row) => count + Number(row.overdue_condition_count ?? 0), 0),
+      criticalReviewsPending: rows.filter((row) => this.isCriticalReviewSource(row) && this.isOpenReviewStatus(row.review_status)).length
+    };
+  }
+
+  private filterReviewPackagesByView(rows: Row[], view: string, query: Row = {}) {
+    const now = Date.now();
+    if (view === 'open') return rows.filter((row) => this.isOpenReviewStatus(row.review_status));
+    if (view === 'pending') return rows.filter((row) => row.review_status === 'Pending Review');
+    if (view === 'overdue') return rows.filter((row) => this.isOverdue(row, now));
+    if (view === 'returned') return rows.filter((row) => row.review_status === 'Returned For Correction');
+    if (view === 'rejected') return rows.filter((row) => row.review_status === 'Rejected');
+    if (view === 'approved') return rows.filter((row) => row.review_status === 'Approved');
+    if (view === 'approved-with-conditions') return rows.filter((row) => row.review_status === 'Approved With Conditions');
+    if (view === 'stale') return rows.filter((row) => row.stale_status && row.stale_status !== 'Current');
+    if (view === 'escalated') return rows.filter((row) => row.escalation_status === 'Escalated');
+    if (view === 'e-signatures') return rows.filter((row) => row.e_signature_status && row.e_signature_status !== 'Not Required');
+    if (view === 'validation-failures') return rows.filter((row) => ['Failed', 'Blocked', 'Validation Failed'].includes(row.validation_status ?? row.review_status));
+    if (query.completed === 'true') return rows.filter((row) => ['Approved', 'Approved With Conditions', 'Completed', 'Rejected'].includes(row.review_status));
+    return rows;
+  }
+
+  private isOpenReviewStatus(status: string | null | undefined) {
+    return ['Draft', 'Validation Failed', 'Pending Review', 'In Review', 'Returned For Correction', 'Request Info'].includes(String(status ?? ''));
+  }
+
+  private isOverdue(row: Row, now = Date.now()) {
+    return Boolean(row.due_date && this.isOpenReviewStatus(row.review_status) && new Date(row.due_date).getTime() < now);
+  }
+
+  private reviewPermissionState(permissions: string[]) {
+    const has = (permission: string) => permissions.includes(permission) || permissions.includes('regulatory.manage') || permissions.includes('regulatory:manage');
+    return {
+      canView: has('regulatory.review.view') || has('regulatory.review.package.view'),
+      canCreate: has('regulatory.review.package.create'),
+      canSubmit: has('regulatory.review.package.submit'),
+      canApprove: has('regulatory.review.decision.approve'),
+      canReject: has('regulatory.review.decision.reject'),
+      canReturn: has('regulatory.review.decision.return'),
+      canRequestInfo: has('regulatory.review.decision.request_info'),
+      canESign: has('regulatory.review.esign.sign'),
+      canManageRules: has('regulatory.review.rule.edit'),
+      canEditSettings: has('regulatory.review.settings.edit')
+    };
+  }
+
+  private async resolveReviewSource(scope: Scope, sourceTypeInput: string, sourceRecordId: string): Promise<Row> {
+    const type = this.normalReviewSourceType(sourceTypeInput);
+    if (!sourceRecordId) throw new BadRequestException('Review package requires source record.');
+    const sourceMap: Record<string, { table: string; label: string; number: string[]; title: string[] }> = {
+      'Regulatory Item': { table: 'regulatory_register_items', label: 'Regulatory Item', number: ['requirement_code', 'source_reference_number'], title: ['requirement_title', 'title'] },
+      Obligation: { table: 'regulatory_obligations', label: 'Obligation', number: ['obligation_code', 'obligation_number'], title: ['obligation_title', 'title'] },
+      'Applicability Assessment': { table: 'regulatory_applicability_assessments', label: 'Applicability Assessment', number: ['assessment_number', 'assessment_code'], title: ['assessment_title', 'applicability_decision'] },
+      'Compliance Assessment': { table: 'regulatory_compliance_assessments', label: 'Compliance Assessment', number: ['assessment_number', 'assessment_code'], title: ['assessment_title', 'compliance_status'] },
+      'Evidence Link': { table: 'regulatory_evidence_links', label: 'Evidence Link', number: ['evidence_code', 'link_code'], title: ['evidence_title', 'description'] },
+      'Evidence Package': { table: 'regulatory_evidence_package_foundations', label: 'Evidence Package', number: ['package_code'], title: ['package_title'] },
+      'Audit Mapping': { table: 'regulatory_audit_mappings', label: 'Audit Mapping', number: ['mapping_code'], title: ['mapping_title'] },
+      'Action Link': { table: 'regulatory_action_links', label: 'Action Link', number: ['action_link_code'], title: ['action_title', 'title'] },
+      'CAPA Package': { table: 'regulatory_capa_packages', label: 'CAPA Package', number: ['package_code'], title: ['package_title'] }
+    };
+    const config = sourceMap[type];
+    if (!config) throw new BadRequestException(`Unsupported regulatory review source type: ${sourceTypeInput}`);
+    const row = await this.db.single<Row>(this.db.from(config.table).select('*').eq('company_id', scope.companyId).eq('id', sourceRecordId).single());
+    if (!this.canAccessSite(scope, row.site_id)) throw new ForbiddenException('Source record is outside the selected site scope.');
+    const number = config.number.map((key) => row[key]).find(Boolean) ?? row.id;
+    const title = config.title.map((key) => row[key]).find(Boolean) ?? number;
+    return { type, id: row.id, row, snapshot: { ...row, snapshot_created_at: new Date().toISOString(), snapshot_source_table: config.table }, label: config.label, title, number };
+  }
+
+  private normalReviewSourceType(sourceType: string) {
+    const text = String(sourceType ?? '').trim().toLowerCase();
+    if (['regulatory item', 'item', 'regulation', 'register'].includes(text)) return 'Regulatory Item';
+    if (['obligation', 'requirement'].includes(text)) return 'Obligation';
+    if (text.includes('applicability')) return 'Applicability Assessment';
+    if (text.includes('compliance')) return 'Compliance Assessment';
+    if (text.includes('evidence package')) return 'Evidence Package';
+    if (text.includes('evidence')) return 'Evidence Link';
+    if (text.includes('audit')) return 'Audit Mapping';
+    if (text.includes('capa')) return 'CAPA Package';
+    if (text.includes('action')) return 'Action Link';
+    return sourceType;
+  }
+
+  private validateReviewSource(source: Row) {
+    const row = source.row ?? {};
+    const checks = [
+      this.reviewCheck('Source record exists', Boolean(row.id), 'Source', true),
+      this.reviewCheck('Source belongs to company', Boolean(row.company_id), 'Source', true),
+      this.reviewCheck('Source has owner or responsible party', Boolean(row.owner_user_id ?? row.compliance_owner_user_id ?? row.assigned_owner_id ?? row.created_by), 'Ownership', false),
+      this.reviewCheck('Source status is not archived/cancelled', !['Archived', 'Cancelled', 'Superseded'].includes(row.status ?? row.register_status ?? row.obligation_status ?? row.assessment_status), 'Status', true),
+      this.reviewCheck('Evidence/readiness context available', true, 'Readiness', false)
+    ];
+    const blocking = checks.some((check) => check.blocking && check.validation_status !== 'Passed');
+    return { status: blocking ? 'Failed' : checks.some((check) => check.validation_status === 'Warning') ? 'Passed With Warnings' : 'Passed', message: blocking ? 'Validation blockers must be resolved before approval.' : 'Source is ready for regulatory review foundation.', blocking, checks };
+  }
+
+  private reviewCheck(title: string, passed: boolean, module: string, blocking: boolean) {
+    return { validation_key: title.toLowerCase().replace(/[^a-z0-9]+/g, '_'), validation_title: title, validation_status: passed ? 'Passed' : blocking ? 'Blocked' : 'Warning', validation_message: passed ? null : `${title} is incomplete.`, severity: blocking ? 'High' : 'Medium', blocking, source_module: module, source_record_id: null };
+  }
+
+  private reviewDueDate(days: unknown) {
+    const value = Number(days ?? 14);
+    const date = new Date();
+    date.setDate(date.getDate() + (Number.isFinite(value) ? value : 14));
+    return date.toISOString();
+  }
+
+  private async createReviewStage(scope: Scope, row: Row, userId: string, dto: Row) {
+    const stage = await this.db.single<Row>(this.db.from('regulatory_review_stages').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: row.site_id ?? null, package_id: row.id, stage_number: 1, stage_title: dto.stageTitle ?? 'Regulatory Review', stage_status: row.review_status === 'Draft' ? 'Not Started' : 'Pending', reviewer_user_id: row.current_reviewer_user_id ?? null, required_permission: dto.requiredPermission ?? 'regulatory.review.decision.approve', due_date: row.due_date ?? null }).select().single()).catch(() => null);
+    if (stage?.id) await this.patchReviewPackage(scope, row.id, { current_stage_id: stage.id, updated_by: userId });
+    return stage;
+  }
+
+  private async replaceReviewValidation(scope: Scope, pkg: Row, validation: Row) {
+    await this.db.single(this.db.from('regulatory_review_validation_results').delete().eq('company_id', scope.companyId).eq('package_id', pkg.id).select('id').limit(1).single()).catch(() => null);
+    const rows = (validation.checks ?? []).map((check: Row) => ({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: pkg.site_id ?? null, package_id: pkg.id, validation_key: check.validation_key, validation_title: check.validation_title, validation_status: check.validation_status, validation_message: check.validation_message ?? null, severity: check.severity ?? 'Medium', blocking: Boolean(check.blocking), source_module: check.source_module ?? pkg.source_type, source_record_id: check.source_record_id ?? pkg.source_record_id ?? null }));
+    if (rows.length) await this.db.many<Row>(this.db.from('regulatory_review_validation_results').insert(rows).select()).catch(() => []);
+  }
+
+  private async getReviewPackage(scope: Scope, approvalId: string) {
+    const row = await this.db.single<Row>(this.db.from('regulatory_review_packages').select('*').eq('company_id', scope.companyId).eq('id', approvalId).single());
+    if (!this.canAccessSite(scope, row.site_id)) throw new ForbiddenException('Review package is outside the selected site scope.');
+    return row;
+  }
+
+  private async patchReviewPackage(scope: Scope, approvalId: string, patch: Row) {
+    return this.db.single<Row>(this.db.from('regulatory_review_packages').update({ ...patch, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', approvalId).select().single());
+  }
+
+  private reviewPackageOverview(pkg: Row, stages: Row[], decisions: Row[], conditions: Row[], validation: Row[], signatures: Row[]) {
+    return {
+      packageCode: pkg.package_code,
+      packageTitle: pkg.package_title,
+      reviewStatus: pkg.review_status,
+      validationStatus: pkg.validation_status,
+      sourceType: pkg.source_type,
+      sourceRecord: pkg.source_record_number,
+      currentStage: stages.find((stage) => stage.id === pkg.current_stage_id) ?? stages[0] ?? null,
+      decisionsCompleted: decisions.length,
+      conditionsOpen: conditions.filter((condition) => !['Closed', 'Waived', 'Cancelled'].includes(condition.condition_status)).length,
+      signaturesPending: signatures.filter((signature) => signature.signature_status === 'Pending').length,
+      staleStatus: pkg.stale_status,
+      sourceLocked: Boolean(pkg.source_locked),
+      blockers: validation.filter((item) => item.blocking && !['Passed', 'Override Accepted'].includes(item.validation_status))
+    };
+  }
+
+  private isCriticalReviewSource(row: Row) {
+    return criticalRiskBasisStatuses.has(row.criticality ?? row.priority ?? row.risk_level ?? '');
+  }
+
+  private arrayFromSnapshot(snapshot: Row, keys: string[]) {
+    for (const key of keys) {
+      if (Array.isArray(snapshot?.[key])) return snapshot[key];
+    }
+    return [];
+  }
+
+  async reviewHistory(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.review.history.view');
+    let q = this.db.from('regulatory_review_history_events').select('*').eq('company_id', scope.companyId);
+    if (query.packageId) q = q.eq('package_id', query.packageId);
+    if (query.sourceType) q = q.eq('source_type', query.sourceType);
+    if (query.sourceRecordId) q = q.eq('source_record_id', query.sourceRecordId);
+    const rows = await this.db.many<Row>(q.order('created_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 200), 1000))).catch(() => []);
+    return { rows };
+  }
+
+  private async writeReviewMutation(scope: Scope, userId: string, title: string, before: Row | null, after: Row | null, reason: string, metadata: Row = {}) {
+    const entityId = metadata.packageId ?? after?.id ?? before?.id;
+    const audit = await this.audit.write({ tenantId: scope.companyId, actorId: userId, action: title, entityType: 'RegulatoryReviewApproval', ...(entityId ? { entityId } : {}), before: before ?? null, after: after ?? null, metadata: { reason, ...metadata, sourceModule: 'Regulatory Review & Approval' } }).catch(() => null);
+    await this.db.single(this.db.from('regulatory_review_history_events').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: after?.site_id ?? before?.site_id ?? scope.selectedSiteId ?? null, unit_id: after?.unit_id ?? before?.unit_id ?? null, area_id: after?.area_id ?? before?.area_id ?? null, equipment_id: after?.equipment_id ?? before?.equipment_id ?? null, package_id: metadata.packageId ?? after?.id ?? before?.id ?? null, source_type: after?.source_type ?? before?.source_type ?? metadata.sourceType ?? null, source_record_id: after?.source_record_id ?? before?.source_record_id ?? metadata.sourceRecordId ?? null, regulatory_item_id: after?.regulatory_item_id ?? before?.regulatory_item_id ?? null, obligation_id: after?.obligation_id ?? before?.obligation_id ?? null, decision_id: metadata.decisionId ?? null, condition_id: metadata.conditionId ?? null, event_type: title.toUpperCase().replace(/[^A-Z0-9]+/g, '_'), event_title: title, event_description: reason, before_value_json: before ?? null, after_value_json: after ?? null, actor_user_id: userId, source_module: 'Regulatory Review & Approval', audit_log_id: (audit as { id?: string } | null)?.id ?? null }).select('id').single()).catch(() => null);
   }
 
   async evidenceDashboard(scope: Scope, query: Row = {}, permissions: string[] = []) {
@@ -1475,7 +2055,43 @@ export class RegulatoryService {
 
   async createActionFoundationForEvidenceGap(userId: string, scope: Scope, gapId: string, dto: Row, permissions: string[]) {
     this.requirePermission(permissions, 'regulatory.evidence.gap.create_action_foundation');
-    return this.updateEvidenceGap(userId, scope, gapId, { action_id: dto.actionId ?? dto.action_id ?? `action-foundation-${crypto.randomUUID()}`, gap_status: 'Action Foundation Created', reason: dto.reason ?? 'Action foundation created for evidence gap' }, [...permissions, 'regulatory.evidence.gap.edit']);
+    const gap = await this.getEvidenceGap(scope, gapId, [...permissions, 'regulatory.evidence.gap.view']);
+    let actionId = dto.actionId ?? dto.action_id;
+    let actionNumber: string | null = null;
+    if (!actionId) {
+      const ownerId = dto.ownerUserId ?? dto.owner_user_id ?? gap.owner_user_id ?? userId;
+      const dueDate = dto.dueDate ?? dto.due_date ?? gap.due_date ?? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const priorityMap: Record<string, string> = { Critical: 'SAFETY_CRITICAL', High: 'HIGH', Medium: 'MEDIUM', Low: 'LOW' };
+      const priority = priorityMap[gap.criticality ?? gap.gap_severity ?? ''] ?? 'HIGH';
+      const action = await this.actions.create(scope.companyId, userId, {
+        title: dto.title ?? `Evidence Gap: ${gap.gap_title}`,
+        description: dto.description ?? gap.gap_description ?? gap.recommended_fix ?? 'Resolve regulatory evidence gap.',
+        sourceModule: 'REGULATORY',
+        sourceRecordId: gapId,
+        sourceType: 'Regulatory Evidence Gap',
+        siteId: gap.site_id ?? scope.selectedSiteId ?? undefined,
+        ownerId,
+        priority: priority as any,
+        dueDate,
+        evidenceRequired: true,
+        verificationRequired: true
+      });
+      actionId = action.id;
+      actionNumber = action.actionNumber;
+    }
+    const updated = await this.updateEvidenceGap(userId, scope, gapId, {
+      action_id: actionId,
+      gap_status: 'Action Foundation Created',
+      reason: dto.reason ?? 'Action foundation created in Universal Action Center'
+    }, [...permissions, 'regulatory.evidence.gap.edit']);
+    if (actionId) {
+      await this.db.single(this.db.from('regulatory_evidence_gaps').update({
+        universal_action_id: actionId,
+        action_number_snapshot: actionNumber,
+        action_synced_at: new Date().toISOString()
+      }).eq('company_id', scope.companyId).eq('id', gapId).select('id').single()).catch(() => null);
+    }
+    return { ...updated, action_id: actionId, universal_action_id: actionId, action_number_snapshot: actionNumber };
   }
 
   async evidencePackages(scope: Scope, query: Row = {}, permissions: string[] = []) {
@@ -1824,6 +2440,391 @@ export class RegulatoryService {
     return this.getAuditMapping(scope, row.id, [...permissions, 'regulatory.audit_mapping.view'], true);
   }
 
+  async spawnAuditChecklistForRegulation(userId: string, scope: Scope, regulationId: string, dto: Row, permissions: string[]) {
+    this.requirePermission(permissions, 'regulatory.audit_mapping.create');
+    const reg = await this.getItem(scope, regulationId);
+    const obligations = await this.db.many<Row>(
+      this.db.from('regulatory_obligations').select('*').eq('company_id', scope.companyId).eq('regulatory_item_id', regulationId)
+    ).catch(() => []);
+
+    const checklistId = crypto.randomUUID();
+    const siteId = dto.siteId ?? reg.site_id ?? scope.selectedSiteId ?? null;
+    const checklistCode = dto.checklistCode ?? `CHK-REG-${Date.now().toString().slice(-4)}`;
+    const checklistTitle = dto.checklistTitle ?? `Audit Checklist: ${reg.requirement_title}`;
+    const description = dto.description ?? `Auto-spawned audit protocol from Regulatory Register for ${reg.requirement_code ?? reg.requirement_title}.`;
+
+    const checklist = await this.db.single<Row>(
+      this.db.from('audit_checklist_templates').insert({
+        id: checklistId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_code: checklistCode,
+        checklist_title: checklistTitle,
+        description,
+        template_type: dto.templateType ?? 'Regulatory Compliance',
+        audit_type: dto.auditType ?? 'Internal Compliance',
+        checklist_category: dto.category ?? 'PSM Regulatory Protocol',
+        criticality: reg.criticality ?? 'High',
+        checklist_status: 'Active',
+        readiness_health: 'Healthy',
+        version: '1.0',
+        current_version: true,
+        checklist_objective: `Verify site and process unit adherence to ${reg.requirement_code ?? reg.requirement_title} (${reg.authority ?? 'PSM Standards'}).`,
+        owner_user_id: dto.ownerUserId ?? reg.owner_user_id ?? userId,
+        standalone_checklist: true,
+        standalone_reason: `Auto-spawned from Regulatory Register for ${reg.requirement_code ?? regulationId}`,
+        source_snapshot_json: {
+          sourceModule: 'REGULATORY',
+          sourceType: 'Regulation Item',
+          sourceId: regulationId,
+          requirementCode: reg.requirement_code,
+          requirementTitle: reg.requirement_title,
+          authority: reg.authority,
+          obligationsCount: obligations.length,
+          spawnedAt: new Date().toISOString()
+        },
+        ready_for_execution: true,
+        created_by: userId,
+        updated_by: userId
+      }).select().single()
+    );
+
+    await this.db.single(
+      this.db.from('audit_checklist_standards').insert({
+        id: crypto.randomUUID(),
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_id: checklistId,
+        standard_name: reg.authority ?? 'OSHA 1910.119 / EPA RMP',
+        clause_reference: reg.requirement_code ?? 'Compliance Clause',
+        regulatory_register_id: regulationId,
+        mandatory: true,
+        notes: `Spawned from Regulatory Requirement: ${reg.requirement_title}`,
+        created_by: userId
+      }).select('id').single()
+    ).catch(() => null);
+
+    const sectionId = crypto.randomUUID();
+    await this.db.single(
+      this.db.from('audit_checklist_sections').insert({
+        id: sectionId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_id: checklistId,
+        section_code: 'SEC-01',
+        section_title: 'Regulatory Obligations Compliance Verification',
+        section_description: `Verification protocol for ${reg.requirement_title}`,
+        section_order: 1,
+        section_criticality: reg.criticality ?? 'High',
+        mandatory: true,
+        created_by: userId,
+        updated_by: userId
+      }).select('id').single()
+    );
+
+    let itemsCreated = 0;
+    if (obligations.length > 0) {
+      let order = 1;
+      for (const obl of obligations) {
+        if (!obl) continue;
+        const o: any = obl;
+        await this.db.single(
+          this.db.from('audit_checklist_items').insert({
+            id: crypto.randomUUID(),
+            company_id: scope.companyId,
+            site_id: siteId,
+            checklist_id: checklistId,
+            section_id: sectionId,
+            item_code: `Q-${String(order).padStart(2, '0')}`,
+            question_text: `Does site operating procedure, field equipment, and records comply with obligation: ${o.obligation_title ?? o.obligation_code}?`,
+            requirement_text: o.obligation_description ?? o.obligation_title,
+            guidance_text: 'Inspect field implementation, verify active records, and confirm operator certifications.',
+            item_order: order,
+            mandatory: true,
+            risk_level: o.criticality ?? 'High',
+            created_by: userId,
+            updated_by: userId
+          }).select('id').single()
+        ).catch(() => null);
+        itemsCreated++;
+        order++;
+      }
+    } else {
+      const baselineQuestions = [
+        {
+          code: 'Q-01',
+          text: `Are all required Process Safety Information and procedures documented and maintained up to date for ${reg.requirement_code ?? 'this regulation'}?`,
+          req: 'Up-to-date documentation on file and accessible to operating personnel.',
+          guidance: 'Verify P&IDs, operating limits, procedures, and SDS.'
+        },
+        {
+          code: 'Q-02',
+          text: `Have physical safeguards, safety barriers, and critical interlocks been inspected and tested per inspection frequency?`,
+          req: 'SCE inspection, testing, and preventive maintenance records on file.',
+          guidance: 'Review inspection tags, calibration certificates, and functional test logs.'
+        },
+        {
+          code: 'Q-03',
+          text: `Have all affected personnel completed certified training and competency assessments within required intervals?`,
+          req: 'Active training certifications on file with zero overdue refresher requirements.',
+          guidance: 'Check training matrix and refresher logs.'
+        }
+      ];
+      let order = 1;
+      for (const q of baselineQuestions) {
+        if (!q) continue;
+        const item: any = q;
+        await this.db.single(
+          this.db.from('audit_checklist_items').insert({
+            id: crypto.randomUUID(),
+            company_id: scope.companyId,
+            site_id: siteId,
+            checklist_id: checklistId,
+            section_id: sectionId,
+            item_code: item.code,
+            question_text: item.text,
+            requirement_text: item.req,
+            guidance_text: item.guidance,
+            item_order: order,
+            mandatory: true,
+            risk_level: 'High',
+            created_by: userId,
+            updated_by: userId
+          }).select('id').single()
+        ).catch(() => null);
+        itemsCreated++;
+        order++;
+      }
+    }
+
+    const mappingId = crypto.randomUUID();
+    const mapping = await this.db.single<Row>(
+      this.db.from('regulatory_audit_mappings').insert({
+        id: mappingId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        regulatory_source_type: 'Regulatory Item',
+        regulatory_item_id: regulationId,
+        audit_target_type: 'Checklist',
+        audit_checklist_id: checklistId,
+        audit_checklist_code: checklistCode,
+        audit_checklist_title: checklistTitle,
+        mapping_code: `MAP-REG-${Date.now().toString().slice(-4)}`,
+        mapping_title: `Audit Checklist: ${reg.requirement_title}`,
+        mapping_type: 'Standard Checklist Mapping',
+        mapping_rationale: 'Auto-spawned audit protocol from Regulatory Register',
+        mapping_status: 'Active',
+        coverage_status: 'Covered',
+        verification_status: 'Verified',
+        audit_readiness_status: 'Ready For Audit',
+        spawned_at: new Date().toISOString(),
+        created_by: userId,
+        updated_by: userId
+      }).select().single()
+    );
+
+    await this.writeAuditMappingMutation(scope, userId, 'Audit checklist spawned from regulation', null, mapping, `Audit checklist ${checklistCode} auto-spawned with ${itemsCreated} questions.`, { regulationId, checklistId });
+    return { checklist, mapping, itemsCreated };
+  }
+
+  async spawnAuditChecklistForObligation(userId: string, scope: Scope, obligationId: string, dto: Row, permissions: string[]) {
+    this.requirePermission(permissions, 'regulatory.audit_mapping.create');
+    const obl = await this.getObligation(scope, obligationId);
+    const checklistId = crypto.randomUUID();
+    const siteId = dto.siteId ?? obl.site_id ?? scope.selectedSiteId ?? null;
+    const checklistCode = dto.checklistCode ?? `CHK-OBL-${Date.now().toString().slice(-4)}`;
+    const checklistTitle = dto.checklistTitle ?? `Audit Checklist: ${obl.obligation_title}`;
+
+    const checklist = await this.db.single<Row>(
+      this.db.from('audit_checklist_templates').insert({
+        id: checklistId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_code: checklistCode,
+        checklist_title: checklistTitle,
+        description: dto.description ?? `Auto-spawned audit protocol for obligation: ${obl.obligation_code ?? obl.obligation_title}.`,
+        template_type: dto.templateType ?? 'Regulatory Compliance',
+        audit_type: dto.auditType ?? 'Internal Compliance',
+        criticality: obl.criticality ?? 'High',
+        checklist_status: 'Active',
+        readiness_health: 'Healthy',
+        version: '1.0',
+        current_version: true,
+        checklist_objective: `Verify compliance with obligation ${obl.obligation_code ?? obl.obligation_title}.`,
+        owner_user_id: dto.ownerUserId ?? obl.owner_user_id ?? userId,
+        standalone_checklist: true,
+        standalone_reason: `Auto-spawned from Regulatory Obligation: ${obl.obligation_code ?? obligationId}`,
+        source_snapshot_json: {
+          sourceModule: 'REGULATORY',
+          sourceType: 'Regulatory Obligation',
+          obligationId,
+          obligationCode: obl.obligation_code,
+          spawnedAt: new Date().toISOString()
+        },
+        ready_for_execution: true,
+        created_by: userId,
+        updated_by: userId
+      }).select().single()
+    );
+
+    const sectionId = crypto.randomUUID();
+    await this.db.single(
+      this.db.from('audit_checklist_sections').insert({
+        id: sectionId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_id: checklistId,
+        section_code: 'SEC-01',
+        section_title: 'Obligation Compliance Verification',
+        section_order: 1,
+        mandatory: true,
+        created_by: userId,
+        updated_by: userId
+      }).select('id').single()
+    );
+
+    await this.db.single(
+      this.db.from('audit_checklist_items').insert({
+        id: crypto.randomUUID(),
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_id: checklistId,
+        section_id: sectionId,
+        item_code: 'Q-01',
+        question_text: `Does the facility maintain verifiable documentation and physical safeguards for: ${obl.obligation_title}?`,
+        requirement_text: obl.obligation_description ?? obl.obligation_title,
+        guidance_text: 'Inspect field evidence, maintenance records, and operating procedure logs.',
+        item_order: 1,
+        mandatory: true,
+        risk_level: obl.criticality ?? 'High',
+        created_by: userId,
+        updated_by: userId
+      }).select('id').single()
+    );
+
+    const mappingId = crypto.randomUUID();
+    const mapping = await this.db.single<Row>(
+      this.db.from('regulatory_audit_mappings').insert({
+        id: mappingId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        regulatory_source_type: 'Regulatory Obligation',
+        regulatory_item_id: obl.regulatory_item_id,
+        obligation_id: obligationId,
+        audit_target_type: 'Checklist',
+        audit_checklist_id: checklistId,
+        audit_checklist_code: checklistCode,
+        audit_checklist_title: checklistTitle,
+        mapping_code: `MAP-OBL-${Date.now().toString().slice(-4)}`,
+        mapping_title: `Audit Checklist: ${obl.obligation_title}`,
+        mapping_type: 'Standard Checklist Mapping',
+        mapping_rationale: 'Auto-spawned audit protocol from Regulatory Obligation',
+        mapping_status: 'Active',
+        coverage_status: 'Covered',
+        verification_status: 'Verified',
+        audit_readiness_status: 'Ready For Audit',
+        spawned_at: new Date().toISOString(),
+        created_by: userId,
+        updated_by: userId
+      }).select().single()
+    );
+
+    await this.writeAuditMappingMutation(scope, userId, 'Audit checklist spawned from obligation', null, mapping, `Audit checklist ${checklistCode} spawned.`, { obligationId, checklistId });
+    return { checklist, mapping };
+  }
+
+  async spawnAuditChecklistForMapping(userId: string, scope: Scope, mappingId: string, dto: Row, permissions: string[]) {
+    this.requirePermission(permissions, 'regulatory.audit_mapping.create');
+    const mapping = await this.getAuditMapping(scope, mappingId, [...permissions, 'regulatory.audit_mapping.view']);
+    let checklistTitle = dto.checklistTitle ?? `Audit Checklist: ${mapping.mapping_title}`;
+    let checklistCode = dto.checklistCode ?? `CHK-MAP-${Date.now().toString().slice(-4)}`;
+    const checklistId = crypto.randomUUID();
+    const siteId = dto.siteId ?? mapping.site_id ?? scope.selectedSiteId ?? null;
+
+    const checklist = await this.db.single<Row>(
+      this.db.from('audit_checklist_templates').insert({
+        id: checklistId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_code: checklistCode,
+        checklist_title: checklistTitle,
+        description: dto.description ?? `Auto-spawned audit protocol for mapping: ${mapping.mapping_title}.`,
+        template_type: dto.templateType ?? 'Regulatory Compliance',
+        audit_type: dto.auditType ?? 'Internal Compliance',
+        criticality: 'High',
+        checklist_status: 'Active',
+        readiness_health: 'Healthy',
+        version: '1.0',
+        current_version: true,
+        checklist_objective: `Verify compliance for mapping ${mapping.mapping_title}.`,
+        owner_user_id: dto.ownerUserId ?? userId,
+        standalone_checklist: true,
+        standalone_reason: `Auto-spawned from Regulatory Audit Mapping: ${mappingId}`,
+        source_snapshot_json: {
+          sourceModule: 'REGULATORY',
+          sourceType: 'Audit Mapping',
+          mappingId,
+          spawnedAt: new Date().toISOString()
+        },
+        ready_for_execution: true,
+        created_by: userId,
+        updated_by: userId
+      }).select().single()
+    );
+
+    const sectionId = crypto.randomUUID();
+    await this.db.single(
+      this.db.from('audit_checklist_sections').insert({
+        id: sectionId,
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_id: checklistId,
+        section_code: 'SEC-01',
+        section_title: 'Compliance Assessment Protocol',
+        section_order: 1,
+        mandatory: true,
+        created_by: userId,
+        updated_by: userId
+      }).select('id').single()
+    );
+
+    await this.db.single(
+      this.db.from('audit_checklist_items').insert({
+        id: crypto.randomUUID(),
+        company_id: scope.companyId,
+        site_id: siteId,
+        checklist_id: checklistId,
+        section_id: sectionId,
+        item_code: 'Q-01',
+        question_text: `Are all operational, mechanical, and administrative controls compliant with mapping: ${mapping.mapping_title}?`,
+        requirement_text: mapping.mapping_rationale ?? mapping.mapping_title,
+        guidance_text: 'Verify objective field evidence against regulatory obligations.',
+        item_order: 1,
+        mandatory: true,
+        risk_level: 'High',
+        created_by: userId,
+        updated_by: userId
+      }).select('id').single()
+    );
+
+    const updatedMapping = await this.db.single<Row>(
+      this.db.from('regulatory_audit_mappings').update({
+        audit_target_type: 'Checklist',
+        audit_checklist_id: checklistId,
+        audit_checklist_code: checklistCode,
+        audit_checklist_title: checklistTitle,
+        coverage_status: 'Covered',
+        audit_readiness_status: 'Ready For Audit',
+        spawned_at: new Date().toISOString(),
+        updated_by: userId,
+        updated_at: new Date().toISOString()
+      }).eq('company_id', scope.companyId).eq('id', mappingId).select().single()
+    );
+
+    await this.writeAuditMappingMutation(scope, userId, 'Audit checklist spawned for mapping', mapping, updatedMapping, `Audit checklist ${checklistCode} linked to mapping.`, { mappingId, checklistId });
+    return { checklist, mapping: updatedMapping };
+  }
+
   async archiveAuditMapping(userId: string, scope: Scope, mappingId: string, dto: Row, permissions: string[]) {
     this.requirePermission(permissions, 'regulatory.audit_mapping.archive');
     const reason = String(dto.reason ?? '').trim();
@@ -2009,10 +3010,37 @@ export class RegulatoryService {
   async createActionFoundationForAuditMappingGap(userId: string, scope: Scope, gapId: string, dto: Row, permissions: string[]) {
     this.requirePermission(permissions, 'regulatory.audit_mapping.gap.create_action_foundation');
     const before = await this.getAuditMappingGap(scope, gapId, [...permissions, 'regulatory.audit_mapping.gap.view']);
-    const actionFoundationId = dto.actionFoundationId ?? dto.action_foundation_id ?? crypto.randomUUID();
-    const row = await this.db.single<Row>(this.db.from('regulatory_audit_mapping_gaps').update({ action_foundation_id: actionFoundationId, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', gapId).select().single());
-    await this.writeAuditMappingMutation(scope, userId, 'Audit mapping gap action foundation created', before, row, String(dto.reason ?? 'Action foundation created for audit mapping gap'), { gapId: row.id, actionFoundationId });
-    return { gap: row, actionFoundation: { id: actionFoundationId, source: 'Universal Action Engine foundation adapter', status: 'Linked Foundation' } };
+    let actionId = dto.actionFoundationId ?? dto.action_foundation_id ?? dto.actionId;
+    let actionNumber: string | null = null;
+    if (!actionId) {
+      const ownerId = dto.ownerUserId ?? dto.owner_user_id ?? before.owner_user_id ?? userId;
+      const dueDate = dto.dueDate ?? dto.due_date ?? before.due_date ?? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const action = await this.actions.create(scope.companyId, userId, {
+        title: dto.title ?? `Audit Mapping Gap: ${before.gap_title ?? before.gap_type}`,
+        description: dto.description ?? before.gap_description ?? 'Resolve audit mapping gap between regulatory obligation and audit protocol.',
+        sourceModule: 'REGULATORY',
+        sourceRecordId: gapId,
+        sourceType: 'Regulatory Audit Mapping Gap',
+        siteId: before.site_id ?? scope.selectedSiteId ?? undefined,
+        ownerId,
+        priority: 'HIGH',
+        dueDate,
+        evidenceRequired: true,
+        verificationRequired: true
+      });
+      actionId = action.id;
+      actionNumber = action.actionNumber;
+    }
+    const row = await this.db.single<Row>(this.db.from('regulatory_audit_mapping_gaps').update({
+      action_foundation_id: actionId,
+      universal_action_id: actionId,
+      action_number_snapshot: actionNumber,
+      action_synced_at: new Date().toISOString(),
+      updated_by: userId,
+      updated_at: new Date().toISOString()
+    }).eq('company_id', scope.companyId).eq('id', gapId).select().single());
+    await this.writeAuditMappingMutation(scope, userId, 'Audit mapping gap action foundation created', before, row, String(dto.reason ?? 'Universal Action created for audit mapping gap'), { gapId: row.id, actionFoundationId: actionId });
+    return { gap: row, actionFoundation: { id: actionId, actionNumber, source: 'Universal Action Center', status: 'Linked Action' } };
   }
 
   async auditMappingHistory(scope: Scope, query: Row = {}, permissions: string[]) {
@@ -2520,9 +3548,38 @@ export class RegulatoryService {
 
   async createActionFoundationForGap(userId: string, scope: Scope, gapId: string, dto: Row, permissions: string[]) {
     this.requirePermission(permissions, 'regulatory.applicability.gap.manage');
-    const gap = await this.updateApplicabilityGap(userId, scope, gapId, { linked_action_id: dto.actionId ?? dto.action_id ?? `action-foundation-${crypto.randomUUID()}`, reason: dto.reason ?? 'Action foundation link created' }, permissions);
-    await this.writeApplicabilityMutation(scope, userId, 'Applicability gap action foundation linked', gap.regulatory_item_id, null, gap, String(dto.reason ?? 'Action foundation link created'));
-    return gap;
+    let actionId = dto.actionId ?? dto.action_id;
+    let actionNumber: string | null = null;
+    if (!actionId) {
+      const gapRow = await this.db.single<Row>(this.db.from('regulatory_applicability_gaps').select('*').eq('company_id', scope.companyId).eq('id', gapId).maybeSingle()).catch(() => null);
+      const ownerId = dto.ownerUserId ?? dto.owner_user_id ?? gapRow?.owner_user_id ?? userId;
+      const dueDate = dto.dueDate ?? dto.due_date ?? gapRow?.due_date ?? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const action = await this.actions.create(scope.companyId, userId, {
+        title: dto.title ?? `Applicability Gap: ${gapRow?.gap_title ?? gapId}`,
+        description: dto.description ?? gapRow?.gap_description ?? 'Resolve regulatory applicability gap.',
+        sourceModule: 'REGULATORY',
+        sourceRecordId: gapId,
+        sourceType: 'Regulatory Applicability Gap',
+        siteId: gapRow?.site_id ?? scope.selectedSiteId ?? undefined,
+        ownerId,
+        priority: 'HIGH',
+        dueDate,
+        evidenceRequired: true,
+        verificationRequired: true
+      });
+      actionId = action.id;
+      actionNumber = action.actionNumber;
+    }
+    const gap = await this.updateApplicabilityGap(userId, scope, gapId, { linked_action_id: actionId, reason: dto.reason ?? 'Universal Action linked' }, permissions);
+    if (actionId) {
+      await this.db.single(this.db.from('regulatory_applicability_gaps').update({
+        universal_action_id: actionId,
+        action_number_snapshot: actionNumber,
+        action_synced_at: new Date().toISOString()
+      }).eq('company_id', scope.companyId).eq('id', gapId).select('id').single()).catch(() => null);
+    }
+    await this.writeApplicabilityMutation(scope, userId, 'Applicability gap action foundation linked', gap.regulatory_item_id, null, gap, String(dto.reason ?? 'Universal Action linked'));
+    return { ...gap, linked_action_id: actionId, universal_action_id: actionId, action_number_snapshot: actionNumber };
   }
 
   applicabilityHistory(scope: Scope, query: Row = {}) {
@@ -3007,7 +4064,37 @@ export class RegulatoryService {
 
   async createActionFoundationForObligationGap(userId: string, scope: Scope, gapId: string, dto: Row, permissions: string[]) {
     this.requirePermission(permissions, 'regulatory.obligation.gap.manage');
-    return this.updateObligationGap(userId, scope, gapId, { action_id: dto.actionId ?? dto.action_id ?? `action-foundation-${crypto.randomUUID()}`, reason: dto.reason ?? 'Action foundation link created' }, permissions);
+    let actionId = dto.actionId ?? dto.action_id;
+    let actionNumber: string | null = null;
+    if (!actionId) {
+      const gapRow = await this.db.single<Row>(this.db.from('regulatory_obligation_gaps').select('*').eq('company_id', scope.companyId).eq('id', gapId).maybeSingle()).catch(() => null);
+      const ownerId = dto.ownerUserId ?? dto.owner_user_id ?? gapRow?.owner_user_id ?? userId;
+      const dueDate = dto.dueDate ?? dto.due_date ?? gapRow?.due_date ?? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const action = await this.actions.create(scope.companyId, userId, {
+        title: dto.title ?? `Obligation Gap: ${gapRow?.gap_title ?? gapId}`,
+        description: dto.description ?? gapRow?.gap_description ?? 'Resolve regulatory obligation gap.',
+        sourceModule: 'REGULATORY',
+        sourceRecordId: gapId,
+        sourceType: 'Regulatory Obligation Gap',
+        siteId: gapRow?.site_id ?? scope.selectedSiteId ?? undefined,
+        ownerId,
+        priority: 'HIGH',
+        dueDate,
+        evidenceRequired: true,
+        verificationRequired: true
+      });
+      actionId = action.id;
+      actionNumber = action.actionNumber;
+    }
+    const updated = await this.updateObligationGap(userId, scope, gapId, { action_id: actionId, reason: dto.reason ?? 'Universal Action link created' }, permissions);
+    if (actionId) {
+      await this.db.single(this.db.from('regulatory_obligation_gaps').update({
+        universal_action_id: actionId,
+        action_number_snapshot: actionNumber,
+        action_synced_at: new Date().toISOString()
+      }).eq('company_id', scope.companyId).eq('id', gapId).select('id').single()).catch(() => null);
+    }
+    return { ...updated, action_id: actionId, universal_action_id: actionId, action_number_snapshot: actionNumber };
   }
 
   async obligationHistory(scope: Scope, query: Row = {}) {
@@ -3528,7 +4615,42 @@ export class RegulatoryService {
 
   async createActionFoundationForComplianceGap(userId: string, scope: Scope, gapId: string, dto: Row, permissions: string[]) {
     this.requirePermission(permissions, 'regulatory.compliance.gap.create_action_foundation');
-    return this.updateComplianceGap(userId, scope, gapId, { action_required: true, action_id: dto.actionId ?? dto.action_id ?? `action-foundation-${crypto.randomUUID()}`, gap_status: 'Action Foundation Created', reason: dto.reason ?? 'Action foundation linked to compliance gap' }, [...permissions, 'regulatory.compliance.gap.edit']);
+    let actionId = dto.actionId ?? dto.action_id;
+    let actionNumber: string | null = null;
+    if (!actionId) {
+      const gapRow = await this.db.single<Row>(this.db.from('regulatory_compliance_gaps').select('*').eq('company_id', scope.companyId).eq('id', gapId).maybeSingle()).catch(() => null);
+      const ownerId = dto.ownerUserId ?? dto.owner_user_id ?? gapRow?.owner_user_id ?? userId;
+      const dueDate = dto.dueDate ?? dto.due_date ?? gapRow?.due_date ?? new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const action = await this.actions.create(scope.companyId, userId, {
+        title: dto.title ?? `Compliance Gap: ${gapRow?.gap_title ?? gapId}`,
+        description: dto.description ?? gapRow?.gap_description ?? gapRow?.gap_remediation ?? 'Resolve regulatory compliance gap.',
+        sourceModule: 'REGULATORY',
+        sourceRecordId: gapId,
+        sourceType: 'Regulatory Compliance Gap',
+        siteId: gapRow?.site_id ?? scope.selectedSiteId ?? undefined,
+        ownerId,
+        priority: 'HIGH',
+        dueDate,
+        evidenceRequired: true,
+        verificationRequired: true
+      });
+      actionId = action.id;
+      actionNumber = action.actionNumber;
+    }
+    const updated = await this.updateComplianceGap(userId, scope, gapId, {
+      action_required: true,
+      action_id: actionId,
+      gap_status: 'Action Foundation Created',
+      reason: dto.reason ?? 'Universal Action linked to compliance gap'
+    }, [...permissions, 'regulatory.compliance.gap.edit']);
+    if (actionId) {
+      await this.db.single(this.db.from('regulatory_compliance_gaps').update({
+        universal_action_id: actionId,
+        action_number_snapshot: actionNumber,
+        action_synced_at: new Date().toISOString()
+      }).eq('company_id', scope.companyId).eq('id', gapId).select('id').single()).catch(() => null);
+    }
+    return { ...updated, action_id: actionId, universal_action_id: actionId, action_number_snapshot: actionNumber };
   }
 
   async linkCapaFoundationForComplianceGap(userId: string, scope: Scope, gapId: string, dto: Row, permissions: string[]) {
@@ -6577,6 +7699,1103 @@ export class RegulatoryService {
     }).select('id').single()).catch(() => null);
   }
 
+  async regulatoryReportDashboard(userId: string, scope: Scope, query: Row = {}, permissions: string[] = []) {
+    const register = await this.regulatoryReports(scope, { ...query, limit: 5000 }, permissions);
+    const rows = register.allRows ?? register.rows ?? [];
+    const jobs = await this.regulatoryReportJobs(scope, { ...query, limit: 50 }, permissions).catch(() => ({ rows: [] as Row[] }));
+    const packages = await this.regulatoryReportPackages(scope, { ...query, limit: 5000 }, permissions).catch(() => ({ rows: [] as Row[] }));
+    const access = await this.regulatoryReportAccessLog(scope, query, permissions).catch(() => ({ rows: [] as Row[] }));
+    return {
+      header: { title: 'Regulatory Reports / Export', subtitle: 'Controlled regulatory reports, compliance packages, source snapshots, generation jobs, access logging and stale monitoring.', generatedAt: new Date().toISOString() },
+      summary: this.regulatoryReportSummaryFromRows(rows, jobs.rows ?? [], packages.rows ?? [], access.rows ?? []),
+      byType: this.groupRows(rows, 'report_type'),
+      byStatus: this.groupRows(rows, 'report_status'),
+      bySite: this.groupRows(rows, 'site_id'),
+      byUnit: this.groupRows(rows, 'unit_id'),
+      byJurisdiction: this.groupRows(rows, 'jurisdiction_id'),
+      byOwner: this.groupRows(rows, 'owner_user_id'),
+      byExportFormat: this.groupRows(rows, 'export_format'),
+      failedJobsPreview: (jobs.rows ?? []).filter((row) => row.job_status === 'Failed').slice(0, 8),
+      staleReportsPreview: rows.filter((row) => row.stale_status && row.stale_status !== 'Current').slice(0, 8),
+      pendingApprovalPreview: rows.filter((row) => row.report_status === 'Pending Approval').slice(0, 8),
+      missingEvidencePreview: rows.filter((row) => Number(row.excluded_evidence_count ?? 0) > 0 || row.readiness_status === 'Missing Evidence').slice(0, 8),
+      openActionsPreview: rows.filter((row) => Number(row.open_action_count ?? 0) > 0).slice(0, 8),
+      restrictedEvidencePreview: rows.filter((row) => Number(row.restricted_evidence_count ?? 0) > 0).slice(0, 8),
+      recentGenerated: rows.filter((row) => row.generated_at).slice(0, 10),
+      recentAccessEvents: (access.rows ?? []).slice(0, 10),
+      packages: packages.rows ?? [],
+      permissions: this.regulatoryReportPermissionState(permissions),
+      userId
+    };
+  }
+
+  async regulatoryReportDashboardSummary(userId: string, scope: Scope, query: Row = {}, permissions: string[] = []) {
+    const dashboard = await this.regulatoryReportDashboard(userId, scope, query, permissions);
+    return dashboard.summary;
+  }
+
+  async regulatoryReports(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.register.view');
+    const page = Math.max(Number(query.page ?? 1), 1);
+    const limit = Math.min(Math.max(Number(query.limit ?? 25), 1), 5000);
+    let q = this.db.from('regulatory_reports').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    if (query.reportType) q = q.eq('report_type', query.reportType);
+    if (query.reportStatus) q = q.eq('report_status', query.reportStatus);
+    if (query.staleStatus) q = q.eq('stale_status', query.staleStatus);
+    if (query.exportFormat) q = q.eq('export_format', query.exportFormat);
+    if (query.ownerUserId) q = q.eq('owner_user_id', query.ownerUserId);
+    if (query.generatedBy) q = q.eq('generated_by', query.generatedBy);
+    if (query.view) q = this.applyRegulatoryReportView(q, String(query.view));
+    if (query.search) q = q.or(`report_code.ilike.%${query.search}%,report_title.ilike.%${query.search}%,report_type.ilike.%${query.search}%`);
+    const allRows = await this.db.many<Row>(q.order('updated_at', { ascending: false }).limit(5000)).catch(() => []);
+    const sorted = this.sortRows(allRows.filter((row) => this.canAccessSite(scope, row.site_id)), String(query.sort ?? 'updated_at.desc'));
+    const rows = sorted.slice((page - 1) * limit, page * limit);
+    return { rows, allRows: sorted, total: sorted.length, page, limit, hasMore: page * limit < sorted.length, summary: this.regulatoryReportSummaryFromRows(sorted), permissions: this.regulatoryReportPermissionState(permissions) };
+  }
+
+  async createRegulatoryReport(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requireAnyPermission(permissions, ['regulatory.report.create', 'regulatory.report.generate']);
+    const normalized = await this.normalizeRegulatoryReportInput(scope, dto, permissions, 'draft');
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').insert({
+      id,
+      company_id: scope.companyId,
+      site_id: normalized.site_id,
+      unit_id: normalized.unit_id,
+      area_id: normalized.area_id,
+      equipment_id: normalized.equipment_id,
+      report_code: normalized.report_code || await this.nextRegulatoryCode(scope, 'regulatory_reports', 'report_code', 'RPT'),
+      report_title: normalized.report_title,
+      report_type: normalized.report_type,
+      report_purpose: normalized.report_purpose,
+      audience: normalized.audience,
+      confidentiality_level: normalized.confidentiality_level,
+      report_status: normalized.report_status,
+      readiness_status: normalized.readiness_status,
+      stale_status: 'Current',
+      export_format: normalized.export_format,
+      template_id: normalized.template_id,
+      template_snapshot_json: normalized.template_snapshot_json,
+      source_scope_json: normalized.source_scope_json,
+      source_filters_json: normalized.source_filters_json,
+      source_snapshot_json: normalized.source_snapshot_json,
+      generation_manifest_json: normalized.generation_manifest_json,
+      evidence_rules_json: normalized.evidence_rules_json,
+      section_config_json: normalized.section_config_json,
+      included_source_count: normalized.included_source_count,
+      included_evidence_count: normalized.included_evidence_count,
+      restricted_evidence_count: normalized.restricted_evidence_count,
+      excluded_evidence_count: normalized.excluded_evidence_count,
+      open_gap_count: normalized.open_gap_count,
+      open_action_count: normalized.open_action_count,
+      approval_required: normalized.approval_required,
+      approval_status: normalized.approval_status,
+      owner_user_id: normalized.owner_user_id,
+      notes: normalized.notes,
+      created_by: userId,
+      updated_by: userId,
+      created_at: now,
+      updated_at: now
+    }).select().single());
+    await this.persistRegulatoryReportContents(scope, userId, row, normalized);
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report draft created', row, null, row, 'Regulatory report draft created');
+    return this.regulatoryReportDetail(scope, row.id, permissions);
+  }
+
+  async generateRegulatoryReport(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.generate');
+    const detail = dto.reportId ? await this.regulatoryReportDetail(scope, String(dto.reportId), permissions) : await this.createRegulatoryReport(userId, scope, { ...dto, reportStatus: 'Queued' }, permissions);
+    const report = dto.reportId
+      ? await this.createRegulatoryReportVersion(userId, scope, detail.report as Row, dto)
+      : detail.report as Row;
+    const now = new Date().toISOString();
+    const job = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').insert({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: report.site_id ?? scope.selectedSiteId ?? null,
+      report_id: report.id,
+      job_code: await this.nextRegulatoryCode(scope, 'regulatory_report_generation_jobs', 'job_code', 'RRJ'),
+      job_type: dto.jobType ?? 'Generate Report',
+      job_status: 'Queued',
+      progress_percent: 0,
+      export_format: report.export_format ?? dto.exportFormat ?? 'PDF',
+      source_payload_json: { reportId: report.id, requestedPayload: dto },
+      validation_result_json: this.validateRegulatoryReportGeneration(report, permissions),
+      queued_by: userId,
+      queued_at: now,
+      created_at: now,
+      updated_at: now
+    }).select().single());
+    const updated = await this.db.single<Row>(this.db.from('regulatory_reports').update({ report_status: 'Queued', readiness_status: job.validation_result_json?.status ?? report.readiness_status, updated_by: userId, updated_at: now }).eq('company_id', scope.companyId).eq('id', report.id).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report generation queued', updated, report, updated, 'Backend generation job queued with immutable manifest foundation.', { jobId: job.id });
+    const processedJob = await this.processRegulatoryReportJob(userId, scope, job, updated).catch(async (error) => {
+      const message = error instanceof Error ? error.message : 'Report generation failed safely.';
+      return this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').update({ job_status: 'Failed', error_message: message, failed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', job.id).select().single());
+    });
+    return { ...(await this.regulatoryReportDetail(scope, report.id, permissions)), job: processedJob };
+  }
+
+  async regulatoryReportDetail(scope: Scope, reportId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.view');
+    const report = await this.db.single<Row>(this.db.from('regulatory_reports').select('*').eq('company_id', scope.companyId).eq('id', reportId).maybeSingle());
+    if (!report || !this.canAccessSite(scope, report.site_id)) throw new NotFoundException('Regulatory report was not found or is outside your company/site scope.');
+    const [sources, sections, evidence, files, versions, jobs, accessLog, history] = await Promise.all([
+      this.db.many<Row>(this.db.from('regulatory_report_source_links').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('linked_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_sections').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('section_order')).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_evidence_items').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('added_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_files').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('created_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_versions').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('version_number', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_generation_jobs').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('created_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_access_events').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('accessed_at', { ascending: false }).limit(100)).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_history_events').select('*').eq('company_id', scope.companyId).eq('report_id', reportId).order('created_at', { ascending: false }).limit(100)).catch(() => [])
+    ]);
+    const visibleEvidence = evidence.map((row) => this.redactRegulatoryReportEvidence(row, permissions));
+    return {
+      report,
+      overview: this.regulatoryReportOverview(report, sources, visibleEvidence, files, versions, accessLog),
+      source: { rows: sources, snapshot: report.source_snapshot_json },
+      snapshot: report.source_snapshot_json,
+      sections: { rows: sections, config: report.section_config_json },
+      evidence: { rows: visibleEvidence, rules: report.evidence_rules_json },
+      gaps: { rows: sources.filter((row) => row.source_type === 'Compliance Gap'), openGapCount: report.open_gap_count },
+      actions: { rows: sources.filter((row) => ['Action Link', 'CAPA Package'].includes(row.source_type)), openActionCount: report.open_action_count },
+      auditMapping: { rows: sources.filter((row) => row.source_type === 'Audit Mapping') },
+      review: { approvalRequired: report.approval_required, approvalStatus: report.approval_status, approvalPackageId: report.approval_package_id },
+      files: { rows: this.safeReportFiles(files) },
+      versions: { rows: versions },
+      jobs: { rows: jobs },
+      accessLog: { rows: accessLog },
+      history: { rows: history },
+      permissions: this.regulatoryReportPermissionState(permissions),
+      readOnly: Boolean(report.locked || report.archived_at),
+      readOnlyReason: report.locked ? `Report is locked${report.lock_reason ? `: ${report.lock_reason}` : '.'}` : report.archived_at ? 'Archived reports are read-only.' : null
+    };
+  }
+
+  async regulatoryReportSection(scope: Scope, reportId: string, section: string, permissions: string[] = []) {
+    const detail = await this.regulatoryReportDetail(scope, reportId, permissions);
+    const sections: Record<string, unknown> = {
+      overview: detail.overview, source: detail.source, snapshot: detail.snapshot, sections: detail.sections, evidence: detail.evidence,
+      gaps: detail.gaps, actions: detail.actions, 'audit-mapping': detail.auditMapping, review: detail.review, files: detail.files,
+      versions: detail.versions, 'access-log': detail.accessLog, history: detail.history
+    };
+    if (!(section in sections)) throw new NotFoundException('Report section was not found.');
+    return sections[section];
+  }
+
+  async updateRegulatoryReport(userId: string, scope: Scope, reportId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.create');
+    const before = (await this.regulatoryReportDetail(scope, reportId, permissions)).report;
+    if (before.locked) throw new ForbiddenException('Locked reports require a controlled new-version/regenerate flow.');
+    const update = this.pickMapped(dto, { reportTitle: 'report_title', reportPurpose: 'report_purpose', audience: 'audience', confidentialityLevel: 'confidentiality_level', exportFormat: 'export_format', ownerUserId: 'owner_user_id', notes: 'notes' });
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').update({ ...update, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', reportId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report updated', row, before, row, String(dto.reason ?? 'Report updated'));
+    return this.regulatoryReportDetail(scope, reportId, permissions);
+  }
+
+  async archiveRegulatoryReport(userId: string, scope: Scope, reportId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.archive');
+    if (!dto.reason) throw new BadRequestException('Report archive requires reason.');
+    const before = (await this.regulatoryReportDetail(scope, reportId, permissions)).report;
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').update({ report_status: 'Archived', archived_at: new Date().toISOString(), archived_by: userId, archive_reason: dto.reason, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', reportId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report archived', row, before, row, dto.reason);
+    return this.regulatoryReportDetail(scope, reportId, permissions);
+  }
+
+  async lockRegulatoryReport(userId: string, scope: Scope, reportId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.lock');
+    const before = (await this.regulatoryReportDetail(scope, reportId, permissions)).report;
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').update({ locked: true, locked_by: userId, locked_at: new Date().toISOString(), lock_reason: dto.reason ?? 'Locked as controlled report package.', report_status: 'Locked', updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', reportId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report locked', row, before, row, String(dto.reason ?? 'Report locked'));
+    return this.regulatoryReportDetail(scope, reportId, permissions);
+  }
+
+  async unlockRegulatoryReport(userId: string, scope: Scope, reportId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.unlock');
+    if (!dto.reason) throw new BadRequestException('Report unlock requires reason.');
+    const before = (await this.regulatoryReportDetail(scope, reportId, permissions)).report;
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').update({ locked: false, locked_by: null, locked_at: null, lock_reason: dto.reason, report_status: 'Generated', updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', reportId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report unlocked', row, before, row, dto.reason);
+    return this.regulatoryReportDetail(scope, reportId, permissions);
+  }
+
+  async markRegulatoryReportHistorical(userId: string, scope: Scope, reportId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.mark_historical');
+    const before = (await this.regulatoryReportDetail(scope, reportId, permissions)).report;
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').update({ report_status: 'Historical', stale_status: 'Resolved', updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', reportId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report marked historical', row, before, row, String(dto.reason ?? 'Report marked historical'));
+    return this.regulatoryReportDetail(scope, reportId, permissions);
+  }
+
+  async submitRegulatoryReportApproval(userId: string, scope: Scope, reportId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.submit_approval');
+    const before = (await this.regulatoryReportDetail(scope, reportId, permissions)).report;
+    const row = await this.db.single<Row>(this.db.from('regulatory_reports').update({ report_status: 'Pending Approval', approval_required: true, approval_status: 'Pending Review', updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', reportId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report submitted for approval', row, before, row, String(dto.reason ?? 'Report submitted for review and approval'));
+    return this.regulatoryReportDetail(scope, reportId, permissions);
+  }
+
+  async accessRegulatoryReport(userId: string, scope: Scope, reportId: string, accessType: string, permissions: string[] = []) {
+    const permission = accessType === 'Preview' ? 'regulatory.report.preview' : accessType === 'Download' ? 'regulatory.report.download' : 'regulatory.report.export';
+    this.requirePermission(permissions, permission);
+    const detail = await this.regulatoryReportDetail(scope, reportId, permissions);
+    const event = await this.writeRegulatoryReportAccess(scope, userId, detail.report, accessType, 'Allowed', null);
+    return { access: event, report: detail.report, files: detail.files, message: `${accessType} is authorized. File delivery must use the configured Reports/Storage/Document Control adapter; no raw storage paths are exposed.` };
+  }
+
+  async regulatoryReportTemplates(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.template.view');
+    let q = this.db.from('regulatory_report_templates').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    if (query.reportType) q = q.eq('report_type', query.reportType);
+    if (query.templateStatus) q = q.eq('template_status', query.templateStatus);
+    const rows = await this.db.many<Row>(q.order('updated_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 200), 500))).catch(() => []);
+    return { rows: rows.filter((row) => this.canAccessSite(scope, row.site_id)), total: rows.length };
+  }
+
+  async createRegulatoryReportTemplate(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.template.create');
+    if (!dto.templateTitle && !dto.template_title) throw new BadRequestException('Template title is required.');
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_templates').insert({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: dto.siteId ?? dto.site_id ?? scope.selectedSiteId ?? null,
+      template_code: dto.templateCode ?? dto.template_code ?? await this.nextRegulatoryCode(scope, 'regulatory_report_templates', 'template_code', 'RRT'),
+      template_title: dto.templateTitle ?? dto.template_title,
+      report_type: dto.reportType ?? dto.report_type ?? 'Regulatory Register Report',
+      default_sections_json: dto.defaultSections ?? dto.default_sections_json ?? null,
+      default_evidence_rules_json: dto.defaultEvidenceRules ?? dto.default_evidence_rules_json ?? null,
+      default_export_format: dto.defaultExportFormat ?? dto.default_export_format ?? 'PDF',
+      default_audience: dto.defaultAudience ?? dto.default_audience ?? 'Internal Compliance Team',
+      header_footer_foundation_json: dto.headerFooterFoundation ?? dto.header_footer_foundation_json ?? null,
+      watermark_foundation: dto.watermarkFoundation ?? dto.watermark_foundation ?? null,
+      confidentiality_footer_foundation: dto.confidentialityFooterFoundation ?? dto.confidentiality_footer_foundation ?? null,
+      template_status: dto.templateStatus ?? dto.template_status ?? 'Draft',
+      notes: dto.notes ?? null,
+      created_by: userId,
+      updated_by: userId
+    }).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report template created', row, null, row, 'Report template created', { templateId: row.id });
+    return row;
+  }
+
+  async updateRegulatoryReportTemplate(userId: string, scope: Scope, templateId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.template.edit');
+    const before = await this.db.single<Row>(this.db.from('regulatory_report_templates').select('*').eq('company_id', scope.companyId).eq('id', templateId).maybeSingle());
+    if (!before || !this.canAccessSite(scope, before.site_id)) throw new NotFoundException('Report template was not found or is outside your company/site scope.');
+    const update = this.pickMapped(dto, { templateTitle: 'template_title', reportType: 'report_type', defaultExportFormat: 'default_export_format', defaultAudience: 'default_audience', templateStatus: 'template_status', notes: 'notes' });
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_templates').update({ ...update, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', templateId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report template updated', row, before, row, String(dto.reason ?? 'Report template updated'), { templateId });
+    return row;
+  }
+
+  async archiveRegulatoryReportTemplate(userId: string, scope: Scope, templateId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.template.archive');
+    if (!dto.reason) throw new BadRequestException('Template archive requires reason.');
+    const before = await this.db.single<Row>(this.db.from('regulatory_report_templates').select('*').eq('company_id', scope.companyId).eq('id', templateId).maybeSingle());
+    if (!before || !this.canAccessSite(scope, before.site_id)) throw new NotFoundException('Report template was not found or is outside your company/site scope.');
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_templates').update({ template_status: 'Archived', archived_at: new Date().toISOString(), archived_by: userId, archive_reason: dto.reason, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', templateId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report template archived', row, before, row, dto.reason, { templateId });
+    return row;
+  }
+
+  async regulatoryReportTemplateDetail(scope: Scope, templateId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.template.view');
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_templates').select('*').eq('company_id', scope.companyId).eq('id', templateId).maybeSingle());
+    if (!row || !this.canAccessSite(scope, row.site_id)) throw new NotFoundException('Report template was not found or is outside your company/site scope.');
+    return row;
+  }
+
+  async reactivateRegulatoryReportTemplate(userId: string, scope: Scope, templateId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.template.edit');
+    const before = await this.regulatoryReportTemplateDetail(scope, templateId, permissions);
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_templates').update({ template_status: 'Active', archived_at: null, archived_by: null, archive_reason: null, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', templateId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report template reactivated', row, before, row, String(dto.reason ?? 'Report template reactivated'), { templateId });
+    return row;
+  }
+
+  async regulatoryReportJobs(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.job.view');
+    let q = this.db.from('regulatory_report_generation_jobs').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    if (query.jobStatus) q = q.eq('job_status', query.jobStatus);
+    const rows = await this.db.many<Row>(q.order('created_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 100), 500))).catch(() => []);
+    return { rows: rows.filter((row) => this.canAccessSite(scope, row.site_id)), total: rows.length, summary: this.groupRows(rows, 'job_status') };
+  }
+
+  async retryRegulatoryReportJob(userId: string, scope: Scope, jobId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.job.retry');
+    const before = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').select('*').eq('company_id', scope.companyId).eq('id', jobId).maybeSingle());
+    if (!before || !this.canAccessSite(scope, before.site_id)) throw new NotFoundException('Report generation job was not found or is outside your company/site scope.');
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').update({ job_status: 'Retry Pending', retry_count: Number(before.retry_count ?? 0) + 1, error_message: null, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', jobId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report job retry requested', row, before, row, String(dto.reason ?? 'Report job retry requested'), { jobId });
+    return row;
+  }
+
+  async cancelRegulatoryReportJob(userId: string, scope: Scope, jobId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.job.cancel');
+    const before = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').select('*').eq('company_id', scope.companyId).eq('id', jobId).maybeSingle());
+    if (!before || !this.canAccessSite(scope, before.site_id)) throw new NotFoundException('Report generation job was not found or is outside your company/site scope.');
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').update({ job_status: 'Cancelled', cancelled_by: userId, cancelled_at: new Date().toISOString(), cancel_reason: dto.reason ?? null, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', jobId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report job cancelled', row, before, row, String(dto.reason ?? 'Report job cancelled'), { jobId });
+    return row;
+  }
+
+  async regulatoryReportJobDetail(scope: Scope, jobId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.job.view');
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').select('*').eq('company_id', scope.companyId).eq('id', jobId).maybeSingle());
+    if (!row || !this.canAccessSite(scope, row.site_id)) throw new NotFoundException('Report generation job was not found or is outside your company/site scope.');
+    return row;
+  }
+
+  async regulatoryReportPackages(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.package.view');
+    let q = this.db.from('regulatory_report_package_foundations').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    if (query.packageType) q = q.eq('package_type', query.packageType);
+    if (query.packageStatus) q = q.eq('package_status', query.packageStatus);
+    const rows = await this.db.many<Row>(q.order('updated_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 100), 5000))).catch(() => []);
+    return { rows: rows.filter((row) => this.canAccessSite(scope, row.site_id)), total: rows.length, summary: this.groupRows(rows, 'package_status') };
+  }
+
+  async createRegulatoryReportPackage(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.package.create');
+    if (!dto.packageTitle && !dto.package_title) throw new BadRequestException('Package title is required.');
+    const manifest = this.buildRegulatoryPackageManifest(dto);
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_package_foundations').insert({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: dto.siteId ?? dto.site_id ?? scope.selectedSiteId ?? null,
+      package_code: dto.packageCode ?? dto.package_code ?? await this.nextRegulatoryCode(scope, 'regulatory_report_package_foundations', 'package_code', 'RPK'),
+      package_title: dto.packageTitle ?? dto.package_title,
+      package_type: dto.packageType ?? dto.package_type ?? 'Regulatory Compliance Package',
+      package_status: dto.packageStatus ?? dto.package_status ?? 'Draft',
+      scope_json: dto.scope ?? dto.scope_json ?? null,
+      manifest_json: manifest,
+      owner_user_id: dto.ownerUserId ?? dto.owner_user_id ?? null,
+      created_by: userId,
+      updated_by: userId
+    }).select().single());
+    await this.persistRegulatoryReportPackageItems(scope, userId, row, dto);
+    await this.writeRegulatoryReportMutation(scope, userId, 'Compliance package created', row, null, row, 'Compliance package foundation created', { packageId: row.id });
+    return this.regulatoryReportPackageDetail(scope, row.id, permissions);
+  }
+
+  private async persistRegulatoryReportPackageItems(scope: Scope, userId: string, pkg: Row, dto: Row) {
+    const manifest = this.buildRegulatoryPackageManifest(dto);
+    const mappings: Array<[string, string, string]> = [
+      ['includedRegulatoryItems', 'Regulatory Item', 'regulatory_item_id'],
+      ['includedObligations', 'Obligation', 'obligation_id'],
+      ['includedComplianceAssessments', 'Compliance Assessment', ''],
+      ['includedEvidenceLinks', 'Evidence Link', 'evidence_link_id'],
+      ['includedAuditMappings', 'Audit Mapping', ''],
+      ['includedActions', 'Action Link', ''],
+      ['includedReviewPackages', 'Review Package', '']
+    ];
+    const rows: Row[] = [];
+    for (const [inputKey, itemType, foreignKey] of mappings) {
+      const values = Array.isArray(dto[inputKey]) ? dto[inputKey] : [];
+      for (const value of values) {
+        const id = typeof value === 'string' ? value : value?.id ?? value?.recordId;
+        if (!id) continue;
+        const row: Row = { id: crypto.randomUUID(), company_id: scope.companyId, site_id: pkg.site_id ?? null, package_id: pkg.id, item_type: itemType, item_record_id: String(id), included: value?.included !== false, restricted: Boolean(value?.restricted), excluded_reason: value?.excludedReason ?? null, source_snapshot_json: typeof value === 'string' ? { sourceRecordId: value } : value, added_by: userId, added_at: new Date().toISOString() };
+        if (foreignKey) row[foreignKey] = String(id);
+        rows.push(row);
+      }
+    }
+    if (rows.length) await this.db.many<Row>(this.db.from('regulatory_report_package_items').insert(rows).select('id'));
+    const included = (type: string) => rows.filter((row) => row.item_type === type && row.included).length;
+    await this.db.single(this.db.from('regulatory_report_package_foundations').update({
+      manifest_json: manifest,
+      included_regulatory_item_count: included('Regulatory Item'),
+      included_obligation_count: included('Obligation'),
+      included_compliance_assessment_count: included('Compliance Assessment'),
+      included_evidence_count: included('Evidence Link'),
+      included_audit_mapping_count: included('Audit Mapping'),
+      included_action_count: included('Action Link'),
+      excluded_record_count: rows.filter((row) => !row.included).length,
+      restricted_evidence_count: rows.filter((row) => row.restricted).length
+    }).eq('company_id', scope.companyId).eq('id', pkg.id).select('id').single());
+  }
+
+  async regulatoryReportPackageDetail(scope: Scope, packageId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.package.view');
+    const pkg = await this.db.single<Row>(this.db.from('regulatory_report_package_foundations').select('*').eq('company_id', scope.companyId).eq('id', packageId).maybeSingle());
+    if (!pkg || !this.canAccessSite(scope, pkg.site_id)) throw new NotFoundException('Regulatory report package was not found or is outside your company/site scope.');
+    const [items, history] = await Promise.all([
+      this.db.many<Row>(this.db.from('regulatory_report_package_items').select('*').eq('company_id', scope.companyId).eq('package_id', packageId).order('added_at', { ascending: false })).catch(() => []),
+      this.db.many<Row>(this.db.from('regulatory_report_history_events').select('*').eq('company_id', scope.companyId).eq('package_id', packageId).order('created_at', { ascending: false }).limit(100)).catch(() => [])
+    ]);
+    return { package: pkg, overview: pkg, sources: { rows: items }, evidence: { rows: items.filter((row) => row.item_type === 'Evidence Link') }, manifest: pkg.manifest_json, files: { rows: [] }, history: { rows: history }, permissions: this.regulatoryReportPermissionState(permissions) };
+  }
+
+  async prepareRegulatoryReportPackage(userId: string, scope: Scope, packageId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.package.prepare');
+    const before = (await this.regulatoryReportPackageDetail(scope, packageId, permissions)).package;
+    const manifest = this.buildRegulatoryPackageManifest({ ...before, ...dto, preparedAt: new Date().toISOString() });
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_package_foundations').update({ package_status: 'Prepared', manifest_json: manifest, prepared_by: userId, prepared_at: new Date().toISOString(), updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', packageId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Compliance package prepared', row, before, row, String(dto.reason ?? 'Compliance package prepared'), { packageId });
+    return this.regulatoryReportPackageDetail(scope, packageId, permissions);
+  }
+
+  async updateRegulatoryReportPackage(userId: string, scope: Scope, packageId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.package.create');
+    const before = (await this.regulatoryReportPackageDetail(scope, packageId, permissions)).package;
+    if (before.archived_at) throw new ForbiddenException('Archived packages are read-only.');
+    const update = this.pickMapped(dto, { packageTitle: 'package_title', packageType: 'package_type', ownerUserId: 'owner_user_id', packageStatus: 'package_status', scope: 'scope_json' });
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_package_foundations').update({ ...update, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', packageId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Compliance package updated', row, before, row, String(dto.reason ?? 'Compliance package updated'), { packageId });
+    return this.regulatoryReportPackageDetail(scope, packageId, permissions);
+  }
+
+  async archiveRegulatoryReportPackage(userId: string, scope: Scope, packageId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.package.archive');
+    if (!dto.reason) throw new BadRequestException('Package archive requires reason.');
+    const before = (await this.regulatoryReportPackageDetail(scope, packageId, permissions)).package;
+    const row = await this.db.single<Row>(this.db.from('regulatory_report_package_foundations').update({ package_status: 'Archived', archived_at: new Date().toISOString(), archived_by: userId, archive_reason: dto.reason, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', packageId).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Compliance package archived', row, before, row, dto.reason, { packageId });
+    return this.regulatoryReportPackageDetail(scope, packageId, permissions);
+  }
+
+  async generateRegulatoryReportFromPackage(userId: string, scope: Scope, packageId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.generate');
+    const pkg = (await this.regulatoryReportPackageDetail(scope, packageId, permissions)).package;
+    const items = await this.db.many<Row>(this.db.from('regulatory_report_package_items').select('*').eq('company_id', scope.companyId).eq('package_id', packageId).eq('included', true).is('removed_at', null));
+    const sourceTypeMap: Record<string, string> = { 'Regulatory Item': 'Regulatory Item', Obligation: 'Obligation', 'Compliance Assessment': 'Compliance Assessment', 'Evidence Link': 'Evidence Link', 'Audit Mapping': 'Audit Mapping', 'Action Link': 'Action Link', 'Review Package': 'Review Package' };
+    return this.generateRegulatoryReport(userId, scope, { ...dto, reportTitle: dto.reportTitle ?? pkg.package_title, reportType: dto.reportType ?? 'Regulatory Compliance Status Report', audience: dto.audience ?? 'Internal Compliance Team', exportFormat: dto.exportFormat ?? 'JSON Manifest Foundation', sources: items.map((item) => ({ sourceType: sourceTypeMap[item.item_type] ?? item.item_type, sourceRecordId: item.item_record_id })), sourceScope: pkg.scope_json, packageId }, permissions);
+  }
+
+  async regulatoryReportPackageSection(scope: Scope, packageId: string, section: string, permissions: string[] = []) {
+    const detail = await this.regulatoryReportPackageDetail(scope, packageId, permissions);
+    const sections: Record<string, unknown> = { overview: detail.overview, sources: detail.sources, evidence: detail.evidence, manifest: detail.manifest, files: detail.files, history: detail.history };
+    if (!(section in sections)) throw new NotFoundException('Package section was not found.');
+    return sections[section];
+  }
+
+  async regulatoryReportAccessLog(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.access_log.view');
+    let q = this.db.from('regulatory_report_access_events').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    if (query.reportId) q = q.eq('report_id', query.reportId);
+    if (query.accessType) q = q.eq('access_type', query.accessType);
+    const rows = await this.db.many<Row>(q.order('accessed_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 100), 500))).catch(() => []);
+    return { rows: rows.filter((row) => this.canAccessSite(scope, row.site_id)), total: rows.length };
+  }
+
+  async regulatoryReportHistory(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.history.view');
+    let q = this.db.from('regulatory_report_history_events').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    const rows = await this.db.many<Row>(q.order('created_at', { ascending: false }).limit(Math.min(Number(query.limit ?? 100), 500))).catch(() => []);
+    return { rows: rows.filter((row) => this.canAccessSite(scope, row.site_id)), total: rows.length };
+  }
+
+  async regulatoryReportSettings(scope: Scope) {
+    const settings = await this.settings(scope);
+    return { settings, reportSettings: this.pick(settings, ['require_approval_for_external_report', 'require_approval_for_regulator_package', 'require_approval_for_management_review_package', 'allow_draft_report_with_unapproved_sources', 'block_export_if_open_critical_gap', 'block_export_if_restricted_evidence_unapproved', 'exclude_restricted_evidence_by_default', 'allow_restricted_evidence_export', 'include_evidence_manifest_by_default', 'include_access_log_in_external_package', 'auto_mark_report_stale_on_source_change', 'auto_mark_report_stale_on_evidence_change', 'auto_mark_report_stale_on_action_change', 'auto_mark_report_stale_on_review_change', 'auto_notify_owner_on_report_generated', 'auto_notify_owner_on_report_failed', 'auto_notify_owner_on_report_stale', 'report_generation_timeout_minutes', 'report_download_expiry_minutes']) };
+  }
+
+  async updateRegulatoryReportSettings(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.settings.edit');
+    return this.updateSettings(userId, scope, dto, permissions);
+  }
+
+  async sourceRegulatoryReports(scope: Scope, sourceType: string, sourceRecordId: string, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.report.view');
+    const rows = await this.db.many<Row>(this.db.from('regulatory_report_source_links').select('report_id').eq('company_id', scope.companyId).eq('source_type', sourceType).eq('source_record_id', sourceRecordId).is('removed_at', null)).catch(() => []);
+    const reportIds = [...new Set(rows.map((row) => row.report_id).filter(Boolean))];
+    if (!reportIds.length) return { rows: [], total: 0, sourceType, sourceRecordId };
+    const reports = await this.db.many<Row>(this.db.from('regulatory_reports').select('*').eq('company_id', scope.companyId).in('id', reportIds).order('updated_at', { ascending: false })).catch(() => []);
+    return { rows: reports.filter((row) => this.canAccessSite(scope, row.site_id)), total: reports.length, sourceType, sourceRecordId };
+  }
+
+  async generateSourceRegulatoryReport(userId: string, scope: Scope, sourceType: string, sourceRecordId: string, dto: Row, permissions: string[] = []) {
+    return this.generateRegulatoryReport(userId, scope, { ...dto, sources: [{ sourceType, sourceRecordId }], reportTitle: dto.reportTitle ?? `${sourceType} report`, reportType: dto.reportType ?? this.defaultReportTypeForSource(sourceType) }, permissions);
+  }
+
+  /** Executes formats supported by the installed controlled-storage adapter. Unsupported formats fail safely instead of producing a fabricated file. */
+  private async processRegulatoryReportJob(userId: string, scope: Scope, job: Row, report: Row) {
+    const startedAt = new Date().toISOString();
+    await this.db.single(this.db.from('regulatory_report_generation_jobs').update({ job_status: 'Generating', progress_percent: 25, started_at: startedAt, updated_at: startedAt }).eq('company_id', scope.companyId).eq('id', job.id).select('id').single());
+    const validation = job.validation_result_json ?? this.validateRegulatoryReportGeneration(report, []);
+    if (validation.status === 'Validation Failed') throw new BadRequestException(Array.isArray(validation.blockers) ? validation.blockers.join(' ') : 'Report validation failed.');
+    const format = String(report.export_format ?? job.export_format);
+    if (!['CSV', 'JSON Manifest Foundation'].includes(format)) throw new BadRequestException(`${format} generation requires the configured global Reports adapter. No file was generated.`);
+    const version = await this.db.single<Row>(this.db.from('regulatory_report_versions').select('*').eq('company_id', scope.companyId).eq('report_id', report.id).eq('version_status', 'Current').maybeSingle());
+    const payload = format === 'CSV' ? this.regulatoryReportCsv(report) : JSON.stringify({ report, sourceSnapshot: report.source_snapshot_json, manifest: report.generation_manifest_json }, null, 2);
+    const extension = format === 'CSV' ? 'csv' : 'json';
+    const fileName = `${String(report.report_code ?? report.id).replace(/[^a-zA-Z0-9._-]/g, '_')}-v${report.current_version ?? 1}.${extension}`;
+    const storageKey = this.storage.buildObjectKey(scope.companyId, `regulatory/reports/${report.site_id ?? 'company'}/${report.id}`, fileName);
+    await this.storage.putObject(storageKey, Buffer.from(payload, 'utf8'));
+    const completedAt = new Date().toISOString();
+    await this.db.single<Row>(this.db.from('regulatory_report_files').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: report.site_id ?? null, report_id: report.id, report_version_id: version?.id ?? null, file_code: `${report.report_code ?? report.id}-v${report.current_version ?? 1}`, file_name: fileName, file_type: format === 'CSV' ? 'text/csv' : 'application/json', export_format: format, file_status: 'Generated', storage_file_id: storageKey, file_size_bytes: Buffer.byteLength(payload, 'utf8'), generated_by: userId, generated_at: completedAt, created_at: completedAt }).select().single());
+    const generated = await this.db.single<Row>(this.db.from('regulatory_reports').update({ report_status: 'Generated', readiness_status: validation.status, generated_by: userId, generated_at: completedAt, updated_by: userId, updated_at: completedAt }).eq('company_id', scope.companyId).eq('id', report.id).select().single());
+    const completed = await this.db.single<Row>(this.db.from('regulatory_report_generation_jobs').update({ job_status: 'Completed', progress_percent: 100, completed_at: completedAt, updated_at: completedAt }).eq('company_id', scope.companyId).eq('id', job.id).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report generated', generated, report, generated, `Controlled ${format} report generated through the storage adapter.`, { reportId: report.id, jobId: completed.id });
+    return completed;
+  }
+
+  /** Regeneration never overwrites the prior controlled basis. It creates a new current version and supersedes the old one. */
+  private async createRegulatoryReportVersion(userId: string, scope: Scope, report: Row, dto: Row) {
+    if (report.archived_at) throw new ForbiddenException('Archived reports cannot be regenerated. Create a controlled new report instead.');
+    const now = new Date().toISOString();
+    const prior = await this.db.single<Row>(this.db.from('regulatory_report_versions').select('*').eq('company_id', scope.companyId).eq('report_id', report.id).eq('version_status', 'Current').maybeSingle());
+    const nextVersionNumber = Number(report.current_version ?? prior?.version_number ?? 1) + 1;
+    const sourceSnapshot = Array.isArray(dto.sources) ? await this.buildRegulatoryReportSourceSnapshot(scope, dto) : report.source_snapshot_json ?? {};
+    const manifest = this.buildRegulatoryReportManifest({ ...report.generation_manifest_json, ...dto, reportType: dto.reportType ?? report.report_type, exportFormat: dto.exportFormat ?? report.export_format }, sourceSnapshot);
+    const versionId = crypto.randomUUID();
+    if (prior) await this.db.single(this.db.from('regulatory_report_versions').update({ version_status: 'Superseded', superseded_by_version_id: versionId, superseded_at: now }).eq('company_id', scope.companyId).eq('id', prior.id).select('id').single());
+    await this.db.single<Row>(this.db.from('regulatory_report_versions').insert({ id: versionId, company_id: scope.companyId, site_id: report.site_id ?? null, report_id: report.id, version_number: nextVersionNumber, version_status: 'Current', source_snapshot_json: sourceSnapshot, generation_manifest_json: manifest, generated_by: userId, generated_at: now, version_reason: String(dto.reason ?? 'Regenerated controlled report version'), created_at: now }).select().single());
+    const next = await this.db.single<Row>(this.db.from('regulatory_reports').update({ current_version: nextVersionNumber, source_snapshot_json: sourceSnapshot, generation_manifest_json: manifest, stale_status: 'Current', stale_reason: null, report_status: 'Queued', updated_by: userId, updated_at: now }).eq('company_id', scope.companyId).eq('id', report.id).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, 'Report regenerated as new version', next, report, next, String(dto.reason ?? 'New immutable report version created.'), { reportId: report.id, versionId });
+    return next;
+  }
+
+  private regulatoryReportCsv(report: Row) {
+    const sources = Array.isArray(report.source_snapshot_json?.sources) ? report.source_snapshot_json.sources : [];
+    const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    return [['Report Code', 'Report Title', 'Report Type', 'Source Type', 'Source Record ID', 'Source Title', 'Source Number'].join(','), ...sources.map((source: Row) => [report.report_code, report.report_title, report.report_type, source.sourceType, source.sourceRecordId, source.title, source.number].map(escape).join(','))].join('\n');
+  }
+
+  /** Persists the immutable source/section foundation that a report version is based on. */
+  private async persistRegulatoryReportContents(scope: Scope, userId: string, report: Row, normalized: Row) {
+    const now = new Date().toISOString();
+    const sources = Array.isArray(normalized.source_snapshot_json?.sources) ? normalized.source_snapshot_json.sources : [];
+    const sourceRows = sources.map((source: Row) => {
+      const sourceType = String(source.sourceType ?? source.source_type ?? 'Unknown Source');
+      const sourceRecordId = String(source.sourceRecordId ?? source.source_record_id ?? '');
+      const foreignKeys: Row = {};
+      const fieldByType: Record<string, string> = {
+        'Regulatory Item': 'regulatory_item_id',
+        Obligation: 'obligation_id',
+        'Compliance Assessment': 'compliance_assessment_id',
+        'Compliance Gap': 'compliance_gap_id',
+        'Evidence Link': 'evidence_link_id',
+        'Audit Mapping': 'audit_mapping_id',
+        'Action Link': 'action_link_id',
+        'Review Package': 'review_package_id'
+      };
+      const key = fieldByType[sourceType];
+      if (key) foreignKeys[key] = sourceRecordId;
+      return {
+        id: crypto.randomUUID(),
+        company_id: scope.companyId,
+        site_id: source.siteId ?? report.site_id ?? null,
+        report_id: report.id,
+        source_type: sourceType,
+        source_record_id: sourceRecordId,
+        ...foreignKeys,
+        source_snapshot_json: source.snapshot ?? source,
+        included: true,
+        linked_by: userId,
+        linked_at: now
+      };
+    }).filter((row: Row) => row.source_record_id);
+    if (sourceRows.length) await this.db.many<Row>(this.db.from('regulatory_report_source_links').insert(sourceRows).select('id'));
+
+    const sections = Array.isArray(normalized.section_config_json) ? normalized.section_config_json : [];
+    const sectionRows = sections.map((section: Row, index: number) => ({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: report.site_id ?? null,
+      report_id: report.id,
+      section_key: String(section.key ?? `section_${index + 1}`),
+      section_title: String(section.title ?? section.key ?? `Section ${index + 1}`),
+      section_order: Number(section.order ?? index + 1),
+      included: section.included !== false,
+      section_status: 'Pending',
+      section_data_snapshot_json: { sourceSnapshotAt: now, configuration: section },
+      created_at: now,
+      updated_at: now
+    }));
+    if (sectionRows.length) await this.db.many<Row>(this.db.from('regulatory_report_sections').insert(sectionRows).select('id'));
+
+    const evidenceRows = sources.filter((source: Row) => String(source.sourceType ?? source.source_type) === 'Evidence Link').map((source: Row) => ({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: source.siteId ?? report.site_id ?? null,
+      report_id: report.id,
+      evidence_link_id: source.sourceRecordId ?? source.source_record_id,
+      included: !Boolean(source.restricted) || Boolean(normalized.evidence_rules_json?.includeRestrictedEvidence),
+      restricted: Boolean(source.restricted),
+      evidence_status: source.snapshot?.review_status ?? source.snapshot?.evidence_status ?? 'Linked',
+      excluded_reason: source.restricted && !normalized.evidence_rules_json?.includeRestrictedEvidence ? 'Restricted evidence excluded by report policy.' : null,
+      source_snapshot_json: source.snapshot ?? source,
+      added_by: userId,
+      added_at: now
+    }));
+    if (evidenceRows.length) await this.db.many<Row>(this.db.from('regulatory_report_evidence_items').insert(evidenceRows).select('id'));
+
+    await this.db.single<Row>(this.db.from('regulatory_report_versions').insert({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: report.site_id ?? null,
+      report_id: report.id,
+      version_number: Number(report.current_version ?? 1),
+      version_status: 'Current',
+      source_snapshot_json: normalized.source_snapshot_json ?? {},
+      generation_manifest_json: normalized.generation_manifest_json ?? {},
+      generated_by: userId,
+      generated_at: now,
+      version_reason: 'Initial controlled report source snapshot',
+      created_at: now
+    }).select('id').single());
+  }
+
+  private async markRegulatoryReportsStaleForSource(userId: string, scope: Scope, sourceType: string, sourceRecordId: string, reason: string) {
+    const links = await this.db.many<Row>(this.db.from('regulatory_report_source_links').select('report_id,site_id').eq('company_id', scope.companyId).eq('source_type', sourceType).eq('source_record_id', sourceRecordId).is('removed_at', null)).catch(() => []);
+    for (const link of links) {
+      const before = await this.db.single<Row>(this.db.from('regulatory_reports').select('*').eq('company_id', scope.companyId).eq('id', link.report_id).maybeSingle()).catch(() => null);
+      if (!before || !this.canAccessSite(scope, before.site_id)) continue;
+      const nextStatus = before.locked ? before.report_status : 'Stale';
+      const after = await this.db.single<Row>(this.db.from('regulatory_reports').update({ stale_status: 'Stale', stale_reason: reason, report_status: nextStatus, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', before.id).select().single());
+      await this.db.single(this.db.from('regulatory_report_staleness_events').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: after.site_id ?? null, report_id: after.id, stale_trigger_type: 'Source Changed', source_module: sourceType, source_record_id: sourceRecordId, stale_reason: reason }).select('id').single()).catch(() => null);
+      await this.writeRegulatoryReportMutation(scope, userId, 'Report marked stale', after, before, after, reason, { reportId: after.id, sourceType, sourceRecordId }).catch(() => null);
+    }
+  }
+
+  private applyRegulatoryReportScope(q: any, scope: Scope, query: Row) {
+    if (scope.selectedSiteId && !scope.corporateView) q = q.or(`site_id.is.null,site_id.eq.${scope.selectedSiteId}`);
+    if (query.siteId) q = q.eq('site_id', query.siteId);
+    if (query.unitId) q = q.eq('unit_id', query.unitId);
+    if (query.areaId) q = q.eq('area_id', query.areaId);
+    if (query.equipmentId) q = q.eq('equipment_id', query.equipmentId);
+    return q;
+  }
+
+  private applyRegulatoryReportView(q: any, view: string) {
+    const map: Record<string, Row> = {
+      draft: { report_status: 'Draft' },
+      generated: { report_status: 'Generated' },
+      'pending-approval': { report_status: 'Pending Approval' },
+      approved: { report_status: 'Approved' },
+      locked: { report_status: 'Locked' },
+      stale: { stale_status: 'Stale' },
+      failed: { report_status: 'Generation Failed' },
+      exported: { report_status: 'Exported' },
+      archived: { report_status: 'Archived' }
+    };
+    const filters = map[view];
+    if (!filters) return q;
+    for (const [key, value] of Object.entries(filters)) q = q.eq(key, value);
+    return q;
+  }
+
+  private async normalizeRegulatoryReportInput(scope: Scope, dto: Row, permissions: string[], mode: 'draft' | 'generate') {
+    const reportTitle = dto.reportTitle ?? dto.report_title;
+    const reportType = dto.reportType ?? dto.report_type;
+    const audience = dto.audience;
+    const exportFormat = dto.exportFormat ?? dto.export_format;
+    const confidentialityLevel = dto.confidentialityLevel ?? dto.confidentiality_level ?? 'Internal';
+    if (!reportTitle) throw new BadRequestException('Report title is required.');
+    if (!reportType) throw new BadRequestException('Report type is required.');
+    if (!audience) throw new BadRequestException('Audience is required.');
+    if (!exportFormat) throw new BadRequestException('Export format is required.');
+    if ((dto.includeRestrictedEvidence || dto.include_restricted_evidence) && !permissions.includes('regulatory.report.restricted_evidence.include') && !permissions.includes('regulatory.manage')) {
+      throw new ForbiddenException('Missing permission: regulatory.report.restricted_evidence.include');
+    }
+    const templateId = dto.templateId ?? dto.template_id ?? null;
+    const template = templateId ? await this.regulatoryReportTemplateDetail(scope, String(templateId), permissions) : null;
+    const sourceSnapshot = await this.buildRegulatoryReportSourceSnapshot(scope, dto);
+    const evidenceRules = {
+      includeEvidenceManifest: dto.includeEvidenceManifest ?? true,
+      includeEvidenceFiles: dto.includeEvidenceFiles ?? false,
+      includeRestrictedEvidence: dto.includeRestrictedEvidence ?? false,
+      includePendingReviewEvidence: dto.includePendingReviewEvidence ?? false,
+      includeRejectedEvidence: dto.includeRejectedEvidence ?? false,
+      includeStaleEvidence: dto.includeStaleEvidence ?? false,
+      includeMissingEvidenceList: dto.includeMissingEvidenceList ?? true,
+      includeEvidenceAccessLog: dto.includeEvidenceAccessLog ?? false,
+      includeChainOfCustody: dto.includeChainOfCustody ?? false,
+      redactionFoundation: dto.evidenceRedactionFoundation ?? 'Restricted evidence excluded unless elevated permission is granted.'
+    };
+    const sourceRows = sourceSnapshot.sources ?? [];
+    const readiness = sourceRows.length ? 'Ready With Warnings' : 'Missing Source';
+    return {
+      site_id: dto.siteId ?? dto.site_id ?? scope.selectedSiteId ?? null,
+      unit_id: dto.unitId ?? dto.unit_id ?? null,
+      area_id: dto.areaId ?? dto.area_id ?? null,
+      equipment_id: dto.equipmentId ?? dto.equipment_id ?? null,
+      report_code: dto.reportCode ?? dto.report_code ?? null,
+      report_title: reportTitle,
+      report_type: reportType,
+      report_purpose: dto.reportPurpose ?? dto.report_purpose ?? null,
+      audience,
+      confidentiality_level: confidentialityLevel,
+      report_status: dto.reportStatus ?? dto.report_status ?? (mode === 'generate' ? 'Queued' : 'Draft'),
+      readiness_status: dto.readinessStatus ?? dto.readiness_status ?? readiness,
+      export_format: exportFormat,
+      template_id: templateId,
+      template_snapshot_json: template ? { ...template, snappedAt: new Date().toISOString() } : dto.templateSnapshot ?? dto.template_snapshot_json ?? null,
+      source_scope_json: dto.scope ?? dto.sourceScope ?? dto.source_scope_json ?? null,
+      source_filters_json: dto.filters ?? dto.source_filters_json ?? null,
+      source_snapshot_json: sourceSnapshot,
+      generation_manifest_json: this.buildRegulatoryReportManifest(dto, sourceSnapshot),
+      evidence_rules_json: evidenceRules,
+      section_config_json: dto.sections ?? dto.section_config_json ?? this.defaultReportSections(reportType),
+      included_source_count: sourceRows.length,
+      included_evidence_count: sourceSnapshot.evidenceCount ?? 0,
+      restricted_evidence_count: evidenceRules.includeRestrictedEvidence ? Number(sourceSnapshot.restrictedEvidenceCount ?? 0) : 0,
+      excluded_evidence_count: evidenceRules.includeRestrictedEvidence ? 0 : Number(sourceSnapshot.restrictedEvidenceCount ?? 0),
+      open_gap_count: Number(sourceSnapshot.openGapCount ?? 0),
+      open_action_count: Number(sourceSnapshot.openActionCount ?? 0),
+      approval_required: Boolean(dto.approvalRequired ?? dto.approval_required ?? false),
+      approval_status: dto.approvalStatus ?? dto.approval_status ?? null,
+      owner_user_id: dto.ownerUserId ?? dto.owner_user_id ?? null,
+      notes: dto.notes ?? null
+    };
+  }
+
+  private async buildRegulatoryReportSourceSnapshot(scope: Scope, dto: Row) {
+    const sources = Array.isArray(dto.sources) ? dto.sources : [];
+    const snapshots: Row[] = [];
+    for (const source of sources) {
+      const sourceType = source.sourceType ?? source.source_type;
+      const sourceRecordId = source.sourceRecordId ?? source.source_record_id;
+      if (!sourceType || !sourceRecordId) continue;
+      const resolved = await this.resolveReportSource(scope, sourceType, sourceRecordId).catch((error) => ({ sourceType, sourceRecordId, error: error instanceof Error ? error.message : 'Source unavailable' }));
+      snapshots.push(resolved);
+    }
+    return {
+      generatedAt: new Date().toISOString(),
+      sources: snapshots,
+      evidenceCount: snapshots.filter((row) => String(row.sourceType).includes('Evidence')).length,
+      restrictedEvidenceCount: snapshots.filter((row) => row.restricted).length,
+      openGapCount: snapshots.filter((row) => String(row.sourceType).includes('Gap')).length,
+      openActionCount: snapshots.filter((row) => String(row.sourceType).includes('Action') || String(row.sourceType).includes('CAPA')).length
+    };
+  }
+
+  private async resolveReportSource(scope: Scope, sourceType: string, sourceRecordId: string) {
+    const tableMap: Record<string, string> = {
+      'Regulatory Item': 'regulatory_register_items',
+      Obligation: 'regulatory_obligations',
+      'Applicability Assessment': 'regulatory_applicability_assessments',
+      'Compliance Assessment': 'regulatory_compliance_assessments',
+      'Compliance Gap': 'regulatory_compliance_gaps',
+      'Evidence Link': 'regulatory_evidence_links',
+      'Evidence Package': 'regulatory_evidence_packages',
+      'Audit Mapping': 'regulatory_audit_mappings',
+      'Action Link': 'regulatory_action_links',
+      'CAPA Package': 'regulatory_capa_packages',
+      'Review Package': 'regulatory_review_packages',
+      Jurisdiction: 'regulatory_jurisdictions',
+      'Evidence Requirement': 'regulatory_evidence_requirements'
+    };
+    const table = tableMap[sourceType];
+    if (!table) return { sourceType, sourceRecordId, title: sourceRecordId, warning: 'Unsupported source adapter foundation.' };
+    const row = await this.db.single<Row>(this.db.from(table).select('*').eq('company_id', scope.companyId).eq('id', sourceRecordId).maybeSingle());
+    if (!row || !this.canAccessSite(scope, row.site_id)) throw new ForbiddenException(`${sourceType} source is outside your company/site scope.`);
+    return { sourceType, sourceRecordId, siteId: row.site_id ?? null, title: row.requirement_title ?? row.jurisdiction_name ?? row.obligation_title ?? row.assessment_title ?? row.gap_title ?? row.package_title ?? row.title ?? sourceRecordId, number: row.requirement_code ?? row.jurisdiction_code ?? row.obligation_code ?? row.assessment_code ?? row.gap_code ?? row.package_code ?? row.id, restricted: Boolean(row.restricted || row.confidentiality_level === 'Restricted'), snapshot: row };
+  }
+
+  private buildRegulatoryReportManifest(dto: Row, sourceSnapshot: Row) {
+    return {
+      manifestVersion: 1,
+      generatedAt: new Date().toISOString(),
+      reportType: dto.reportType ?? dto.report_type,
+      exportFormat: dto.exportFormat ?? dto.export_format,
+      output: {
+        fileName: dto.fileName ?? dto.file_name ?? null,
+        orientation: dto.orientation ?? null,
+        includeCharts: Boolean(dto.includeCharts ?? dto.include_charts ?? false),
+        includeTables: Boolean(dto.includeTables ?? dto.include_tables ?? true),
+        includeApproval: Boolean(dto.includeApproval ?? dto.include_approval ?? false),
+        includeSignatures: Boolean(dto.includeSignatures ?? dto.include_signatures ?? false),
+        includeAttachments: Boolean(dto.includeAttachments ?? dto.include_attachments ?? false),
+        includeEvidenceManifest: Boolean(dto.includeEvidenceManifest ?? dto.include_evidence_manifest ?? true),
+        watermark: dto.watermark ?? null
+      },
+      sourceCount: sourceSnapshot.sources?.length ?? 0,
+      adapter: 'Regulatory report foundation adapter',
+      noLegalCertification: true,
+      storagePolicy: 'No raw storage paths are exposed. Generated files must use Reports/Storage/Document Control adapters.'
+    };
+  }
+
+  private defaultReportSections(reportType: string) {
+    const all = ['Cover Page', 'Report Metadata', 'Executive Summary Foundation', 'Scope Summary', 'Jurisdiction Summary', 'Regulatory Register Summary', 'Regulatory Item Details', 'Obligation Details', 'Applicability Summary', 'Compliance Status Summary', 'Compliance Gaps', 'Evidence Requirements', 'Evidence Links', 'Evidence Package Manifest', 'Audit Mapping Traceability', 'Regulatory Actions / CAPA', 'Review & Approval Decisions', 'E-Signature Summary', 'History / Change Summary', 'Exceptions / Exclusions', 'Appendix', 'JSON Manifest Foundation'];
+    return all.map((title, index) => ({ key: title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), title, order: index + 1, included: reportType === 'Regulatory Register Report' ? index < 12 : true }));
+  }
+
+  private validateRegulatoryReportGeneration(report: Row, permissions: string[]) {
+    const blockers: string[] = [];
+    const warnings: string[] = [];
+    if (!report.source_snapshot_json?.sources?.length) blockers.push('At least one source is required.');
+    if (Number(report.restricted_evidence_count ?? 0) > 0 && !permissions.includes('regulatory.report.restricted_evidence.include') && !permissions.includes('regulatory.manage')) blockers.push('Restricted evidence inclusion requires permission.');
+    if (report.stale_status && report.stale_status !== 'Current') warnings.push(`Report source is ${report.stale_status}.`);
+    if (!['PDF', 'DOCX', 'XLSX', 'CSV', 'ZIP Package', 'ZIP', 'JSON Manifest Foundation'].includes(report.export_format)) blockers.push('Export format is not supported by the regulatory report adapter foundation.');
+    return { status: blockers.length ? 'Validation Failed' : warnings.length ? 'Ready With Warnings' : 'Ready', blockers, warnings };
+  }
+
+  private regulatoryReportSummaryFromRows(rows: Row[], jobs: Row[] = [], packages: Row[] = [], access: Row[] = []) {
+    const count = (fn: (row: Row) => boolean) => rows.filter(fn).length;
+    return {
+      totalReports: rows.length,
+      draftReports: count((row) => row.report_status === 'Draft'),
+      queuedReports: count((row) => row.report_status === 'Queued'),
+      generatingReports: count((row) => row.report_status === 'Generating'),
+      generatedReports: count((row) => row.report_status === 'Generated'),
+      generationFailed: count((row) => row.report_status === 'Generation Failed') + jobs.filter((row) => row.job_status === 'Failed').length,
+      pendingApproval: count((row) => row.report_status === 'Pending Approval'),
+      approvedReports: count((row) => row.report_status === 'Approved'),
+      approvedWithConditions: count((row) => row.report_status === 'Approved With Conditions'),
+      lockedReports: count((row) => Boolean(row.locked) || row.report_status === 'Locked'),
+      exportedReports: count((row) => row.report_status === 'Exported'),
+      downloadedReports: access.filter((row) => row.access_type === 'Download' && row.access_status === 'Allowed').length,
+      staleReports: count((row) => row.stale_status && row.stale_status !== 'Current'),
+      archivedReports: count((row) => row.archived_at || row.report_status === 'Archived'),
+      compliancePackages: packages.filter((row) => row.package_type === 'Regulatory Compliance Package').length,
+      evidencePackages: packages.filter((row) => row.package_type === 'Evidence Package').length,
+      reportsWithRestrictedEvidence: count((row) => Number(row.restricted_evidence_count ?? 0) > 0),
+      reportsExcludingRestrictedEvidence: count((row) => Number(row.excluded_evidence_count ?? 0) > 0),
+      reportsWithMissingEvidence: count((row) => row.readiness_status === 'Missing Evidence' || Number(row.excluded_evidence_count ?? 0) > 0),
+      reportsWithOpenCapa: count((row) => Number(row.open_action_count ?? 0) > 0),
+      readyForExternalAuditor: count((row) => row.audience === 'External Auditor Foundation' && ['Generated', 'Approved', 'Locked'].includes(row.report_status)),
+      readyForRegulator: count((row) => row.audience === 'Regulator Foundation' && ['Generated', 'Approved', 'Locked'].includes(row.report_status)),
+      readyForManagementReview: count((row) => row.audience === 'Management Review' && ['Generated', 'Approved', 'Locked'].includes(row.report_status)),
+      recentDownloads: access.filter((row) => row.access_type === 'Download').length,
+      recentExports: access.filter((row) => row.access_type === 'Export').length
+    };
+  }
+
+  private regulatoryReportOverview(report: Row, sources: Row[], evidence: Row[], files: Row[], versions: Row[], accessLog: Row[]) {
+    return {
+      cards: {
+        title: report.report_title,
+        code: report.report_code,
+        type: report.report_type,
+        status: report.report_status,
+        readiness: report.readiness_status,
+        scope: report.source_scope_json,
+        owner: report.owner_user_id,
+        generatedBy: report.generated_by,
+        generatedAt: report.generated_at,
+        exportFormat: report.export_format,
+        version: report.current_version,
+        evidenceCount: evidence.length,
+        restrictedEvidenceCount: report.restricted_evidence_count,
+        openGaps: report.open_gap_count,
+        openActions: report.open_action_count,
+        approvalStatus: report.approval_status,
+        staleStatus: report.stale_status,
+        fileStatus: files[0]?.file_status ?? 'No File Generated',
+        downloadCount: accessLog.filter((row) => row.access_type === 'Download' && row.access_status === 'Allowed').length,
+        lastAccessed: accessLog[0]?.accessed_at ?? null
+      },
+      sourceCount: sources.length,
+      fileCount: files.length,
+      versionCount: versions.length
+    };
+  }
+
+  private redactRegulatoryReportEvidence(row: Row, permissions: string[]) {
+    if (!row.restricted || permissions.includes('regulatory.report.restricted_evidence.view') || permissions.includes('regulatory.manage')) return row;
+    return { id: row.id, report_id: row.report_id, restricted: true, included: false, evidence_status: 'Restricted', excluded_reason: 'Restricted evidence hidden because permission is missing.' };
+  }
+
+  private safeReportFiles(files: Row[]) {
+    return files.map(({ storage_file_id, ...row }) => ({ ...row, storage_file_id: storage_file_id ? 'controlled-storage-adapter' : null, rawStoragePath: undefined }));
+  }
+
+  private buildRegulatoryPackageManifest(dto: Row) {
+    return {
+      manifestVersion: 1,
+      preparedAt: dto.preparedAt ?? new Date().toISOString(),
+      restrictedEvidenceRule: dto.restrictedEvidenceRule ?? 'Exclude restricted evidence by default',
+      included: {
+        regulatoryItems: dto.includedRegulatoryItems ?? [],
+        obligations: dto.includedObligations ?? [],
+        complianceAssessments: dto.includedComplianceAssessments ?? [],
+        evidenceLinks: dto.includedEvidenceLinks ?? [],
+        auditMappings: dto.includedAuditMappings ?? [],
+        actions: dto.includedActions ?? [],
+        reviewPackages: dto.includedReviewPackages ?? []
+      },
+      excludedRecords: dto.excludedRecords ?? []
+    };
+  }
+
+  private defaultReportTypeForSource(sourceType: string) {
+    if (sourceType === 'Obligation') return 'Regulatory Obligation Report';
+    if (sourceType === 'Compliance Assessment') return 'Regulatory Compliance Status Report';
+    if (sourceType === 'Compliance Gap') return 'Regulatory Gap Report';
+    if (sourceType === 'Evidence Package') return 'Regulatory Evidence Package';
+    if (sourceType === 'Audit Mapping') return 'Regulatory Audit Mapping Traceability Report';
+    if (sourceType === 'CAPA Package') return 'Regulatory CAPA / Action Remediation Report';
+    return 'Regulatory Item Detail Report';
+  }
+
+  private regulatoryReportPermissionState(permissions: string[]) {
+    const can = (permission: string) => permissions.includes(permission) || permissions.includes('regulatory.manage') || permissions.includes('regulatory:manage');
+    return {
+      canView: can('regulatory.report.view'),
+      canCreate: can('regulatory.report.create'),
+      canGenerate: can('regulatory.report.generate'),
+      canPreview: can('regulatory.report.preview'),
+      canDownload: can('regulatory.report.download'),
+      canExport: can('regulatory.report.export'),
+      canArchive: can('regulatory.report.archive'),
+      canLock: can('regulatory.report.lock'),
+      canIncludeRestrictedEvidence: can('regulatory.report.restricted_evidence.include'),
+      disabledReasons: {
+        create: 'Missing permission: regulatory.report.create',
+        generate: 'Missing permission: regulatory.report.generate',
+        preview: 'Missing permission: regulatory.report.preview',
+        download: 'Missing permission: regulatory.report.download',
+        export: 'Missing permission: regulatory.report.export',
+        archive: 'Missing permission: regulatory.report.archive',
+        lock: 'Missing permission: regulatory.report.lock',
+        restrictedEvidence: 'Missing permission: regulatory.report.restricted_evidence.include'
+      }
+    };
+  }
+
+  private async writeRegulatoryReportAccess(scope: Scope, userId: string, report: Row, accessType: string, accessStatus: string, deniedReason: string | null) {
+    const event = await this.db.single<Row>(this.db.from('regulatory_report_access_events').insert({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: report.site_id ?? scope.selectedSiteId ?? null,
+      report_id: report.id,
+      access_type: accessType,
+      access_status: accessStatus,
+      accessed_by: userId,
+      accessed_at: new Date().toISOString(),
+      denied_reason: deniedReason
+    }).select().single());
+    await this.writeRegulatoryReportMutation(scope, userId, `Report ${accessType.toLowerCase()} ${accessStatus.toLowerCase()}`, report, null, event, deniedReason ?? `${accessType} access logged`);
+    return event;
+  }
+
+  private async writeRegulatoryReportMutation(scope: Scope, userId: string, title: string, entity: Row | null, before: Row | null, after: Row | null, reason: string, metadata: Row = {}) {
+    const entityId = entity?.id ?? after?.id ?? before?.id ?? metadata.reportId ?? metadata.packageId ?? metadata.templateId ?? metadata.jobId ?? null;
+    const audit = await this.audit.write({ tenantId: scope.companyId, actorId: userId, action: title, entityType: 'RegulatoryReportsExport', ...(entityId ? { entityId } : {}), before: before ?? null, after: after ?? null, metadata: { reason, ...metadata, sourceModule: 'Regulatory Reports / Export' } }).catch(() => null);
+    await this.db.single(this.db.from('regulatory_report_history_events').insert({
+      id: crypto.randomUUID(),
+      company_id: scope.companyId,
+      site_id: after?.site_id ?? before?.site_id ?? entity?.site_id ?? scope.selectedSiteId ?? null,
+      unit_id: after?.unit_id ?? before?.unit_id ?? entity?.unit_id ?? null,
+      area_id: after?.area_id ?? before?.area_id ?? entity?.area_id ?? null,
+      equipment_id: after?.equipment_id ?? before?.equipment_id ?? entity?.equipment_id ?? null,
+      report_id: metadata.reportId ?? entity?.report_id ?? after?.report_id ?? before?.report_id ?? (metadata.packageId || metadata.templateId || metadata.jobId ? null : entity?.id ?? after?.id ?? before?.id ?? null),
+      package_id: metadata.packageId ?? entity?.package_id ?? after?.package_id ?? null,
+      template_id: metadata.templateId ?? entity?.template_id ?? after?.template_id ?? null,
+      job_id: metadata.jobId ?? entity?.job_id ?? after?.job_id ?? null,
+      event_type: title.toUpperCase().replace(/[^A-Z0-9]+/g, '_'),
+      event_title: title,
+      event_description: reason,
+      before_value_json: before ?? null,
+      after_value_json: after ? { ...after, auditLogId: (audit as { id?: string } | null)?.id ?? null } : null,
+      actor_user_id: userId,
+      source_module: 'Regulatory Reports / Export',
+      source_record_id: entityId
+    }).select('id').single()).catch(() => null);
+  }
+
+  // Phase 10: Regulatory Change Management + Update Monitoring foundation.
+  async regulatoryChangeDashboard(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.change.dashboard.view');
+    const register = await this.regulatoryChanges(scope, { ...query, limit: 5000 }, permissions);
+    const rows = register.allRows ?? register.rows;
+    const count = (predicate: (row: Row) => boolean) => rows.filter(predicate).length;
+    return { summary: {
+      totalChanges: rows.length, draftChanges: count((r) => r.change_status === 'Draft'), newUpdates: count((r) => r.change_status === 'New Update'), underReview: count((r) => r.change_status === 'Under Review'), approved: count((r) => r.change_status === 'Approved Foundation'), rejected: count((r) => r.change_status === 'Rejected Foundation'), implemented: count((r) => r.change_status === 'Implemented'), superseded: count((r) => r.change_status === 'Superseded'), archived: count((r) => r.change_status === 'Archived'), unassessed: count((r) => r.impact_status === 'Not Assessed'), impactPending: count((r) => String(r.impact_status).includes('Impact') || String(r.change_status).includes('Impact Assessment')), highImpact: count((r) => ['High Impact', 'Critical Impact'].includes(r.impact_status)), psmCritical: count((r) => r.criticality === 'PSM-Critical'), safetyCritical: count((r) => r.criticality === 'Safety-Critical'), environmentalCritical: count((r) => r.criticality === 'Environmental-Critical'), regulatoryCritical: count((r) => r.criticality === 'Regulatory-Critical'), overdueImpactReviews: count((r) => r.review_due_date && new Date(r.review_due_date) < new Date() && !['Implemented', 'Archived', 'Rejected Foundation'].includes(r.change_status)), staleRecords: rows.reduce((n, r) => n + Number(r.stale_record_count ?? 0), 0)
+    }, byJurisdiction: this.groupRows(rows, 'jurisdiction_id'), bySource: this.groupRows(rows, 'source_type'), bySite: this.groupRows(rows, 'site_id'), byStatus: this.groupRows(rows, 'change_status'), recent: rows.slice(0, 12), impactPending: rows.filter((r) => r.impact_status === 'Not Assessed' || String(r.change_status).includes('Impact Assessment')).slice(0, 12), highImpact: rows.filter((r) => ['High Impact', 'Critical Impact'].includes(r.impact_status)).slice(0, 12) };
+  }
+
+  async regulatoryChanges(scope: Scope, query: Row = {}, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.change.register.view');
+    const page = Math.max(Number(query.page ?? 1), 1); const limit = Math.min(Math.max(Number(query.limit ?? 25), 1), 500);
+    let q = this.db.from('regulatory_changes').select('*').eq('company_id', scope.companyId);
+    q = this.applyRegulatoryReportScope(q, scope, query);
+    const filters: Record<string, string> = { changeStatus: 'change_status', impactStatus: 'impact_status', sourceType: 'source_type', changeType: 'change_type', criticality: 'criticality', jurisdictionId: 'jurisdiction_id', authorityId: 'authority_id', regulatoryItemId: 'regulatory_item_id', obligationId: 'obligation_id', ownerUserId: 'owner_user_id', reviewerUserId: 'reviewer_user_id' };
+    for (const [input, column] of Object.entries(filters)) if (query[input]) q = q.eq(column, query[input]);
+    if (query.search) q = q.or(`change_code.ilike.%${query.search}%,change_title.ilike.%${query.search}%,source_reference.ilike.%${query.search}%`);
+    const allRows = this.sortRows((await this.db.many<Row>(q.order('updated_at', { ascending: false }).limit(5000)).catch(() => [])).filter((row) => this.canAccessSite(scope, row.site_id)), String(query.sort ?? 'updated_at.desc'));
+    const rows = allRows.slice((page - 1) * limit, page * limit);
+    return { rows, allRows, total: allRows.length, page, limit, hasMore: page * limit < allRows.length, summary: this.regulatoryChangeSummaryFromRows(allRows), permissions: this.regulatoryChangePermissionState(permissions) };
+  }
+
+  async createRegulatoryChange(userId: string, scope: Scope, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.change.create');
+    const draft = String(dto.changeStatus ?? dto.change_status ?? 'Draft') === 'Draft';
+    if (!draft) this.validateRegulatoryChange(dto);
+    const sourceType = String(dto.sourceType ?? dto.source_type ?? '');
+    const sourceUrl = dto.sourceUrl ?? dto.source_url ?? null;
+    if (sourceUrl) this.validateRegulatoryChangeUrl(String(sourceUrl));
+    if (sourceType === 'Manual Entry' && !dto.manualEntryReason && !dto.manual_entry_reason) throw new BadRequestException('Manual regulatory changes require a reason.');
+    const siteId = dto.siteId ?? dto.site_id ?? scope.selectedSiteId ?? null;
+    if (siteId && !this.canAccessSite(scope, siteId)) throw new ForbiddenException('Selected site is outside your assigned scope.');
+    const now = new Date().toISOString();
+    const row = await this.db.single<Row>(this.db.from('regulatory_changes').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: siteId, department_id: dto.departmentId ?? null, unit_id: dto.unitId ?? null, area_id: dto.areaId ?? null, equipment_id: dto.equipmentId ?? null, change_code: dto.changeCode ?? await this.nextRegulatoryCode(scope, 'regulatory_changes', 'change_code', 'RCH'), change_title: dto.changeTitle ?? dto.change_title ?? 'Untitled draft change', change_type: dto.changeType ?? dto.change_type ?? 'Custom', source_type: sourceType || 'Manual Entry', change_source_id: dto.changeSourceId ?? null, authority_id: dto.authorityId ?? null, jurisdiction_id: dto.jurisdictionId ?? null, regulatory_item_id: dto.regulatoryItemId ?? null, obligation_id: dto.obligationId ?? null, source_reference: dto.sourceReference ?? null, source_url: sourceUrl, source_document_id: dto.sourceDocumentId ?? null, published_date: dto.publishedDate ?? null, detected_date: dto.detectedDate ?? now, effective_date: dto.effectiveDate ?? null, change_summary: dto.changeSummary ?? null, change_description: dto.changeDescription ?? null, manual_entry_reason: dto.manualEntryReason ?? null, change_status: dto.changeStatus ?? (draft ? 'Draft' : 'New Update'), impact_status: 'Not Assessed', criticality: dto.criticality ?? null, preliminary_impact_flags_json: dto.preliminaryImpactFlags ?? {}, owner_user_id: dto.ownerUserId ?? null, reviewer_user_id: dto.reviewerUserId ?? null, review_due_date: dto.reviewDueDate ?? null, notes: dto.notes ?? null, created_by: userId, updated_by: userId, created_at: now, updated_at: now }).select().single());
+    await this.writeRegulatoryChangeMutation(scope, userId, 'Regulatory change created', null, row, 'Regulatory change intake created. Source content is metadata only and unverified until review.', row.id);
+    return this.regulatoryChangeDetail(scope, row.id, permissions);
+  }
+
+  async updateRegulatoryChange(userId: string, scope: Scope, changeId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.change.edit'); const before = (await this.regulatoryChangeDetail(scope, changeId, permissions)).change;
+    if (['Implemented', 'Archived', 'Superseded'].includes(before.change_status)) throw new ForbiddenException('This change is read-only. Create a controlled new update instead.');
+    if (dto.sourceUrl ?? dto.source_url) this.validateRegulatoryChangeUrl(String(dto.sourceUrl ?? dto.source_url));
+    const patch = this.pickMapped(dto, { changeTitle: 'change_title', changeType: 'change_type', sourceType: 'source_type', sourceReference: 'source_reference', sourceUrl: 'source_url', publishedDate: 'published_date', detectedDate: 'detected_date', effectiveDate: 'effective_date', changeSummary: 'change_summary', changeDescription: 'change_description', manualEntryReason: 'manual_entry_reason', criticality: 'criticality', ownerUserId: 'owner_user_id', reviewerUserId: 'reviewer_user_id', reviewDueDate: 'review_due_date', notes: 'notes', preliminaryImpactFlags: 'preliminary_impact_flags_json' });
+    const row = await this.db.single<Row>(this.db.from('regulatory_changes').update({ ...patch, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', changeId).select().single());
+    await this.writeRegulatoryChangeMutation(scope, userId, 'Regulatory change updated', before, row, String(dto.reason ?? 'Change metadata updated'), changeId); return this.regulatoryChangeDetail(scope, changeId, permissions);
+  }
+
+  async transitionRegulatoryChange(userId: string, scope: Scope, changeId: string, transition: 'reviewed' | 'submitted' | 'approved' | 'implemented' | 'archived', dto: Row, permissions: string[] = []) {
+    const permission: Record<typeof transition, string> = { reviewed: 'regulatory.change.edit', submitted: 'regulatory.change.submit_review', approved: 'regulatory.change.impact.approve_foundation', implemented: 'regulatory.change.implement', archived: 'regulatory.change.archive' };
+    this.requirePermission(permissions, permission[transition]); const before = (await this.regulatoryChangeDetail(scope, changeId, permissions)).change;
+    if (transition === 'archived' && !dto.reason) throw new BadRequestException('Archiving a regulatory change requires a reason.');
+    if (transition === 'implemented' && !['Approved Foundation', 'Implementation Pending'].includes(before.change_status) && !permissions.includes('regulatory.manage')) throw new ForbiddenException('Implementation requires approved change review or an authorized override.');
+    const status: Record<typeof transition, string> = { reviewed: 'Triage', submitted: 'Under Review', approved: 'Approved Foundation', implemented: 'Implemented', archived: 'Archived' };
+    const patch: Row = { change_status: status[transition], updated_by: userId, updated_at: new Date().toISOString() };
+    if (transition === 'implemented') { patch.implemented_by = userId; patch.implemented_at = new Date().toISOString(); patch.implementation_note = dto.implementationNote ?? dto.reason ?? null; patch.impact_status = 'Implemented Foundation'; }
+    if (transition === 'archived') { patch.archived_at = new Date().toISOString(); patch.archived_by = userId; patch.archive_reason = dto.reason; }
+    const after = await this.db.single<Row>(this.db.from('regulatory_changes').update(patch).eq('company_id', scope.companyId).eq('id', changeId).select().single());
+    await this.writeRegulatoryChangeMutation(scope, userId, `Regulatory change ${transition}`, before, after, String(dto.reason ?? `Change ${transition}.`), changeId); return this.regulatoryChangeDetail(scope, changeId, permissions);
+  }
+
+  async regulatoryChangeDetail(scope: Scope, changeId: string, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.change.view'); const change = await this.db.single<Row>(this.db.from('regulatory_changes').select('*').eq('company_id', scope.companyId).eq('id', changeId).maybeSingle());
+    if (!change || !this.canAccessSite(scope, change.site_id)) throw new NotFoundException('Regulatory change was not found or is outside your scope.');
+    const changeCollections = await Promise.all(['regulatory_change_impact_assessments', 'regulatory_change_affected_records', 'regulatory_change_version_comparisons', 'regulatory_change_actions', 'regulatory_change_history_events', 'regulatory_change_staleness_events'].map((table) => this.db.many<Row>(this.db.from(table).select('*').eq('company_id', scope.companyId).eq('change_id', changeId).order('created_at', { ascending: false })).catch(() => [])));
+    const impacts = changeCollections[0] ?? []; const affectedRecords = changeCollections[1] ?? []; const versions = changeCollections[2] ?? []; const actions = changeCollections[3] ?? []; const history = changeCollections[4] ?? []; const staleness = changeCollections[5] ?? [];
+    return { change, overview: { impactedRecords: affectedRecords.length, staleRecords: affectedRecords.filter((r) => r.stale_marked).length, openActions: actions.filter((r) => !['Completed', 'Closed', 'Cancelled'].includes(r.action_status)).length, impactAssessments: impacts.length }, source: { sourceId: change.change_source_id, sourceReference: change.source_reference, sourceUrl: change.source_url, unverified: change.source_type !== 'Manual Entry' }, versions: { rows: versions }, impact: { rows: impacts }, affectedRecords: { rows: affectedRecords }, actions: { rows: actions }, review: { status: change.change_status, reviewerUserId: change.reviewer_user_id, approvalPackageId: change.approval_package_id }, reports: { reportRegenerationRequired: affectedRecords.some((r) => r.affected_record_type === 'Report' && r.stale_marked) }, history: { rows: history }, staleness: { rows: staleness }, permissions: this.regulatoryChangePermissionState(permissions), readOnly: ['Implemented', 'Archived', 'Superseded'].includes(change.change_status) };
+  }
+
+  async startRegulatoryChangeImpact(userId: string, scope: Scope, changeId: string, dto: Row, permissions: string[] = []) {
+    this.requirePermission(permissions, 'regulatory.change.impact.create'); const change = (await this.regulatoryChangeDetail(scope, changeId, permissions)).change;
+    const now = new Date().toISOString(); const assessment = await this.db.single<Row>(this.db.from('regulatory_change_impact_assessments').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: change.site_id ?? null, change_id: changeId, assessment_code: await this.nextRegulatoryCode(scope, 'regulatory_change_impact_assessments', 'assessment_code', 'RIA'), assessment_title: dto.assessmentTitle ?? `Impact assessment for ${change.change_code}`, assessment_status: 'In Progress', impact_status: 'Not Assessed', affected_scope_json: dto.affectedScope ?? { siteId: change.site_id, unitId: change.unit_id, areaId: change.area_id, equipmentId: change.equipment_id }, assessor_user_id: userId, reviewer_user_id: dto.reviewerUserId ?? change.reviewer_user_id ?? null, review_due_date: dto.reviewDueDate ?? change.review_due_date ?? null, created_by: userId, updated_by: userId, created_at: now, updated_at: now }).select().single());
+    const after = await this.db.single<Row>(this.db.from('regulatory_changes').update({ change_status: 'Impact Assessment In Progress', updated_by: userId, updated_at: now }).eq('company_id', scope.companyId).eq('id', changeId).select().single());
+    await this.writeRegulatoryChangeMutation(scope, userId, 'Impact assessment started', change, after, 'Impact assessment opened.', changeId, assessment.id); return this.regulatoryImpactAssessmentDetail(scope, assessment.id, permissions);
+  }
+
+  async regulatoryImpactAssessments(scope: Scope, query: Row = {}, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.impact.view'); const rows = await this.db.many<Row>(this.applyRegulatoryReportScope(this.db.from('regulatory_change_impact_assessments').select('*').eq('company_id', scope.companyId), scope, query).order('updated_at', { ascending: false }).limit(Number(query.limit ?? 200))).catch(() => []); return { rows: rows.filter((r) => this.canAccessSite(scope, r.site_id)), total: rows.length }; }
+
+  async createRegulatoryImpactAssessment(userId: string, scope: Scope, dto: Row, permissions: string[] = []) { if (!dto.changeId) throw new BadRequestException('Change is required.'); return this.startRegulatoryChangeImpact(userId, scope, String(dto.changeId), dto, permissions); }
+
+  async regulatoryImpactAssessmentDetail(scope: Scope, impactId: string, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.impact.view'); const assessment = await this.db.single<Row>(this.db.from('regulatory_change_impact_assessments').select('*').eq('company_id', scope.companyId).eq('id', impactId).maybeSingle()); if (!assessment || !this.canAccessSite(scope, assessment.site_id)) throw new NotFoundException('Impact assessment was not found or is outside your scope.'); const affected = await this.db.many<Row>(this.db.from('regulatory_change_affected_records').select('*').eq('company_id', scope.companyId).eq('impact_assessment_id', impactId).order('updated_at', { ascending: false })).catch(() => []); return { assessment, affectedRecords: { rows: affected }, applicability: { rows: affected.filter((r) => r.affected_record_type === 'Applicability Assessment') }, obligations: { rows: affected.filter((r) => r.affected_record_type === 'Regulatory Obligation') }, complianceStatus: { rows: affected.filter((r) => ['Compliance Assessment', 'Compliance Gap'].includes(r.affected_record_type)) }, evidence: { rows: affected.filter((r) => String(r.affected_record_type).includes('Evidence')) }, auditMapping: { rows: affected.filter((r) => r.affected_record_type === 'Audit Mapping') }, actions: { rows: affected.filter((r) => ['Action Link', 'CAPA Package'].includes(r.affected_record_type)) }, reports: { rows: affected.filter((r) => ['Report', 'Report Package'].includes(r.affected_record_type)) } }; }
+
+  async updateRegulatoryImpactAssessment(userId: string, scope: Scope, impactId: string, dto: Row, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.impact.edit'); const before = (await this.regulatoryImpactAssessmentDetail(scope, impactId, permissions)).assessment; if (dto.impactStatus && dto.impactStatus !== 'No Impact' && !dto.impactRationale && !dto.impact_rationale) throw new BadRequestException('Impact decision requires rationale.'); const patch = this.pickMapped(dto, { assessmentTitle: 'assessment_title', assessmentStatus: 'assessment_status', impactStatus: 'impact_status', impactSummary: 'impact_summary', impactRationale: 'impact_rationale', affectedScope: 'affected_scope_json', applicabilityImpactStatus: 'applicability_impact_status', obligationImpactStatus: 'obligation_impact_status', complianceImpactStatus: 'compliance_impact_status', evidenceImpactStatus: 'evidence_impact_status', auditMappingImpactStatus: 'audit_mapping_impact_status', actionImpactStatus: 'action_impact_status', reportImpactStatus: 'report_impact_status', criticality: 'criticality', reviewerUserId: 'reviewer_user_id', reviewDueDate: 'review_due_date' }); const row = await this.db.single<Row>(this.db.from('regulatory_change_impact_assessments').update({ ...patch, updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', impactId).select().single()); await this.writeRegulatoryChangeMutation(scope, userId, 'Impact assessment updated', before, row, String(dto.reason ?? 'Impact assessment updated'), row.change_id, impactId); return this.regulatoryImpactAssessmentDetail(scope, impactId, permissions); }
+
+  async addRegulatoryChangeAffectedRecord(userId: string, scope: Scope, impactId: string, dto: Row, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.affected_records.manage'); if (!dto.affectedRecordType || !dto.affectedRecordId) throw new BadRequestException('Affected record type and record are required.'); const impact = (await this.regulatoryImpactAssessmentDetail(scope, impactId, permissions)).assessment; const type = String(dto.affectedRecordType); if (!regulatoryChangeAffectedRecordTypes.includes(type as never)) throw new BadRequestException('Affected record type is not supported.'); const row = await this.db.single<Row>(this.db.from('regulatory_change_affected_records').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: dto.siteId ?? impact.site_id ?? null, change_id: impact.change_id, impact_assessment_id: impactId, affected_record_type: type, affected_record_id: dto.affectedRecordId, regulatory_item_id: dto.regulatoryItemId ?? null, obligation_id: dto.obligationId ?? null, impact_action: dto.impactAction ?? 'Review Required', impact_status: dto.impactStatus ?? 'Pending', impact_reason: dto.impactReason ?? null, owner_user_id: dto.ownerUserId ?? null, due_date: dto.dueDate ?? null, source_snapshot_json: dto.sourceSnapshot ?? {}, created_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }).select().single()); await this.writeRegulatoryChangeMutation(scope, userId, 'Affected record linked', null, row, String(dto.impactReason ?? 'Affected record added to assessment.'), impact.change_id, impactId); return row; }
+
+  async markRegulatoryChangeAffectedRecordsStale(userId: string, scope: Scope, impactId: string, dto: Row, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.mark_stale_records'); const detail = await this.regulatoryImpactAssessmentDetail(scope, impactId, permissions); const rows = detail.affectedRecords.rows as Row[]; const reason = String(dto.reason ?? 'Regulatory change impact requires reassessment.'); for (const record of rows.filter((r) => !r.stale_marked && r.impact_action !== 'No Action Required')) { await this.db.single(this.db.from('regulatory_change_affected_records').update({ stale_marked: true, stale_reason: reason, impact_status: 'Stale', updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', record.id).select('id').single()); await this.db.single(this.db.from('regulatory_change_staleness_events').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: record.site_id ?? detail.assessment.site_id ?? null, change_id: detail.assessment.change_id, affected_record_type: record.affected_record_type, affected_record_id: record.affected_record_id, stale_trigger_type: 'Regulatory Change', source_module: 'Regulatory Change Management', source_record_id: detail.assessment.change_id, stale_reason: reason }).select('id').single()).catch(() => null); if (record.owner_user_id) await this.notifications.notifyUser({ tenantId: scope.companyId, userId: record.owner_user_id, siteId: record.site_id ?? detail.assessment.site_id ?? null, type: 'regulatory.change.stale', module: 'regulatory', title: 'Regulatory reassessment required', message: reason, relatedRecordId: detail.assessment.change_id, relatedRecordType: 'RegulatoryChange', relatedUrl: `/regulatory/changes/${detail.assessment.change_id}`, priority: 'High' }).catch(() => null); } const change = (await this.regulatoryChangeDetail(scope, detail.assessment.change_id, permissions)).change; await this.db.single(this.db.from('regulatory_changes').update({ impact_status: 'Stale', updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', change.id).select('id').single()); await this.writeRegulatoryChangeMutation(scope, userId, 'Affected records marked stale', change, change, reason, change.id, impactId); return this.regulatoryImpactAssessmentDetail(scope, impactId, permissions); }
+  async createRegulatoryChangeActions(userId: string, scope: Scope, impactId: string, dto: Row, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.create_action_foundation'); const detail = await this.regulatoryImpactAssessmentDetail(scope, impactId, permissions); const created: Row[] = []; for (const record of (detail.affectedRecords.rows as Row[]).filter((r) => ['Create Action', 'Create CAPA'].includes(r.impact_action) && !r.action_id)) { const ownerId = record.owner_user_id ?? dto.ownerUserId; const dueDate = record.due_date ?? dto.dueDate; if (!ownerId || !dueDate) throw new BadRequestException('Action foundation requires an owner and due date.'); const action = await this.actions.create(scope.companyId, userId, { title: dto.title ?? `Regulatory change: ${record.affected_record_type}`, description: dto.description ?? record.impact_reason ?? 'Regulatory change impact follow-up.', sourceModule: 'regulatory', sourceRecordId: detail.assessment.change_id, sourceType: 'Regulatory Change', siteId: record.site_id ?? detail.assessment.site_id ?? undefined, ownerId, priority: detail.assessment.criticality === 'Critical' ? 'SAFETY_CRITICAL' : 'HIGH', dueDate, evidenceRequired: false, verificationRequired: true }); const link = await this.db.single<Row>(this.db.from('regulatory_change_actions').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: record.site_id ?? detail.assessment.site_id ?? null, change_id: detail.assessment.change_id, impact_assessment_id: impactId, affected_record_id: record.id, action_type: record.impact_action, action_title: action.title, action_status: action.status, owner_user_id: ownerId, due_date: dueDate, universal_action_id: action.id, created_by: userId, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }).select().single()); await this.db.single(this.db.from('regulatory_change_affected_records').update({ action_id: action.id, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', record.id).select('id').single()); created.push(link); } await this.writeRegulatoryChangeMutation(scope, userId, 'Change actions created', null, { created }, 'Universal Action Engine follow-up actions created.', detail.assessment.change_id, impactId); return { rows: created }; }
+
+  async regulatoryChangeSources(scope: Scope, query: Row = {}, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.source.view'); const rows = await this.db.many<Row>(this.applyRegulatoryReportScope(this.db.from('regulatory_change_sources').select('*').eq('company_id', scope.companyId), scope, query).order('updated_at', { ascending: false }).limit(Number(query.limit ?? 200))).catch(() => []); return { rows: rows.filter((r) => this.canAccessSite(scope, r.site_id)), total: rows.length }; }
+  async createRegulatoryChangeSource(userId: string, scope: Scope, dto: Row, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.source.create'); if (!dto.sourceTitle || !dto.sourceType) throw new BadRequestException('Source title and source type are required.'); if (dto.sourceUrl) this.validateRegulatoryChangeUrl(String(dto.sourceUrl)); const row = await this.db.single<Row>(this.db.from('regulatory_change_sources').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: dto.siteId ?? scope.selectedSiteId ?? null, source_code: dto.sourceCode ?? await this.nextRegulatoryCode(scope, 'regulatory_change_sources', 'source_code', 'RCS'), source_title: dto.sourceTitle, source_type: dto.sourceType, authority_id: dto.authorityId ?? null, jurisdiction_id: dto.jurisdictionId ?? null, source_url: dto.sourceUrl ?? null, monitoring_frequency_foundation: dto.monitoringFrequencyFoundation ?? null, owner_user_id: dto.ownerUserId ?? userId, last_checked_at: null, next_check_at: dto.nextCheckAt ?? null, source_status: dto.sourceStatus ?? 'Active', notes: dto.notes ?? null, created_by: userId, updated_by: userId }).select().single()); await this.writeRegulatoryChangeMutation(scope, userId, 'Change monitoring source created', null, row, 'Monitoring foundation created; no source fetching or legal interpretation is performed.', null); return row; }
+  async updateRegulatoryChangeSource(userId: string, scope: Scope, sourceId: string, dto: Row, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.source.edit'); const before = await this.regulatoryChangeSource(scope, sourceId, permissions); if (dto.sourceUrl) this.validateRegulatoryChangeUrl(String(dto.sourceUrl)); const row = await this.db.single<Row>(this.db.from('regulatory_change_sources').update({ ...this.pickMapped(dto, { sourceTitle: 'source_title', sourceType: 'source_type', sourceUrl: 'source_url', monitoringFrequencyFoundation: 'monitoring_frequency_foundation', ownerUserId: 'owner_user_id', nextCheckAt: 'next_check_at', sourceStatus: 'source_status', notes: 'notes' }), updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', sourceId).select().single()); await this.writeRegulatoryChangeMutation(scope, userId, 'Change monitoring source updated', before, row, String(dto.reason ?? 'Source monitoring foundation updated.'), null); return row; }
+  async regulatoryChangeSource(scope: Scope, sourceId: string, permissions: string[] = []) { this.requirePermission(permissions, 'regulatory.change.source.view'); const row = await this.db.single<Row>(this.db.from('regulatory_change_sources').select('*').eq('company_id', scope.companyId).eq('id', sourceId).maybeSingle()); if (!row || !this.canAccessSite(scope, row.site_id)) throw new NotFoundException('Change monitoring source was not found or is outside your scope.'); return row; }
+  async markRegulatoryChangeSourceChecked(userId: string, scope: Scope, sourceId: string, dto: Row, permissions: string[] = []) { const before = await this.regulatoryChangeSource(scope, sourceId, permissions); this.requirePermission(permissions, 'regulatory.change.source.edit'); const row = await this.db.single<Row>(this.db.from('regulatory_change_sources').update({ last_checked_at: new Date().toISOString(), next_check_at: dto.nextCheckAt ?? before.next_check_at, source_status: dto.sourceStatus ?? 'Active', updated_by: userId, updated_at: new Date().toISOString() }).eq('company_id', scope.companyId).eq('id', sourceId).select().single()); await this.writeRegulatoryChangeMutation(scope, userId, 'Monitoring source manually checked', before, row, String(dto.reason ?? 'Manual monitoring check recorded. No scraping was performed.'), null); return row; }
+
+  private regulatoryChangeSummaryFromRows(rows: Row[]) { const count = (predicate: (row: Row) => boolean) => rows.filter(predicate).length; return { totalChanges: rows.length, draftChanges: count((r) => r.change_status === 'Draft'), newUpdates: count((r) => r.change_status === 'New Update'), underReview: count((r) => r.change_status === 'Under Review'), approved: count((r) => r.change_status === 'Approved Foundation'), rejected: count((r) => r.change_status === 'Rejected Foundation'), implemented: count((r) => r.change_status === 'Implemented'), superseded: count((r) => r.change_status === 'Superseded'), archived: count((r) => r.change_status === 'Archived'), unassessed: count((r) => r.impact_status === 'Not Assessed'), impactPending: count((r) => String(r.impact_status).includes('Impact') || String(r.change_status).includes('Impact Assessment')), highImpact: count((r) => ['High Impact', 'Critical Impact'].includes(r.impact_status)), overdueImpactReviews: count((r) => r.review_due_date && new Date(r.review_due_date) < new Date() && !['Implemented', 'Archived', 'Rejected Foundation'].includes(r.change_status)), staleRecords: rows.reduce((n, r) => n + Number(r.stale_record_count ?? 0), 0) }; }
+  private validateRegulatoryChange(dto: Row) { for (const [label, value] of [['Change title', dto.changeTitle ?? dto.change_title], ['Change type', dto.changeType ?? dto.change_type], ['Source type', dto.sourceType ?? dto.source_type]] as const) if (!value) throw new BadRequestException(`${label} is required.`); }
+  private validateRegulatoryChangeUrl(value: string) { try { const url = new URL(value); if (!['https:', 'http:'].includes(url.protocol) || !url.hostname) throw new Error(); } catch { throw new BadRequestException('Source URL must be a valid http(s) URL.'); } }
+  private regulatoryChangePermissionState(permissions: string[]) { const can = (key: string) => permissions.includes(key) || permissions.includes('regulatory.manage') || permissions.includes('regulatory:manage'); return { canView: can('regulatory.change.view'), canCreate: can('regulatory.change.create'), canEdit: can('regulatory.change.edit'), canAssessImpact: can('regulatory.change.impact.create'), canMarkStale: can('regulatory.change.mark_stale_records'), disabledReasons: { create: 'Missing permission: regulatory.change.create', impact: 'Missing permission: regulatory.change.impact.create', stale: 'Missing permission: regulatory.change.mark_stale_records' } }; }
+  private async writeRegulatoryChangeMutation(scope: Scope, userId: string, title: string, before: Row | null, after: Row | null, reason: string, changeId: string | null, impactId: string | null = null) { const audit = await this.audit.write({ tenantId: scope.companyId, actorId: userId, action: title, entityType: 'RegulatoryChange', ...(changeId ? { entityId: changeId } : {}), before: before ?? null, after: after ?? null, metadata: { reason, sourceModule: 'Regulatory Change Management' } }).catch(() => null); await this.db.single(this.db.from('regulatory_change_history_events').insert({ id: crypto.randomUUID(), company_id: scope.companyId, site_id: after?.site_id ?? before?.site_id ?? scope.selectedSiteId ?? null, unit_id: after?.unit_id ?? before?.unit_id ?? null, area_id: after?.area_id ?? before?.area_id ?? null, equipment_id: after?.equipment_id ?? before?.equipment_id ?? null, change_id: changeId, impact_assessment_id: impactId, affected_record_id: after?.affected_record_id ?? null, event_type: title.toUpperCase().replace(/[^A-Z0-9]+/g, '_'), event_title: title, event_description: reason, before_value_json: before ?? null, after_value_json: after ?? null, actor_user_id: userId, source_module: 'Regulatory Change Management', source_record_id: changeId, audit_log_id: (audit as { id?: string } | null)?.id ?? null, created_at: new Date().toISOString() }).select('id').single()).catch(() => null); }
+
   private canAccessSite(scope: Scope, siteId?: string | null) {
     if (!siteId) return true;
     if (scope.corporateView || scope.isCompanyAdmin) return true;
@@ -6585,6 +8804,11 @@ export class RegulatoryService {
 
   private requirePermission(permissions: string[], permission: string) {
     if (!permissions.includes(permission) && !permissions.includes('regulatory.manage') && !permissions.includes('regulatory:manage')) throw new ForbiddenException(`Missing permission: ${permission}`);
+  }
+
+  private requireAnyPermission(permissions: string[], allowed: string[]) {
+    if (permissions.includes('regulatory.manage') || permissions.includes('regulatory:manage')) return;
+    if (!allowed.some((permission) => permissions.includes(permission))) throw new ForbiddenException(`Missing permission: ${allowed.join(' or ')}`);
   }
 
   private isReadOnly(row: Row) {
@@ -6601,7 +8825,7 @@ export class RegulatoryService {
     const auditInput: Parameters<AuditService['write']>[0] = { tenantId: scope.companyId, actorId: userId, action: title, entityType: 'RegulatoryRegister', before: before ?? null, after: after ?? null, metadata: { reason, sourceModule: 'Regulatory Register' } };
     if (itemId) auditInput.entityId = itemId;
     const audit = await this.audit.write(auditInput).catch(() => null);
-    await this.db.single(this.db.from('regulatory_history_events').insert({
+    await this.db.single<Row>(this.db.from('regulatory_history_events').insert({
       id: crypto.randomUUID(),
       company_id: scope.companyId,
       site_id: after?.site_id ?? before?.site_id ?? scope.selectedSiteId ?? null,
@@ -6619,6 +8843,7 @@ export class RegulatoryService {
       source_record_id: itemId,
       audit_log_id: (audit as { id?: string } | null)?.id ?? null
     }).select('id').single()).catch(() => null);
+    if (itemId) await this.markRegulatoryReportsStaleForSource(userId, scope, 'Regulatory Item', itemId, reason).catch(() => null);
   }
 
   private async writeStatusHistory(scope: Scope, userId: string, id: string, statusType: string, before: Row, after: Row, reason: string) {

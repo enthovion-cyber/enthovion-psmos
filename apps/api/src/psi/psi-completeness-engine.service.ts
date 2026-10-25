@@ -296,6 +296,217 @@ export class PsiCompletenessEngineService {
     return this.run(tenantId, actorId, scope, { runScope: 'Unit', scopeRecordId: unitId, unitId });
   }
 
+  async liveEquipmentCompleteness(tenantId: string, scope: Scope, unitId: string) {
+    const unit = await this.unitRecord(tenantId, scope, unitId);
+
+    const [miItems, phase1Items, links, designBases, drawings, reliefSystems, sols] = await Promise.all([
+      this.safeMany<Row>(
+        this.applyScope(
+          this.db.from('mi_equipment').select('*').eq('company_id', tenantId).or(`unit_id.eq.${unitId},unit_id.eq.${unit.unit_code}`),
+          scope
+        )
+      ),
+      this.safeMany<Row>(
+        this.applyScope(
+          this.db.from('Equipment').select('*').eq('tenantId', tenantId),
+          scope
+        )
+      ),
+      this.safeMany<Row>(
+        this.db.from('psi_unit_equipment_links').select('*').eq('company_id', tenantId).eq('unit_id', unitId)
+      ),
+      this.safeMany<Row>(
+        this.db.from('psi_equipment_design_basis').select('*').eq('company_id', tenantId).eq('unit_id', unitId).is('archived_at', null)
+      ),
+      this.safeMany<Row>(
+        this.db.from('psi_drawings').select('*').eq('company_id', tenantId).eq('unit_id', unitId).is('archived_at', null)
+      ),
+      this.safeMany<Row>(
+        this.db.from('psi_relief_systems').select('*').eq('company_id', tenantId).eq('unit_id', unitId).is('archived_at', null)
+      ),
+      this.safeMany<Row>(
+        this.db.from('psi_safe_operating_limits').select('*').eq('company_id', tenantId).eq('unit_id', unitId).is('archived_at', null)
+      )
+    ]);
+
+    const tagMap = new Map<string, Row>();
+
+    for (const item of miItems) {
+      const tag = String(item.equipment_tag ?? '').trim().toUpperCase();
+      if (!tag) continue;
+      tagMap.set(tag, {
+        id: item.id,
+        tag,
+        name: item.equipment_name ?? tag,
+        type: item.equipment_type_key ?? item.equipment_type ?? item.equipment_category ?? 'Equipment',
+        category: item.equipment_category ?? 'Equipment',
+        status: item.status ?? 'Active',
+        source: 'Mechanical Integrity Registry',
+        criticality: item.criticality ?? (item.safety_critical ? 'Critical' : 'Normal'),
+        safetyCritical: Boolean(item.safety_critical || ['CRITICAL', 'HIGH', 'SAFETY CRITICAL'].includes(String(item.criticality ?? '').toUpperCase())),
+        siteId: item.site_id,
+        unitId
+      });
+    }
+
+    const linkedEquipmentIds = new Set(links.map((l) => l.equipment_id));
+    for (const item of phase1Items) {
+      const tag = String(item.tag ?? '').trim().toUpperCase();
+      if (!tag) continue;
+      if (linkedEquipmentIds.has(item.id) || !tagMap.has(tag)) {
+        if (linkedEquipmentIds.has(item.id) || item.siteId === unit.site_id) {
+          tagMap.set(tag, {
+            id: item.id,
+            tag,
+            name: item.name ?? tag,
+            type: item.type ?? 'Equipment',
+            category: item.type ?? 'Equipment',
+            status: item.status ?? 'Active',
+            source: 'Equipment Registry',
+            criticality: item.criticality ?? 'Normal',
+            safetyCritical: Boolean(['CRITICAL', 'HIGH', 'SAFETY CRITICAL'].includes(String(item.criticality ?? '').toUpperCase())),
+            siteId: item.siteId,
+            unitId
+          });
+        }
+      }
+    }
+
+    for (const dbRow of designBases) {
+      const tag = String(dbRow.equipment_tag ?? '').trim().toUpperCase();
+      if (tag && !tagMap.has(tag)) {
+        tagMap.set(tag, {
+          id: dbRow.equipment_id ?? dbRow.id,
+          tag,
+          name: dbRow.equipment_name ?? tag,
+          type: dbRow.equipment_type ?? 'Equipment',
+          category: dbRow.equipment_category ?? 'Equipment',
+          status: dbRow.status ?? 'Active',
+          source: 'PSI Design Basis Registry',
+          criticality: dbRow.equipment_criticality ?? (dbRow.safety_critical ? 'Critical' : 'Normal'),
+          safetyCritical: Boolean(dbRow.safety_critical || dbRow.psm_critical || ['CRITICAL', 'HIGH', 'SAFETY CRITICAL'].includes(String(dbRow.equipment_criticality ?? '').toUpperCase())),
+          siteId: dbRow.site_id,
+          unitId
+        });
+      }
+    }
+
+    const tagList = Array.from(tagMap.values());
+    const evaluations: any[] = tagList.map((eq: any) => {
+      const dbRow = designBases.find((d) => String(d.equipment_tag ?? '').toUpperCase() === eq.tag || d.equipment_id === eq.id);
+      const isPressureContaining = ['VESSEL', 'COLUMN', 'TOWER', 'DRUM', 'REACTOR', 'TANK', 'EXCHANGER', 'BOILER', 'PIPING'].some((k) => String(eq.type).toUpperCase().includes(k) || String(eq.category).toUpperCase().includes(k));
+      const reliefRow = reliefSystems.find((r) => String(r.protected_equipment_tag ?? '').toUpperCase() === eq.tag || r.protected_equipment_id === eq.id);
+
+      const matchingDrawings = drawings.filter((dr) => {
+        const titleMatch = String(dr.drawing_title ?? '').toUpperCase().includes(eq.tag);
+        const numberMatch = String(dr.drawing_number ?? '').toUpperCase().includes(eq.tag);
+        const tagsJson = Array.isArray(dr.drawing_tags) ? dr.drawing_tags.map((t) => String(t).toUpperCase()) : [];
+        return titleMatch || numberMatch || tagsJson.includes(eq.tag) || dr.equipment_id === eq.id;
+      });
+
+      const matchingSol = sols.filter((s) => String(s.parameter_tag ?? '').toUpperCase().includes(eq.tag) || s.equipment_id === eq.id);
+
+      const hasDesignBasis = Boolean(dbRow);
+      const hasDrawing = matchingDrawings.length > 0;
+      const hasRelief = isPressureContaining ? Boolean(reliefRow) : true;
+      const isComplete = hasDesignBasis && hasDrawing && hasRelief;
+
+      const gaps: string[] = [];
+      if (!hasDesignBasis) gaps.push('Missing Equipment Design Basis');
+      if (!hasDrawing) gaps.push('Missing Approved P&ID Drawing');
+      if (isPressureContaining && !reliefRow) gaps.push('Missing Overpressure Relief Sizing Basis');
+
+      return {
+        ...eq,
+        isPressureContaining,
+        hasDesignBasis,
+        hasDrawing,
+        hasRelief,
+        hasSol: matchingSol.length > 0,
+        designBasisId: dbRow?.id ?? null,
+        designBasisStatus: dbRow?.status ?? 'Missing',
+        drawingCount: matchingDrawings.length,
+        reliefSystemId: reliefRow?.id ?? null,
+        reliefStatus: reliefRow ? 'Documented' : (isPressureContaining ? 'Missing' : 'N/A'),
+        solCount: matchingSol.length,
+        isComplete,
+        gaps,
+        pssrBlocker: Boolean(eq.safetyCritical && !isComplete),
+        readinessStatus: isComplete ? 'Complete' : (eq.safetyCritical ? 'Critical Gap' : 'Partially Complete')
+      };
+    });
+
+    const totalLive = evaluations.length;
+    const sceList = evaluations.filter((e) => e.safetyCritical);
+    const sceTotal = sceList.length;
+    const completeCount = evaluations.filter((e) => e.isComplete).length;
+    const sceCompleteCount = sceList.filter((e) => e.isComplete).length;
+    const withDesignBasisCount = evaluations.filter((e) => e.hasDesignBasis).length;
+    const withDrawingCount = evaluations.filter((e) => e.hasDrawing).length;
+    const withReliefCount = evaluations.filter((e) => e.hasRelief).length;
+
+    const overallScore = totalLive > 0 ? Math.round((completeCount / totalLive) * 100) : 100;
+    const sceScore = sceTotal > 0 ? Math.round((sceCompleteCount / sceTotal) * 100) : 100;
+    const pssrBlockerCount = evaluations.filter((e) => e.pssrBlocker).length;
+
+    return {
+      unitId,
+      unitCode: unit.unit_code,
+      unitName: unit.unit_name,
+      siteId: unit.site_id,
+      summary: {
+        totalLiveEquipment: totalLive,
+        safetyCriticalTotal: sceTotal,
+        completeEquipment: completeCount,
+        incompleteEquipment: totalLive - completeCount,
+        sceComplete: sceCompleteCount,
+        sceIncomplete: sceTotal - sceCompleteCount,
+        withDesignBasis: withDesignBasisCount,
+        withDrawing: withDrawingCount,
+        withRelief: withReliefCount,
+        overallEquipmentScore: overallScore,
+        sceReadinessScore: sceScore,
+        pssrBlockers: pssrBlockerCount,
+        auditReady: sceScore === 100 && pssrBlockerCount === 0
+      },
+      tags: evaluations,
+      evaluatedAt: new Date().toISOString()
+    };
+  }
+
+  async syncLiveEquipmentTags(tenantId: string, actorId: string, scope: Scope, unitId: string) {
+    const live = await this.liveEquipmentCompleteness(tenantId, scope, unitId);
+    const unit = await this.unitRecord(tenantId, scope, unitId);
+    let createdCount = 0;
+    for (const tagItem of live.tags) {
+      if (!tagItem.hasDesignBasis) {
+        await this.db.single(this.db.from('psi_equipment_design_basis').insert({
+          id: randomUUID(),
+          company_id: tenantId,
+          site_id: unit.site_id,
+          unit_id: unitId,
+          equipment_id: tagItem.id ?? randomUUID(),
+          equipment_tag: tagItem.tag,
+          equipment_name: tagItem.name,
+          equipment_type: tagItem.type,
+          equipment_category: tagItem.category,
+          equipment_criticality: tagItem.criticality,
+          safety_critical: tagItem.safetyCritical,
+          psm_critical: tagItem.safetyCritical,
+          status: 'Draft',
+          completeness_status: 'Incomplete',
+          review_status: 'Pending Technical Review',
+          notes: `Auto-generated from live Equipment Registry tag: ${tagItem.tag}`,
+          created_by: actorId,
+          updated_by: actorId
+        }).select('id').single()).catch(() => null);
+        createdCount++;
+      }
+    }
+    await this.writeHistory(tenantId, actorId, 'psi.completeness.live_equipment_synced', { unit_id: unitId, site_id: unit.site_id }, null, { createdCount, totalEquipment: live.summary.totalLiveEquipment }, `Synced ${createdCount} equipment tags from live registry into PSI design basis.`);
+    return { unitId, createdCount, totalLive: live.summary.totalLiveEquipment };
+  }
+
   runEquipment(tenantId: string, actorId: string, scope: Scope, equipmentId: string) {
     return this.run(tenantId, actorId, scope, { runScope: 'Equipment', scopeRecordId: equipmentId, equipmentId });
   }
@@ -425,6 +636,25 @@ export class PsiCompletenessEngineService {
     const bad = found.filter((row) => this.isBadModuleRow(row));
     const status = missing ? 'Missing' : bad.length ? (bad.some((row) => row.pssr_blocker || row.conflict_status === 'Critical Conflict') ? 'Critical Gap' : 'Partially Complete') : 'Complete';
     const severity = status === 'Complete' ? 'Info' : requirement.severity_if_missing ?? requirement.severity ?? definition?.severity ?? 'Medium';
+    let liveEqGapsMessage = '';
+    let hasLiveSceBlocker = false;
+    if (requirement.psi_module === 'Equipment Design Basis' && !dto.equipmentId) {
+      try {
+        const live = await this.liveEquipmentCompleteness(tenantId, scope, unit.id);
+        if (live.summary.incompleteEquipment > 0) {
+          liveEqGapsMessage = ` (${live.summary.incompleteEquipment}/${live.summary.totalLiveEquipment} live equipment tags missing design basis, ${live.summary.sceIncomplete} safety-critical)`;
+          if (live.summary.sceIncomplete > 0) {
+            hasLiveSceBlocker = true;
+          }
+        }
+      } catch {
+        // fallback to standard module rows
+      }
+    }
+
+    const effectiveStatus = hasLiveSceBlocker ? 'Critical Gap' : status;
+    const effectiveSeverity = hasLiveSceBlocker ? 'Critical' : severity;
+
     return this.clean({
       id: randomUUID(),
       company_id: tenantId,
@@ -441,17 +671,17 @@ export class PsiCompletenessEngineService {
       source_record_id: found[0]?.id ?? null,
       source_record_title: this.recordTitle(definition, found[0]),
       evaluation_scope: dto.equipmentId ? 'Equipment' : 'Unit',
-      evaluation_status: status,
-      status,
-      severity,
-      pssr_blocker: Boolean((requirement.pssr_blocker_if_missing || definition?.blocker) && status !== 'Complete'),
-      moc_required: Boolean(requirement.moc_required_if_changed && status !== 'Complete'),
-      mi_readiness_impact: Boolean(found.some((row) => row.mi_readiness_impact) || (status !== 'Complete' && ['Equipment Design Basis', 'Relief Systems', 'Safeguards / Controls'].includes(requirement.psi_module))),
+      evaluation_status: effectiveStatus,
+      status: effectiveStatus,
+      severity: effectiveSeverity,
+      pssr_blocker: Boolean((requirement.pssr_blocker_if_missing || definition?.blocker || hasLiveSceBlocker) && effectiveStatus !== 'Complete'),
+      moc_required: Boolean(requirement.moc_required_if_changed && effectiveStatus !== 'Complete'),
+      mi_readiness_impact: Boolean(found.some((row) => row.mi_readiness_impact) || (effectiveStatus !== 'Complete' && ['Equipment Design Basis', 'Relief Systems', 'Safeguards / Controls'].includes(requirement.psi_module))),
       evidence_expected: expected,
-      evidence_found: missing ? null : `${found.length} source record(s); ${bad.length} warning(s)`,
+      evidence_found: missing ? null : `${found.length} source record(s); ${bad.length} warning(s)${liveEqGapsMessage}`,
       evidence_record_json: found.slice(0, 5),
-      message: status === 'Complete' ? 'Requirement complete with source evidence.' : missing ? `${requirement.requirement_title ?? requirement.requirement_name} is missing.` : `${bad.length} source record(s) are incomplete, conflicted, overdue, pending, expired, superseded, bypassed, or impaired.`,
-      missing_reason: status === 'Complete' ? null : missing ? 'Required PSI source record is missing.' : 'Source record has completeness, conflict, review, document, or impairment gaps.',
+      message: effectiveStatus === 'Complete' ? 'Requirement complete with source evidence.' : missing ? `${requirement.requirement_title ?? requirement.requirement_name} is missing.${liveEqGapsMessage}` : `${bad.length} source record(s) are incomplete, conflicted, overdue, pending, expired, superseded, bypassed, or impaired.${liveEqGapsMessage}`,
+      missing_reason: effectiveStatus === 'Complete' ? null : missing ? `Required PSI source record is missing.${liveEqGapsMessage}` : `Source record has completeness, conflict, review, document, or impairment gaps.${liveEqGapsMessage}`,
       recommended_action: status === 'Complete' ? null : requirement.action_required_if_missing ? `Create/update ${requirement.psi_module} record and link current approved evidence.` : `Review ${requirement.psi_module} completeness evidence.`,
       owner_user_id: unit.owner_user_id ?? unit.process_owner_id ?? null,
       due_date: this.dueDate(requirement),

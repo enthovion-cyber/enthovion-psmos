@@ -18,14 +18,14 @@ export function SidebarUserCard({ data, collapsed, open }: { data: SidebarProfil
       </div>
       <div className="min-w-0 flex-1 text-left">
         <div className="truncate text-sm font-semibold">{data?.user.fullName ?? 'Loading user...'}</div>
-        <div className="truncate text-xs text-[var(--psm-muted)]">{data?.user.email ?? 'Loading profile...'}</div>
+        <div className="psm-sidebar-muted truncate text-xs">{data?.user.email ?? 'Loading profile...'}</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {data?.user.primaryRoleLabel ? <span className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] font-semibold text-info">{data.user.primaryRoleLabel}</span> : null}
           <PlanStatusBadge billing={data?.billing} />
         </div>
-        <div className="mt-1 truncate text-[10px] text-[var(--psm-muted)]">{data?.workspace.companyName ?? 'Workspace'}</div>
+        <div className="psm-sidebar-muted mt-1 truncate text-[10px]">{data?.workspace.companyName ?? 'Workspace'}</div>
       </div>
-      <ChevronUp size={16} className={`shrink-0 text-[var(--psm-muted)] transition ${open ? 'rotate-180' : ''}`} />
+      <ChevronUp size={16} className={`psm-sidebar-muted shrink-0 transition ${open ? 'rotate-180' : ''}`} />
     </div>
   );
 }

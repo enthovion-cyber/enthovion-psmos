@@ -30,4 +30,16 @@ export class UpdateActionDto {
   @IsOptional()
   @IsBoolean()
   verificationRequired?: boolean;
+
+  @IsOptional()
+  @IsString()
+  timingGate?: string;
+
+  @IsOptional()
+  @IsString()
+  extensionReason?: string;
+
+  @IsOptional()
+  @IsDateString()
+  requestedDueDate?: string;
 }

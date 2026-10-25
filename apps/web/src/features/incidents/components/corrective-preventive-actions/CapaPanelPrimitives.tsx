@@ -23,12 +23,12 @@ export function CapaSimplePanel({ title, data, empty = 'No backend records were 
   </TabPanel>;
 }
 
-export function CapaRegisterTable({ rows, onEdit, onDelete, onComplete, onVerify, onReject, onEvidence, onSource, onEscalate, onLinkAction }: { rows: any[]; onEdit?: (row: any) => void; onDelete?: (row: any) => void; onComplete?: (row: any) => void; onVerify?: (row: any) => void; onReject?: (row: any) => void; onEvidence?: (row: any) => void; onSource?: (row: any) => void; onEscalate?: (row: any) => void; onLinkAction?: (row: any) => void }) {
+export function CapaRegisterTable({ rows, onEdit, onDelete, onComplete, onVerify, onReject, onEvidence, onSource, onEscalate, onLinkAction, onSpawnMoc, onSyncAction }: { rows: any[]; onEdit?: (row: any) => void; onDelete?: (row: any) => void; onComplete?: (row: any) => void; onVerify?: (row: any) => void; onReject?: (row: any) => void; onEvidence?: (row: any) => void; onSource?: (row: any) => void; onEscalate?: (row: any) => void; onLinkAction?: (row: any) => void; onSpawnMoc?: (row: any) => void; onSyncAction?: (row: any) => void }) {
   if (!rows?.length) return <p className="text-xs text-slate-500">No CAPA records exist yet. Generate from real RCA/barrier sources or add a CAPA linked to an existing Universal Action.</p>;
   return <div className="overflow-x-auto">
     <table className="min-w-[1500px] text-left text-xs">
       <thead className="text-[11px] uppercase text-slate-500">
-        <tr>{['CAPA', 'Type / Category', 'Source', 'Priority', 'Risk Reduction', 'Owner / Due', 'Status', 'Implementation', 'Evidence', 'Verification', 'Escalation', 'Universal Action', 'Updated', 'Actions'].map((h) => <th key={h} className="p-2">{h}</th>)}</tr>
+        <tr>{['CAPA', 'Type / Category', 'Source', 'Priority', 'Risk Reduction', 'Owner / Due', 'Status', 'Implementation', 'Evidence', 'Verification', 'Escalation', 'Universal Action / MOC', 'Updated', 'Actions'].map((h) => <th key={h} className="p-2">{h}</th>)}</tr>
       </thead>
       <tbody>
         {rows.map((row) => <tr key={row.id} className="border-t border-slate-200 align-top dark:border-cyan-300/10">
@@ -43,16 +43,58 @@ export function CapaRegisterTable({ rows, onEdit, onDelete, onComplete, onVerify
           <td className="p-2"><Badge value={row.evidence_status ?? (row.evidence_required ? 'Missing' : 'Not Required')} /></td>
           <td className="p-2"><VerificationStatusBadge value={row.verification_status} /><div className="mt-1"><EffectivenessBadge value={row.effectiveness_status} /></div></td>
           <td className="p-2"><EscalationStatusBadge value={row.escalation_status} /></td>
-          <td className="p-2">{row.universal_action_id ?? '-'}</td>
+          <td className="p-2">
+            <div className="flex flex-col gap-1.5 min-w-[130px]">
+              {row.action_number_snapshot || row.universal_action_id ? (
+                <div className="flex items-center gap-1">
+                  <a
+                    href={`/actions?id=${row.universal_action_id}`}
+                    className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-700 hover:underline dark:bg-blue-500/20 dark:text-blue-300"
+                    title={`Universal Action ID: ${row.universal_action_id}`}
+                  >
+                    <span>🎯</span> {row.action_number_snapshot || (row.universal_action_id?.slice(0, 8) + '...')}
+                  </a>
+                  <button
+                    onClick={() => onSyncAction?.(row)}
+                    className="text-[10px] text-slate-400 hover:text-blue-500"
+                    title="Resync to Universal Action Center"
+                  >
+                    ↻
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => onSyncAction?.(row)}
+                  className="inline-flex items-center gap-1 rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                >
+                  ⚡ Sync Action
+                </button>
+              )}
+              {row.moc_id || row.moc_number ? (
+                <a
+                  href={`/moc/${row.moc_id}`}
+                  className="inline-flex items-center gap-1 rounded bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 hover:underline dark:bg-indigo-500/20 dark:text-indigo-300"
+                  title="View Management of Change Record"
+                >
+                  <span>🔀</span> {row.moc_number || 'MOC'}
+                </a>
+              ) : row.moc_required ? (
+                <span className="inline-block text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                  ⚠ MOC Required
+                </span>
+              ) : null}
+            </div>
+          </td>
           <td className="p-2">{formatDate(row.updated_at)}</td>
-          <td className="p-2"><div className="flex min-w-[260px] flex-wrap gap-1">
+          <td className="p-2"><div className="flex min-w-[280px] flex-wrap gap-1">
             <button className={buttonSecondary} onClick={() => onEdit?.(row)}>Edit</button>
             <button className={buttonSecondary} onClick={() => onComplete?.(row)}>Complete</button>
             <button className={buttonSecondary} onClick={() => onVerify?.(row)}>Verify</button>
+            <button className="rounded border border-indigo-400/40 bg-indigo-500/10 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-500/20 dark:border-indigo-400/30 dark:bg-indigo-500/20 dark:text-indigo-300 dark:hover:bg-indigo-500/30 transition-colors" title="Spawn 1-Click MOC" onClick={() => onSpawnMoc?.(row)}>⚡ MOC</button>
+            <button className="rounded border border-blue-400/40 bg-blue-500/10 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:border-blue-400/30 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30 transition-colors" title="Sync to Action Center" onClick={() => onSyncAction?.(row)}>Action</button>
             <button className={buttonSecondary} onClick={() => onReject?.(row)}>Reject</button>
             <button className={buttonSecondary} onClick={() => onEvidence?.(row)}>Evidence</button>
             <button className={buttonSecondary} onClick={() => onSource?.(row)}>Source</button>
-            <button className={buttonSecondary} onClick={() => onLinkAction?.(row)}>Action</button>
             <button className={buttonSecondary} onClick={() => onEscalate?.(row)}>Escalate</button>
             <button className={buttonSecondary} onClick={() => onDelete?.(row)}>Cancel</button>
           </div></td>

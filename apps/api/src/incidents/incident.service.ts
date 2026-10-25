@@ -2,13 +2,20 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { JsonValue } from '../common/types/db.types';
 import { AuditService } from '../audit/audit.service';
 import { SupabaseService } from '../database/supabase.service';
+import { ActionsService } from '../actions/actions.service';
+import { MocService } from '../moc/moc.service';
 
 type Scope = { allowedSiteIds?: string[]; selectedSiteId?: string | null; corporateView?: boolean };
 type IncidentRow = Record<string, any>;
 
 @Injectable()
 export class IncidentService {
-  constructor(private readonly db: SupabaseService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly db: SupabaseService, 
+    private readonly audit: AuditService,
+    private readonly actionsService: ActionsService,
+    private readonly mocService: MocService
+  ) {}
 
   async dashboard(tenantId: string, actorId: string, scope: Scope, filters: Record<string, any> = {}, permissions: string[] = []) {
     const [summary, attention, psmEvents, highPotential, investigationStatus, actionSnapshot, trends, register, filterContext, savedViews] = await Promise.all([
@@ -2993,7 +3000,31 @@ export class IncidentService {
     const incident = await this.rawIncidentById(tenantId, scope, id);
     this.assertCanEditIncidentRca(incident);
     const before = await this.db.single<any>(this.db.from('incident_rca_root_causes').select('*').eq('tenant_id', tenantId).eq('incident_id', id).eq('id', rootCauseId).single());
-    const actionId = dto.actionId ?? crypto.randomUUID();
+    
+    let actionId = dto.actionId;
+    if (!actionId) {
+      try {
+        const action = await this.actionsService.create(tenantId, actorId, {
+          sourceModule: 'INCIDENTS',
+          sourceType: 'Incident RCA',
+          sourceRecordId: id,
+          title: `RCA Action: ${before.root_cause_statement || 'Root cause corrective action'}`,
+          description: before.capa_recommendation || before.root_cause_statement || 'RCA corrective action',
+          priority: 'HIGH',
+          ownerId: before.owner_id || incident.investigation_owner_id || actorId,
+          siteId: incident.site_id,
+          departmentId: incident.department_id,
+          equipmentId: incident.primary_equipment_id || null,
+          dueDate: incident.due_date || new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+          evidenceRequired: true,
+          verificationRequired: true
+        });
+        actionId = action.id;
+      } catch {
+        actionId = crypto.randomUUID();
+      }
+    }
+
     const row = await this.db.single<any>(this.db.from('incident_rca_root_causes').update({ universal_action_id: actionId, capa_required: true, review_status: 'CAPA Mapped', updated_by: actorId, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('incident_id', id).eq('id', rootCauseId).select().single());
     await this.writeRcaMutation(tenantId, incident, actorId, 'Action Created', 'CAPA/action linked from RCA root cause', dto.reason ?? actionId, before, row, 'incidents.rca.capa.create', row.id);
     return this.rcaTab(tenantId, scope, id, permissions);
@@ -3229,7 +3260,29 @@ export class IncidentService {
   async createBarrierFollowupAction(tenantId: string, actorId: string, scope: Scope, id: string, dto: Record<string, any>, permissions: string[] = []) {
     const incident = await this.rawIncidentById(tenantId, scope, id);
     this.assertCanEditIncidentBarrier(incident);
-    const actionId = dto.actionId ?? crypto.randomUUID();
+    let actionId = dto.actionId;
+    if (!actionId) {
+      try {
+        const action = await this.actionsService.create(tenantId, actorId, {
+          sourceModule: 'INCIDENTS',
+          sourceType: 'Incident Barrier Follow-up',
+          sourceRecordId: id,
+          title: dto.title ?? `Barrier Action: ${dto.followupType ?? 'Follow-up'}`,
+          description: dto.description ?? dto.reason ?? 'Barrier follow-up action',
+          priority: dto.priority === 'Critical' ? 'CRITICAL' : dto.priority === 'High' ? 'HIGH' : 'MEDIUM',
+          ownerId: dto.ownerId ?? incident.investigation_owner_id ?? actorId,
+          siteId: incident.site_id,
+          departmentId: incident.department_id,
+          equipmentId: incident.primary_equipment_id || null,
+          dueDate: dto.dueDate ? new Date(dto.dueDate).toISOString().split('T')[0] : incident.due_date || new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+          evidenceRequired: true,
+          verificationRequired: true
+        });
+        actionId = action.id;
+      } catch {
+        actionId = crypto.randomUUID();
+      }
+    }
     const row = await this.db.single<any>(this.db.from('incident_barrier_followups').insert({
       id: crypto.randomUUID(), tenant_id: tenantId, company_id: incident.company_id, site_id: incident.site_id, incident_id: id,
       barrier_id: dto.barrierId, followup_type: dto.followupType ?? 'Barrier follow-up', title: dto.title ?? 'Barrier follow-up action', description: dto.description ?? dto.reason, required_reason: dto.reason, priority: dto.priority ?? 'High', owner_id: dto.ownerId ?? incident.investigation_owner_id, due_date: this.dateOrNull(dto.dueDate), source_panel: dto.sourcePanel, universal_action_id: actionId, status: 'Open', created_by: actorId, updated_by: actorId
@@ -3429,6 +3482,10 @@ export class IncidentService {
     if (dto.sourceType || dto.sourceId) await this.safeSingle(this.db.from('incident_capa_source_links').insert(this.capaSourceLinkPatch(dto, tenantId, actorId, incident, row)).select().single());
     await this.updateIncidentCapaStatus(tenantId, id, actorId);
     await this.writeCapaMutation(tenantId, incident, actorId, 'Created', 'CAPA item created', row.action_title_snapshot, null, row, 'incidents.capa.create', row.id);
+    
+    // Closed-loop Universal Action Sync to Action Center
+    await this.syncCapaToActionCenter(tenantId, actorId, scope, id, row.id, permissions).catch(() => null);
+    
     return this.capaTab(tenantId, scope, id, permissions);
   }
 
@@ -3439,6 +3496,10 @@ export class IncidentService {
     const row = await this.db.single<any>(this.db.from('incident_capa_items').update(this.capaItemPatch(dto, tenantId, actorId, incident, {}, true)).eq('tenant_id', tenantId).eq('incident_id', id).eq('id', capaId).select().single());
     await this.updateIncidentCapaStatus(tenantId, id, actorId);
     await this.writeCapaMutation(tenantId, incident, actorId, 'Updated', 'CAPA item updated', dto.reason ?? dto.changeReason, before, row, 'incidents.capa.update', row.id);
+    
+    // Sync with Action Center
+    await this.syncCapaToActionCenter(tenantId, actorId, scope, id, row.id, permissions).catch(() => null);
+    
     return this.capaTab(tenantId, scope, id, permissions);
   }
 
@@ -3552,6 +3613,12 @@ export class IncidentService {
     const row = await this.db.single<any>(this.db.from('incident_capa_items').update({ status: 'Evidence Submitted', implementation_status: 'Completed', evidence_status: before.evidence_required ? 'Submitted' : 'Not Required', completion_notes: dto.notes ?? dto.reason, completed_by: actorId, completed_at: new Date().toISOString(), updated_by: actorId, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('incident_id', id).eq('id', capaId).select().single());
     await this.updateIncidentCapaStatus(tenantId, id, actorId);
     await this.writeCapaMutation(tenantId, incident, actorId, 'Updated', 'CAPA completion submitted', dto.reason ?? dto.notes, before, row, 'incidents.capa.complete', row.id);
+    
+    // Closed-loop sync with Action Center
+    if (row.universal_action_id) {
+      await this.db.single(this.db.from('Action').update({ status: 'PENDING_VERIFICATION', updatedAt: new Date().toISOString() }).eq('tenantId', tenantId).eq('id', row.universal_action_id).select('id').single()).catch(() => null);
+    }
+
     return this.capaTab(tenantId, scope, id, permissions);
   }
 
@@ -3579,6 +3646,12 @@ export class IncidentService {
     const row = await this.db.single<any>(this.db.from('incident_capa_items').update({ status: dto.effective === false ? 'Rework Required' : 'Verified Effective', verification_status: dto.effective === false ? 'Failed' : 'Verified Effective', effectiveness_status: dto.effective === false ? 'Ineffective' : 'Effective', rework_required: dto.effective === false, rework_notes: dto.reworkNotes, updated_by: actorId, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('incident_id', id).eq('id', capaId).select().single());
     await this.updateIncidentCapaStatus(tenantId, id, actorId);
     await this.writeCapaMutation(tenantId, incident, actorId, dto.effective === false ? 'Rejected' : 'Validated', 'CAPA effectiveness verified', dto.verificationResult ?? dto.comments, before, { row, verification }, 'incidents.capa.verify', row.id);
+    
+    // Closed-loop sync with Action Center
+    if (before.universal_action_id && dto.effective !== false) {
+      await this.db.single(this.db.from('Action').update({ status: 'CLOSED', updatedAt: new Date().toISOString() }).eq('tenantId', tenantId).eq('id', before.universal_action_id).select('id').single()).catch(() => null);
+    }
+
     return this.capaTab(tenantId, scope, id, permissions);
   }
 
@@ -3678,6 +3751,82 @@ export class IncidentService {
     };
   }
 
+  async syncCapaToActionCenter(tenantId: string, actorId: string, scope: Scope, incidentId: string, capaItemId: string, permissions: string[] = []) {
+    const incident = await this.rawIncidentById(tenantId, scope, incidentId);
+    const capaItem = await this.db.single<any>(this.db.from('incident_capa_items').select('*').eq('tenant_id', tenantId).eq('incident_id', incidentId).eq('id', capaItemId).single());
+    if (!capaItem) throw new NotFoundException('CAPA item not found');
+
+    const priorityMap: Record<string, 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'SAFETY_CRITICAL'> = {
+      'Low': 'LOW',
+      'Medium': 'MEDIUM',
+      'High': 'HIGH',
+      'Critical': 'CRITICAL',
+      'Safety Critical': 'SAFETY_CRITICAL'
+    };
+
+    const actionPriority = priorityMap[capaItem.priority] ?? 'MEDIUM';
+    let actionId = capaItem.universal_action_id;
+    let actionRecord: any = null;
+
+    if (actionId) {
+      actionRecord = await this.db.single<any>(this.db.from('Action').select('*').eq('tenantId', tenantId).eq('id', actionId).maybeSingle()).catch(() => null);
+    }
+
+    if (!actionRecord) {
+      try {
+        actionRecord = await this.actionsService.create(tenantId, actorId, {
+          sourceModule: 'INCIDENTS',
+          sourceType: 'Incident CAPA',
+          sourceRecordId: incidentId,
+          title: capaItem.action_title_snapshot || `CAPA: ${capaItem.capa_number ?? 'Action'}`,
+          description: capaItem.action_description || capaItem.action_title_snapshot,
+          priority: actionPriority,
+          ownerId: capaItem.owner_id || incident.investigation_owner_id || actorId,
+          siteId: incident.site_id,
+          departmentId: incident.department_id,
+          equipmentId: incident.primary_equipment_id || null,
+          dueDate: capaItem.due_date || incident.due_date || new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+          evidenceRequired: !!capaItem.evidence_required,
+          verificationRequired: !!capaItem.verification_required,
+          timingGate: 'NOT_APPLICABLE'
+        });
+
+        actionId = actionRecord.id;
+
+        await this.db.single(this.db.from('incident_capa_items').update({
+          universal_action_id: actionId,
+          action_number_snapshot: actionRecord.actionNumber,
+          action_center_synced_at: new Date().toISOString(),
+          updated_by: actorId,
+          updated_at: new Date().toISOString()
+        }).eq('tenant_id', tenantId).eq('id', capaItemId).select('id').single());
+
+        await this.writeCapaMutation(tenantId, incident, actorId, 'Linked', 'Synchronized to Action Center', `Universal Action ${actionRecord.actionNumber} created`, null, actionRecord, 'incidents.actions.sync', capaItemId);
+      } catch {
+        // Fallback gracefully
+      }
+    } else {
+      if (['Verified', 'Closed', 'Verified Effective'].includes(capaItem.status)) {
+        if (actionRecord.status !== 'CLOSED') {
+          await this.db.single(this.db.from('Action').update({ status: 'CLOSED', updatedAt: new Date().toISOString() }).eq('tenantId', tenantId).eq('id', actionId).select('id').single()).catch(() => null);
+        }
+      } else if (['Evidence Submitted', 'Verification Pending', 'Completed'].includes(capaItem.status) || capaItem.implementation_status === 'Completed') {
+        if (actionRecord.status === 'OPEN') {
+          await this.db.single(this.db.from('Action').update({ status: 'PENDING_VERIFICATION', updatedAt: new Date().toISOString() }).eq('tenantId', tenantId).eq('id', actionId).select('id').single()).catch(() => null);
+        }
+      }
+
+      await this.db.single(this.db.from('incident_capa_items').update({
+        action_number_snapshot: actionRecord.actionNumber,
+        action_center_synced_at: new Date().toISOString(),
+        updated_by: actorId,
+        updated_at: new Date().toISOString()
+      }).eq('tenant_id', tenantId).eq('id', capaItemId).select('id').single());
+    }
+
+    return this.capaTab(tenantId, scope, incidentId, permissions);
+  }
+
   private async ensureCapa(tenantId: string, incident: any, actorId?: string) {
     const existing = await this.safeSingle<any>(this.db.from('incident_capa').select('*').eq('tenant_id', tenantId).eq('incident_id', incident.id).single());
     if (existing) return existing;
@@ -3702,7 +3851,9 @@ export class IncidentService {
     if ((dto.verificationRequired ?? dto.verification_required) && !(dto.verificationMethod ?? dto.verification_method)) throw new BadRequestException('Verification-required CAPA must include a verification method.');
     return this.clean({
       ...(!update ? { id: dto.id ?? crypto.randomUUID(), tenant_id: tenantId, company_id: incident.company_id, site_id: incident.site_id, incident_id: incident.id, capa_id: capa.id, capa_number: dto.capaNumber ?? `CAPA-${String(index).padStart(3, '0')}`, created_by: actorId } : {}),
-      universal_action_id: dto.universalActionId ?? dto.universal_action_id ?? (!update ? crypto.randomUUID() : undefined),
+      universal_action_id: dto.universalActionId ?? dto.universal_action_id ?? null,
+      moc_id: dto.mocId ?? dto.moc_id ?? null,
+      moc_number: dto.mocNumber ?? dto.moc_number ?? null,
       action_title_snapshot: title,
       action_description: dto.description ?? dto.actionDescription ?? dto.action_description,
       action_type: dto.actionType ?? dto.action_type ?? (!update ? 'Corrective Action' : undefined),
@@ -4043,6 +4194,91 @@ export class IncidentService {
     await this.updateIncidentLinkedRecordStatus(tenantId, id, actorId);
     await this.writeLinkedRecordMutation(tenantId, incident, actorId, 'Updated', 'All linked record statuses refreshed', `${links.length} links refreshed`, null, { count: links.length }, 'incidents.linked_records.refresh_all', id);
     return this.linkedRecordsTab(tenantId, scope, id, permissions);
+  }
+
+  async spawnMoc(tenantId: string, actorId: string, scope: Scope, id: string, dto: Record<string, any>, permissions: string[] = []) {
+    const incident = await this.rawIncidentById(tenantId, scope, id);
+    this.assertCanEditLinkedRecords(incident);
+
+    const title = dto.title?.trim() || `MOC from Incident: ${incident.title ?? incident.incident_number}`;
+    const description = dto.description?.trim() || `Management of Change triggered by Incident Investigation ${incident.incident_number}: ${incident.summary || incident.title}`;
+    const changeType = dto.changeType || 'Permanent Process Change';
+    const changeCategory = dto.changeCategory || 'Process';
+    const priority = dto.priority || incident.investigation_priority || 'High';
+
+    const moc = await this.mocService.create(tenantId, actorId, {
+      siteId: incident.site_id,
+      companyId: incident.company_id,
+      departmentId: incident.department_id || undefined,
+      unitId: incident.unit_id || undefined,
+      areaId: incident.area_id || undefined,
+      title,
+      description,
+      changeType,
+      changeCategory,
+      priority,
+      affectedSystem: dto.affectedSystem || incident.system_involved || undefined,
+      locationDescription: incident.location_description || undefined,
+      risk: { safetyImpact: 3, environmentalImpact: 2, productionImpact: 2 }
+    }, scope, false);
+
+    // Create entry in incident_linked_records
+    const existingLinks = await this.incidentChildren(tenantId, 'incident_linked_records', id, scope);
+    const linkRow = await this.db.single<any>(this.db.from('incident_linked_records').insert({
+      id: crypto.randomUUID(),
+      tenant_id: tenantId,
+      company_id: incident.company_id,
+      site_id: incident.site_id,
+      incident_id: id,
+      link_number: `LINK-${String(existingLinks.length + 1).padStart(3, '0')}`,
+      module: 'MOC',
+      record_type: 'Management of Change',
+      record_id: moc.id,
+      record_number_snapshot: moc.moc_number,
+      record_title_snapshot: moc.title,
+      relationship: 'Triggered by Incident',
+      source_generated_type: 'Spawned MOC',
+      link_status: 'Active',
+      impact_status: 'Review required',
+      update_required: true,
+      owner_id: moc.originator_id || actorId,
+      due_date: this.dateOrNull(dto.dueDate ?? incident.due_date),
+      source_module: 'INCIDENTS',
+      source_record_id: id,
+      notes: dto.reason || 'Spawned directly from incident investigation recommendations',
+      created_by: actorId,
+      updated_by: actorId
+    }).select().single());
+
+    // If spawned for a specific CAPA item, link it directly
+    if (dto.capaItemId) {
+      await this.safeSingle(this.db.from('incident_capa_items').update({
+        moc_required: true,
+        moc_id: moc.id,
+        moc_number: moc.moc_number,
+        updated_by: actorId,
+        updated_at: new Date().toISOString()
+      }).eq('tenant_id', tenantId).eq('incident_id', id).eq('id', dto.capaItemId).select('id').single());
+    }
+
+    // Update incident flags
+    await this.safeSingle(this.db.from('incidents').update({
+      moc_id: moc.id,
+      moc_required: true,
+      moc_involved: true,
+      updated_by: actorId,
+      updated_at: new Date().toISOString()
+    }).eq('tenant_id', tenantId).eq('id', id).select('id').single());
+
+    await this.updateIncidentLinkedRecordStatus(tenantId, id, actorId);
+    await this.writeLinkedRecordMutation(tenantId, incident, actorId, 'Created', 'MOC spawned from incident', `Created MOC ${moc.moc_number}: ${moc.title}`, null, { moc, linkRow }, 'incidents.moc.spawn', moc.id);
+
+    return {
+      success: true,
+      moc,
+      link: linkRow,
+      capaItemId: dto.capaItemId
+    };
   }
 
   async updateRecordImpact(tenantId: string, actorId: string, scope: Scope, id: string, impactId: string, dto: Record<string, any>, permissions: string[] = []) {

@@ -64,7 +64,10 @@ export function HazopLinkedRecordsTab({ study }: { study: any }) {
           canDelete={can('hazop.linked_records.delete')}
           onOpen={setSelected}
           onSync={(record) => mutations.sync.mutate(record.id)}
-          onDelete={(record) => mutations.delete.mutate({ linkId: record.id, reason: window.prompt('Reason for removing link') ?? undefined })}
+          onDelete={(record) => {
+            const reason = window.prompt('Reason for removing link');
+            mutations.delete.mutate({ linkId: record.id, ...(reason ? { reason } : {}) });
+          }}
           onMarkBlocking={(record) => mutations.markBlocking.mutate({ linkId: record.id, values: { blockingRule: 'Blocks HAZOP closure' } })}
         />
         <div className="space-y-4">

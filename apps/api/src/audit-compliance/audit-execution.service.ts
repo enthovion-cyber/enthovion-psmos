@@ -147,6 +147,7 @@ export class AuditExecutionService {
       activity,
       history,
       validation,
+      formalFindings,
     ] = await Promise.all([
       this.childRows("audit_execution_sections", execution, "section_order"),
       this.childRows("audit_execution_items", execution, "item_order"),
@@ -160,6 +161,7 @@ export class AuditExecutionService {
       this.childRows("audit_execution_activity_events", execution, "created_at"),
       this.childRows("audit_execution_history_events", execution, "created_at"),
       this.childRows("audit_execution_validation_results", execution, "validated_at"),
+      this.safeRows(this.db.from("audit_findings").select("*").eq("company_id", user.tenantId).eq("execution_id", execution.id)),
     ]);
     return {
       execution,
@@ -169,9 +171,10 @@ export class AuditExecutionService {
       evidence,
       notes,
       findings,
+      formalFindings: formalFindings ?? [],
       interviews,
       walkthroughs,
-      readiness: readinessRows.at(-1) ?? this.computeReadiness(execution, items, responses, evidence, findings),
+      readiness: readinessRows.at(-1) ?? this.computeReadiness(execution, items, responses, evidence, findings, formalFindings ?? []),
       validation: validation.at(-1) ?? null,
       activity,
       history,
@@ -385,7 +388,30 @@ export class AuditExecutionService {
       patch.resumed_at = now;
     } else if (action === "complete") {
       const readiness = await this.runReadiness(user, id);
-      if (!readiness.ready_for_completion && !dto.overrideReadiness) throw new BadRequestException("Execution is not ready for completion.");
+      const majorNcBlockers = (readiness.major_nc_blockers_count as number) ?? 0;
+
+      // Hard Closure Gate: Block completion if there are open Major NCs lacking containment or CAPA
+      if (majorNcBlockers > 0 && !dto.allowMajorNcWaiver && !dto.overrideReadiness) {
+        throw new BadRequestException(
+          `Hard Closure Gate Blocked: Cannot complete audit execution. There are ${majorNcBlockers} open Major Non-Conformance blocker(s) requiring verified containment and active CAPA (or an authorized executive waiver).`,
+        );
+      }
+
+      if (!readiness.ready_for_completion && !dto.overrideReadiness && !dto.allowMajorNcWaiver) {
+        throw new BadRequestException("Execution is not ready for completion.");
+      }
+
+      if (dto.allowMajorNcWaiver) {
+        if (!dto.waiverReason || !dto.waiverApprovedBy) {
+          throw new BadRequestException("Executive waiver requires both waiverReason and waiverApprovedBy.");
+        }
+        patch.major_nc_waiver_approved_by = dto.waiverApprovedBy;
+        patch.major_nc_waiver_reason = dto.waiverReason;
+        patch.major_nc_waiver_granted_at = now;
+      }
+
+      patch.major_nc_blockers_count = majorNcBlockers;
+      patch.closure_blocked = false;
       patch.execution_status = "Completed";
       patch.progress_status = "Complete";
       patch.completed_by = user.id;
@@ -772,7 +798,14 @@ export class AuditExecutionService {
 
   async runReadiness(user: RequestUser, executionId: string) {
     const detail = await this.detail(user, executionId);
-    const readiness = this.computeReadiness(detail.execution, detail.items, detail.responses, detail.evidence, detail.findings);
+    const readiness = this.computeReadiness(
+      detail.execution,
+      detail.items,
+      detail.responses,
+      detail.evidence,
+      detail.findings,
+      detail.formalFindings,
+    );
     const saved = await this.db.single<Row>(
       this.db
         .from("audit_execution_readiness_checks")
@@ -798,13 +831,72 @@ export class AuditExecutionService {
         .select()
         .single(),
     );
+
+    // Save closure gate status on audit_executions
+    await this.db
+      .from("audit_executions")
+      .update({
+        major_nc_blockers_count: readiness.major_nc_blockers_count ?? 0,
+        closure_blocked: (readiness.major_nc_blockers_count ?? 0) > 0,
+        closure_blocker_summary_json: readiness.major_nc_blockers ?? [],
+      })
+      .eq("company_id", user.tenantId)
+      .eq("id", executionId);
+
     await this.event(user, detail.execution, "Readiness Checked", "Audit execution readiness checked", null, saved);
-    return saved;
+    return { ...saved, ...readiness };
+  }
+
+  async closureGate(user: RequestUser, executionId: string) {
+    const detail = await this.detail(user, executionId);
+    const readiness = this.computeReadiness(
+      detail.execution,
+      detail.items,
+      detail.responses,
+      detail.evidence,
+      detail.findings,
+      detail.formalFindings,
+    );
+
+    const isWaiverActive = Boolean(
+      detail.execution.major_nc_waiver_approved_by &&
+      detail.execution.major_nc_waiver_reason,
+    );
+
+    return {
+      executionId,
+      executionCode: detail.execution.execution_code,
+      executionTitle: detail.execution.execution_title,
+      executionStatus: detail.execution.execution_status,
+      readinessStatus: readiness.readiness_status,
+      readyForCompletion: readiness.ready_for_completion || isWaiverActive,
+      hardClosureBlocked: (readiness.major_nc_blockers_count ?? 0) > 0 && !isWaiverActive,
+      majorNcBlockersCount: readiness.major_nc_blockers_count ?? 0,
+      majorNcBlockers: readiness.major_nc_blockers ?? [],
+      allMissingItems: readiness.missing_items_json ?? [],
+      warnings: readiness.warnings_json ?? [],
+      waiver: {
+        active: isWaiverActive,
+        approvedBy: detail.execution.major_nc_waiver_approved_by ?? null,
+        reason: detail.execution.major_nc_waiver_reason ?? null,
+        grantedAt: detail.execution.major_nc_waiver_granted_at ?? null,
+      },
+      auditType: detail.execution.audit_type,
+      criticality: detail.execution.criticality,
+      leadAuditorId: detail.execution.lead_auditor_user_id,
+    };
   }
 
   async validate(user: RequestUser, executionId: string) {
     const detail = await this.detail(user, executionId);
-    const readiness = this.computeReadiness(detail.execution, detail.items, detail.responses, detail.evidence, detail.findings);
+    const readiness = this.computeReadiness(
+      detail.execution,
+      detail.items,
+      detail.responses,
+      detail.evidence,
+      detail.findings,
+      detail.formalFindings,
+    );
     const result = {
       validationStatus: readiness.ready_for_completion ? "Pass" : "Blocked",
       errors: readiness.missing_items_json ?? [],
@@ -1075,9 +1167,20 @@ export class AuditExecutionService {
     return patch;
   }
 
-  private computeReadiness(execution: Row, items: Row[], responses: Row[], evidence: Row[], findings: Row[]) {
+  private computeReadiness(execution: Row, items: Row[], responses: Row[], evidence: Row[], findings: Row[], formalFindings: Row[] = []) {
     const missing: string[] = [];
     const warnings: string[] = [];
+    const majorNcBlockers: Array<{
+      id: string;
+      code: string;
+      title: string;
+      type: string;
+      severity: string;
+      issue: string;
+      missingContainment: boolean;
+      missingCapa: boolean;
+    }> = [];
+
     const responseByItem = new Map(responses.map((response) => [response.execution_item_id, response]));
     const mandatory = items.filter((item) => item.required_response);
     const unanswered = mandatory.filter((item) => !responseByItem.has(item.id));
@@ -1096,6 +1199,56 @@ export class AuditExecutionService {
     if (safetyCriticalNegative.length) missing.push(`${safetyCriticalNegative.length} safety-critical non-compliance(s) need field findings.`);
     if (!execution.lead_auditor_user_id) missing.push("Lead auditor is missing.");
     if (findings.some((finding) => finding.immediate_concern && !finding.converted_to_finding_register)) warnings.push("Immediate concern finding has not been converted to finding register/action engine foundation.");
+
+    // Hard Closure Gate for Major Non-Conformances
+    for (const f of findings) {
+      if (f.cancelled_at) continue;
+      const isMajor = /major/i.test(f.finding_type ?? "") || f.criticality === "Critical" || f.immediate_concern || f.stop_work_recommended;
+      if (isMajor) {
+        const isConverted = f.converted_to_finding_register || ["Converted", "Ready For Finding Register"].includes(f.field_finding_status);
+        if (!isConverted) {
+          const issue = `Major Non-Conformance field finding [${f.finding_code || f.finding_title}] must be converted to finding register.`;
+          missing.push(issue);
+          majorNcBlockers.push({
+            id: f.id,
+            code: f.finding_code || "FIELD-NC",
+            title: f.finding_title || "Field Finding",
+            type: f.finding_type || "Major Non-Conformance",
+            severity: f.criticality || "Critical",
+            issue,
+            missingContainment: false,
+            missingCapa: true,
+          });
+        }
+      }
+    }
+
+    for (const ff of formalFindings) {
+      if (ff.cancelled_at || ff.finding_status === "Cancelled" || ff.finding_status === "Closed") continue;
+      const isMajor = /major/i.test(ff.finding_type ?? "") || ff.severity === "Critical" || ff.criticality === "Critical" || ff.safety_critical;
+      if (isMajor) {
+        const isContained = ["Contained", "Verified"].includes(ff.containment_status) || Boolean(ff.is_contained);
+        const hasCapa = Boolean(ff.capa_record_id || ff.capa_id) || ["CAPA Assigned", "Closed"].includes(ff.finding_status);
+        if (!isContained || !hasCapa) {
+          const reasons: string[] = [];
+          if (!isContained) reasons.push("lacks verified immediate containment");
+          if (!hasCapa) reasons.push("requires an active CAPA package");
+          const issue = `Major Non-Conformance [${ff.finding_code || ff.finding_title}]: ${reasons.join(" and ")}.`;
+          missing.push(issue);
+          majorNcBlockers.push({
+            id: ff.id,
+            code: ff.finding_code || "NC",
+            title: ff.finding_title || "Major Finding",
+            type: ff.finding_type || "Major Non-Conformance",
+            severity: ff.severity || ff.criticality || "Critical",
+            issue,
+            missingContainment: !isContained,
+            missingCapa: !hasCapa,
+          });
+        }
+      }
+    }
+
     const blocked = missing.length > 0;
     return {
       readiness_status: blocked ? "Blocked" : warnings.length ? "Warning" : "Ready",
@@ -1109,6 +1262,9 @@ export class AuditExecutionService {
       completion_notes_complete: true,
       ready_for_completion: !blocked,
       ready_for_finding_register: findings.length > 0 && findings.every((finding) => finding.converted_to_finding_register || ["Ready For Finding Register", "Converted"].includes(finding.field_finding_status)),
+      major_nc_blockers_count: majorNcBlockers.length,
+      major_nc_blockers: majorNcBlockers,
+      closure_blocked: majorNcBlockers.length > 0,
       missing_items_json: missing,
       warnings_json: warnings,
     };

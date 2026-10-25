@@ -1,5 +1,11 @@
 import { ImpairmentDetailPage } from '@/features/mechanical-integrity/impairments/ImpairmentDetailPage';
 
-export default function RestoreBypassImpairmentPage({ params }: { params: { impairmentId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function RestoreBypassImpairmentPage(props: { params: Promise<{ impairmentId: string }> }) {
+  const params = await props.params;
   return <ImpairmentDetailPage impairmentId={params.impairmentId} />;
 }

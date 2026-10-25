@@ -7,6 +7,7 @@ import {
 import { RequestUser } from "../common/decorators/current-user.decorator";
 import { SupabaseService } from "../database/supabase.service";
 import { AuditCapaHistoryService } from "./audit-capa-history.service";
+import { AuditCapaActionEngineAdapterService } from "./audit-capa-action-engine-adapter.service";
 import {
   auditableModules,
   criticalityLevels,
@@ -84,6 +85,7 @@ export class AuditCapaService {
   constructor(
     private readonly db: SupabaseService,
     private readonly history: AuditCapaHistoryService,
+    private readonly actionEngineAdapter: AuditCapaActionEngineAdapterService,
   ) {}
 
   lookups() {
@@ -378,6 +380,13 @@ export class AuditCapaService {
     if (!before) throw new NotFoundException("CAPA section record not found.");
     const payload = this.sectionPatch(user, capa, section, dto);
     const after = await this.db.single<Row>(this.db.from(table).update(payload).eq("company_id", user.tenantId).eq("capa_id", capaId).eq("id", rowId).select().single());
+    if (section === "actions") {
+      try {
+        await this.actionEngineAdapter.syncAction(user, capa, after);
+      } catch {
+        // Non-blocking sync
+      }
+    }
     await this.recalculate(user, capaId);
     await this.event(user, capa, `CAPA ${this.title(section)} Updated`, `CAPA ${section} record updated`, before, after);
     return this.detail(user, capaId);
@@ -449,7 +458,17 @@ export class AuditCapaService {
       throw new BadRequestException("Unsupported CAPA action lifecycle.");
     }
     const after = await this.db.single<Row>(this.db.from("audit_capa_actions").update(patch).eq("company_id", user.tenantId).eq("capa_id", capaId).eq("id", actionId).select().single());
-    await this.writeSync(user, capa, after, lifecycle, "Synced Foundation", before, after);
+    try {
+      await this.actionEngineAdapter.syncStatus(
+        user,
+        after.action_engine_id,
+        lifecycle,
+        dto.completionSummary ?? dto.verificationComment ?? dto.reason,
+      );
+    } catch {
+      // Non-blocking sync
+    }
+    await this.writeSync(user, capa, after, lifecycle, after.action_engine_id ? "Synced Action Engine" : "Synced Foundation", before, after);
     await this.recalculate(user, capaId);
     await this.event(user, capa, title, title, before, after);
     return this.detail(user, capaId);
@@ -818,8 +837,17 @@ export class AuditCapaService {
   private async createAction(user: RequestUser, capa: Row, dto: Row) {
     const errors = this.validateAction(dto);
     if (errors.length) throw new BadRequestException(errors.join(" "));
-    const row = await this.db.single<Row>(this.db.from("audit_capa_actions").insert(this.actionPayload(user, capa, dto)).select().single());
-    await this.writeSync(user, capa, row, "Action Created", "Mapped Foundation", null, row);
+    let row = await this.db.single<Row>(this.db.from("audit_capa_actions").insert(this.actionPayload(user, capa, dto)).select().single());
+    try {
+      const synced = await this.actionEngineAdapter.syncAction(user, capa, row);
+      if (synced) {
+        row.action_engine_id = synced.actionEngineId;
+        row.action_number_snapshot = synced.actionNumber;
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+    await this.writeSync(user, capa, row, "Action Created", row.action_engine_id ? "Synced Action Engine" : "Mapped Foundation", null, row);
     return row;
   }
 

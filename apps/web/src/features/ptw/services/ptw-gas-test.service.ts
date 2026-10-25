@@ -37,6 +37,10 @@ export type PermitGasTest = {
   lel?: number | null;
   h2s?: number | null;
   co?: number | null;
+  custom_gas_name?: string | null;
+  custom_gas_value?: number | null;
+  custom_gas_unit?: string | null;
+  custom_gas_threshold?: number | null;
   custom_gases?: Record<string, number>;
   result?: string;
   result_status?: string;

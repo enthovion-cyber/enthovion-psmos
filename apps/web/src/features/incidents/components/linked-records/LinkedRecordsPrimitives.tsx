@@ -33,29 +33,62 @@ export function LinkedRecordHeaderFacts({ header }: { header: any }) {
 
 export function LinkedRecordsTable({ rows, onEdit, onDelete, onRefresh, onImpact, onFollowup }: any) {
   if (!rows?.length) return <p className="text-xs text-slate-500">No linked records yet. Add a link or auto-detect related records from real incident modules.</p>;
+  
+  const getRecordUrl = (row: any) => {
+    if (!row.record_id) return null;
+    if (row.module === 'MOC' || row.record_type?.toLowerCase().includes('change')) return `/moc/${row.record_id}`;
+    if (row.module === 'PTW' || row.record_type?.toLowerCase().includes('permit')) return `/ptw/${row.record_id}`;
+    if (row.module === 'ACTION' || row.module?.toLowerCase().includes('action')) return `/actions?id=${row.record_id}`;
+    if (row.module === 'PHA' || row.module?.toLowerCase().includes('pha') || row.module?.toLowerCase().includes('hazop')) return `/pha/studies/${row.record_id}`;
+    return null;
+  };
+
   return <div className="overflow-x-auto">
     <table className="min-w-[1500px] text-left text-xs">
       <thead className="text-[11px] uppercase text-slate-500"><tr>{['Link', 'Module / Type', 'Record', 'Relationship', 'Source / Generated', 'Status', 'Impact', 'Owner / Due', 'Restricted', 'Linked / Refreshed', 'Actions'].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead>
-      <tbody>{rows.map((row: any) => <tr key={row.id} className="border-t border-slate-200 align-top dark:border-cyan-300/10">
-        <td className="p-2 font-bold">{row.link_number}</td>
-        <td className="p-2"><div>{row.module}</div><LinkedRecordTypeBadge value={row.record_type} /></td>
-        <td className="p-2"><b>{row.record_number_snapshot ?? row.record_id ?? '-'}</b><p className="max-w-[260px] text-slate-500">{row.record_title_snapshot}</p></td>
-        <td className="p-2"><RelationshipBadge value={row.relationship} /></td>
-        <td className="p-2">{row.source_generated_type}</td>
-        <td className="p-2"><LinkedRecordStatusBadge value={row.link_status} /></td>
-        <td className="p-2"><RecordImpactBadge value={row.impact_status} />{row.update_required ? <div className="mt-1 text-amber-600">Update required</div> : null}</td>
-        <td className="p-2">{row.owner_id ?? '-'}<div className="text-slate-500">{row.due_date ?? '-'}</div></td>
-        <td className="p-2">{row.restricted ? 'Yes' : 'No'}</td>
-        <td className="p-2">{formatDate(row.linked_at)}<div className="text-slate-500">{formatDate(row.last_refreshed_at)}</div></td>
-        <td className="p-2"><div className="flex min-w-[260px] flex-wrap gap-1">
-          <button className={buttonSecondary} onClick={() => row.record_id ? window.alert(`Open record ${row.record_id}`) : undefined}>Open</button>
-          <button className={buttonSecondary} onClick={() => onEdit?.(row)}>Edit</button>
-          <button className={buttonSecondary} onClick={() => onRefresh?.(row)}>Refresh</button>
-          <button className={buttonSecondary} onClick={() => onImpact?.(row)}>Impact</button>
-          <button className={buttonSecondary} onClick={() => onFollowup?.(row)}>Action</button>
-          <button className={buttonSecondary} onClick={() => onDelete?.(row)}>Unlink</button>
-        </div></td>
-      </tr>)}</tbody>
+      <tbody>{rows.map((row: any) => {
+        const recordUrl = getRecordUrl(row);
+        return <tr key={row.id} className="border-t border-slate-200 align-top dark:border-cyan-300/10">
+          <td className="p-2 font-bold">{row.link_number}</td>
+          <td className="p-2">
+            <div className="font-semibold">{row.module}</div>
+            <LinkedRecordTypeBadge value={row.record_type} />
+          </td>
+          <td className="p-2">
+            {recordUrl ? (
+              <a
+                href={recordUrl}
+                className="font-bold text-blue-600 hover:underline dark:text-blue-400 inline-flex items-center gap-1"
+                title={`Open linked record in ${row.module}`}
+              >
+                {row.record_number_snapshot ?? row.record_id ?? '-'} ↗
+              </a>
+            ) : (
+              <b>{row.record_number_snapshot ?? row.record_id ?? '-'}</b>
+            )}
+            <p className="max-w-[260px] text-slate-500">{row.record_title_snapshot}</p>
+          </td>
+          <td className="p-2"><RelationshipBadge value={row.relationship} /></td>
+          <td className="p-2">{row.source_generated_type}</td>
+          <td className="p-2"><LinkedRecordStatusBadge value={row.link_status} /></td>
+          <td className="p-2"><RecordImpactBadge value={row.impact_status} />{row.update_required ? <div className="mt-1 text-amber-600">Update required</div> : null}</td>
+          <td className="p-2">{row.owner_id ?? '-'}<div className="text-slate-500">{row.due_date ?? '-'}</div></td>
+          <td className="p-2">{row.restricted ? 'Yes' : 'No'}</td>
+          <td className="p-2">{formatDate(row.linked_at)}<div className="text-slate-500">{formatDate(row.last_refreshed_at)}</div></td>
+          <td className="p-2"><div className="flex min-w-[260px] flex-wrap gap-1">
+            {recordUrl ? (
+              <a href={recordUrl} className={buttonSecondary}>Open</a>
+            ) : (
+              <button className={buttonSecondary} onClick={() => row.record_id ? window.alert(`Record ID: ${row.record_id}`) : undefined}>Open</button>
+            )}
+            <button className={buttonSecondary} onClick={() => onEdit?.(row)}>Edit</button>
+            <button className={buttonSecondary} onClick={() => onRefresh?.(row)}>Refresh</button>
+            <button className={buttonSecondary} onClick={() => onImpact?.(row)}>Impact</button>
+            <button className={buttonSecondary} onClick={() => onFollowup?.(row)}>Action</button>
+            <button className={buttonSecondary} onClick={() => onDelete?.(row)}>Unlink</button>
+          </div></td>
+        </tr>;
+      })}</tbody>
     </table>
   </div>;
 }

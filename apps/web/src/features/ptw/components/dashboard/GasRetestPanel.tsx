@@ -18,42 +18,37 @@ export function GasRetestPanel({ data }: GasRetestPanelProps) {
       h2s?: number | null;
       co?: number | null;
       result?: string;
-    }
+    };
   }>;
 
-  // Extract the most current active reading payload directly from real data arrays
   const latestRecord = useMemo(() => latest.find((item) => item.latest), [latest]);
   const latestGas = latestRecord?.latest;
 
-  // Real data state checking with clear explicit null/undefined guards
   const o2 = latestGas?.o2;
   const lel = latestGas?.lel;
   const h2s = latestGas?.h2s;
   const co = latestGas?.co;
 
-  // Evaluate dynamic safety thresholds against real live data variables
   const isO2Safe = o2 !== undefined && o2 !== null ? (o2 >= 19.5 && o2 <= 23.5) : null;
   const isLelSafe = lel !== undefined && lel !== null ? (lel < 10) : null;
   const isH2sSafe = h2s !== undefined && h2s !== null ? (h2s < 1) : null;
   const isCoSafe = co !== undefined && co !== null ? (co < 25) : null;
 
-  // Select the highest priority expiring permit from the real active operational queue
   const primaryPermit = useMemo(() => {
     const combined = [...overdue, ...dueSoon];
     return combined.length > 0 ? combined[0] : null;
   }, [dueSoon, overdue]);
 
   return (
-    <section className="w-full max-w-md rounded-xl border border-slate-800/80 bg-[#070f1e] p-5 shadow-2xl select-none">
-      
+    <section className="w-full rounded-xl border border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1829] p-3.5 sm:p-4 shadow-xs dark:shadow-xl select-none transition-all">
       {/* Header Container */}
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          Gas Test Status <span className="text-xs text-slate-400 lowercase font-normal">(Latest)</span>
+      <div className="mb-2.5 flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          Gas Test Status <span className="text-[10px] text-slate-400 dark:text-slate-500 lowercase font-normal">(latest)</span>
         </h3>
-        <a 
-          href="/ptw?gasRetestDue=true" 
-          className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-0.5"
+        <a
+          href="/ptw?gasRetestDue=true"
+          className="text-xs font-bold text-primary dark:text-sky-400 hover:underline transition-colors flex items-center gap-0.5"
         >
           View all →
         </a>
@@ -61,97 +56,62 @@ export function GasRetestPanel({ data }: GasRetestPanelProps) {
 
       {/* Gas Matrix Dynamic Row Grid */}
       <div className="space-y-2">
-        
         {/* Oxygen (O2) */}
-        <div className="flex items-center justify-between rounded-lg border border-slate-800/60 bg-slate-900/20 px-4 py-2.5 transition-all hover:bg-slate-900/40">
-          <div className="w-16 font-semibold text-slate-300 text-sm">O₂</div>
-          <div className={`text-sm font-bold tracking-wide w-20 text-left ${isO2Safe === null ? 'text-slate-500' : isO2Safe ? 'text-emerald-400' : 'text-red-400'}`}>
-            {o2 !== undefined && o2 !== null ? `${o2.toFixed(1)} %` : '-- %'}
-          </div>
-          <div className="text-xs text-slate-500 font-medium w-24 text-left">19.5 - 23.5</div>
-          <span className={`text-[11px] font-black px-2 py-0.5 rounded tracking-wider border ${
-            isO2Safe === null ? 'bg-slate-800/20 border-slate-700/30 text-slate-500' :
-            isO2Safe ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            {isO2Safe === null ? 'N/A' : isO2Safe ? 'PASS' : 'FAIL'}
-          </span>
-        </div>
-
-        {/* LEL (Explosives) */}
-        <div className="flex items-center justify-between rounded-lg border border-slate-800/60 bg-slate-900/20 px-4 py-2.5 transition-all hover:bg-slate-900/40">
-          <div className="w-16 font-semibold text-slate-300 text-sm">LEL</div>
-          <div className={`text-sm font-bold tracking-wide w-20 text-left ${isLelSafe === null ? 'text-slate-500' : isLelSafe ? 'text-emerald-400' : 'text-red-400'}`}>
-            {lel !== undefined && lel !== null ? `${lel} %` : '-- %'}
-          </div>
-          <div className="text-xs text-slate-500 font-medium w-24 text-left">&lt; 10 %</div>
-          <span className={`text-[11px] font-black px-2 py-0.5 rounded tracking-wider border ${
-            isLelSafe === null ? 'bg-slate-800/20 border-slate-700/30 text-slate-500' :
-            isLelSafe ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            {isLelSafe === null ? 'N/A' : isLelSafe ? 'PASS' : 'FAIL'}
-          </span>
-        </div>
-
-        {/* H2S (Hydrogen Sulfide) */}
-        <div className="flex items-center justify-between rounded-lg border border-slate-800/60 bg-slate-900/20 px-4 py-2.5 transition-all hover:bg-slate-900/40">
-          <div className="w-16 font-semibold text-slate-300 text-sm">H₂S</div>
-          <div className={`text-sm font-bold tracking-wide w-20 text-left ${isH2sSafe === null ? 'text-slate-500' : isH2sSafe ? 'text-emerald-400' : 'text-red-400'}`}>
-            {h2s !== undefined && h2s !== null ? `${h2s} ppm` : '-- ppm'}
-          </div>
-          <div className="text-xs text-slate-500 font-medium w-24 text-left">&lt; 1 ppm</div>
-          <span className={`text-[11px] font-black px-2 py-0.5 rounded tracking-wider border ${
-            isH2sSafe === null ? 'bg-slate-800/20 border-slate-700/30 text-slate-500' :
-            isH2sSafe ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            {isH2sSafe === null ? 'N/A' : isH2sSafe ? 'PASS' : 'FAIL'}
-          </span>
-        </div>
-
-        {/* CO (Carbon Monoxide) */}
-        <div className="flex items-center justify-between rounded-lg border border-slate-800/60 bg-slate-900/20 px-4 py-2.5 transition-all hover:bg-slate-900/40">
-          <div className="w-16 font-semibold text-slate-300 text-sm">CO</div>
-          <div className={`text-sm font-bold tracking-wide w-20 text-left ${isCoSafe === null ? 'text-slate-500' : isCoSafe ? 'text-emerald-400' : 'text-red-400'}`}>
-            {co !== undefined && co !== null ? `${co} ppm` : '-- ppm'}
-          </div>
-          <div className="text-xs text-slate-500 font-medium w-24 text-left">&lt; 25 ppm</div>
-          <span className={`text-[11px] font-black px-2 py-0.5 rounded tracking-wider border ${
-            isCoSafe === null ? 'bg-slate-800/20 border-slate-700/30 text-slate-500' :
-            isCoSafe ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            {isCoSafe === null ? 'N/A' : isCoSafe ? 'PASS' : 'FAIL'}
-          </span>
-        </div>
-
+        <GasRow label="O₂" value={o2 !== undefined && o2 !== null ? `${o2.toFixed(1)} %` : '-- %'} range="19.5 - 23.5" isSafe={isO2Safe} />
+        {/* LEL */}
+        <GasRow label="LEL" value={lel !== undefined && lel !== null ? `${lel} %` : '-- %'} range="< 10 %" isSafe={isLelSafe} />
+        {/* H2S */}
+        <GasRow label="H₂S" value={h2s !== undefined && h2s !== null ? `${h2s} ppm` : '-- ppm'} range="< 1 ppm" isSafe={isH2sSafe} />
+        {/* CO */}
+        <GasRow label="CO" value={co !== undefined && co !== null ? `${co} ppm` : '-- ppm'} range="< 25 ppm" isSafe={isCoSafe} />
       </div>
 
       {/* Footer Live Meta Tracker Tracking Row */}
-      <div className="mt-4 pt-3 border-t border-slate-800/50 flex flex-col space-y-1 text-xs">
+      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/50 flex flex-col space-y-1 text-xs">
         {latestRecord?.tested_at ? (
-          <div className="text-slate-400 font-medium flex items-center gap-1.5">
-            <CheckCircle2 size={13} className="text-emerald-500" />
-            Last Test: <span className="text-slate-300 font-semibold">{latestRecord.tested_at}</span>
+          <div className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5 truncate">
+            <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+            <span>Last Test: <strong className="text-slate-900 dark:text-slate-300 font-semibold">{latestRecord.tested_at}</strong></span>
             {latestRecord?.tester_name && (
-              <span className="text-slate-500">({latestRecord.tester_name})</span>
+              <span className="text-slate-400 truncate">({latestRecord.tester_name})</span>
             )}
           </div>
         ) : (
-          <div className="text-slate-500 font-medium flex items-center gap-1.5">
-            <CheckCircle2 size={13} className="text-slate-600" />
+          <div className="text-slate-400 font-medium flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-slate-400" />
             No baseline gas tests submitted yet.
           </div>
         )}
-        
-        {/* Dynamic Real Data Ticker Engine */}
-        <LiveGasCountdown permit={primaryPermit} isOverdue={overdue.length > 0} />
-      </div>
 
+        <LiveGasCountdown permit={primaryPermit ?? null} isOverdue={overdue.length > 0} />
+      </div>
     </section>
   );
 }
 
-/**
- * Isolated Real-Time Target Expiry Countdown Sub-Component (Pure Production Real-Data Driven)
- */
+function GasRow({ label, value, range, isSafe }: { label: string; value: string; range: string; isSafe: boolean | null }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/20 px-3.5 py-2 transition-all hover:bg-slate-100 dark:hover:bg-slate-900/40 text-xs">
+      <div className="w-12 font-bold text-slate-800 dark:text-slate-200">{label}</div>
+      <div className={`font-mono font-bold tracking-wide w-20 text-left ${isSafe === null ? 'text-slate-400' : isSafe ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+        {value}
+      </div>
+      <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono w-24 text-left">{range}</div>
+      <span
+        className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wider border shrink-0 ${
+          isSafe === null
+            ? 'bg-slate-100 dark:bg-slate-800/20 border-slate-200 dark:border-slate-700/30 text-slate-500'
+            : isSafe
+              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+              : 'bg-red-50 dark:bg-red-500/10 border-red-300 dark:border-red-500/20 text-red-800 dark:text-red-300'
+        }`}
+      >
+        {isSafe === null ? 'N/A' : isSafe ? 'PASS' : 'FAIL'}
+      </span>
+    </div>
+  );
+}
+
 function LiveGasCountdown({ permit, isOverdue }: { permit: Permit | null; isOverdue: boolean }) {
   const [displayString, setDisplayString] = useState('--:--');
   const [isAlert, setIsAlert] = useState(isOverdue);
@@ -165,7 +125,7 @@ function LiveGasCountdown({ permit, isOverdue }: { permit: Permit | null; isOver
 
     const firstGasTest = permit.gasTests?.[0];
     const rawTargetTime = firstGasTest?.next_test_due_at ?? firstGasTest?.next_retest_due_at;
-    
+
     if (!rawTargetTime) {
       setDisplayString('Pending schedule assignment');
       setIsAlert(false);
@@ -175,11 +135,11 @@ function LiveGasCountdown({ permit, isOverdue }: { permit: Permit | null; isOver
     const tick = () => {
       const targetMs = new Date(rawTargetTime).getTime();
       const diff = targetMs - Date.now();
-      
-      const timeLabel = new Date(rawTargetTime).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: false 
+
+      const timeLabel = new Date(rawTargetTime).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
       });
 
       if (diff <= 0) {
@@ -193,19 +153,19 @@ function LiveGasCountdown({ permit, isOverdue }: { permit: Permit | null; isOver
       const hours = Math.floor(totalMinutes / 60);
       const minutes = totalMinutes % 60;
 
-      const durationString = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m remaining`;
+      const durationString = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m left`;
       setDisplayString(`${timeLabel} (${durationString})`);
     };
 
     tick();
-    const intervalId = setInterval(tick, 30000); 
+    const intervalId = setInterval(tick, 30000);
     return () => clearInterval(intervalId);
   }, [permit, isOverdue]);
 
   return (
-    <div className={`font-medium flex items-center gap-1.5 mt-0.5 ${isAlert ? 'text-red-400' : 'text-amber-500'}`}>
-      {isAlert ? <AlertTriangle size={13} className="animate-pulse" /> : <Clock size={13} />}
-      <span>Next Test Due:</span>
+    <div className={`font-semibold flex items-center gap-1.5 mt-0.5 text-xs ${isAlert ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+      {isAlert ? <AlertTriangle size={13} className="animate-pulse shrink-0" /> : <Clock size={13} className="shrink-0" />}
+      <span>Next Test:</span>
       <span className="font-bold tracking-wide font-mono">{displayString}</span>
     </div>
   );

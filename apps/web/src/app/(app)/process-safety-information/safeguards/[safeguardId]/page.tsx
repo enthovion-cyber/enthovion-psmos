@@ -1,2 +1,11 @@
 import { SafeguardDetailPage } from '@/features/psi/safeguards/SafeguardDetailPage';
-export default function SafeguardDetailRoute({ params }: { params: { safeguardId: string } }) { return <SafeguardDetailPage safeguardId={params.safeguardId} />; }
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function SafeguardDetailRoute(props: { params: Promise<{ safeguardId: string }> }) {
+  const params = await props.params;
+  return <SafeguardDetailPage safeguardId={params.safeguardId} />;
+}

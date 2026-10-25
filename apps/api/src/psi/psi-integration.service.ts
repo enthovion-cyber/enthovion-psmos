@@ -326,6 +326,252 @@ export class PsiIntegrationService {
     return row;
   }
 
+  async lockPsiRecordsForMoc(tenantId: string, actorId: string, scope: Scope, mocId: string, mocData?: Row) {
+    const moc = mocData ?? await this.sourceRecord('moc', tenantId, mocId);
+    if (!moc) return null;
+
+    const unitId = moc.unit_id ?? moc.unitId;
+    const siteId = moc.site_id ?? moc.siteId ?? this.selectedSite(scope);
+
+    const affectedEquipment = await this.safeMany<Row>(
+      this.db.from('moc_affected_equipment').select('equipment_id, role').eq('tenant_id', tenantId).eq('moc_id', mocId)
+    );
+    const equipmentIds = affectedEquipment.map((e) => e.equipment_id).filter(Boolean);
+
+    const affectedDocs = await this.safeMany<Row>(
+      this.db.from('moc_engineering_documents').select('id, document_id, controlled_document_id').eq('tenant_id', tenantId).eq('moc_id', mocId)
+    );
+    const docIds = affectedDocs.map((d) => d.controlled_document_id ?? d.document_id).filter(Boolean);
+
+    let lockedCount = 0;
+
+    if (equipmentIds.length > 0) {
+      const updatedDesign = await this.safeMany<Row>(
+        this.db.from('psi_equipment_design_basis')
+          .update({
+            moc_update_required: true,
+            pssr_blocker: true,
+            status: 'Pending MOC Change',
+            notes: `[LOCKED] Under active modification by MOC ${moc.moc_number ?? mocId}: ${moc.title ?? ''}`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('company_id', tenantId)
+          .in('equipment_id', equipmentIds)
+          .select('id')
+      );
+      lockedCount += updatedDesign.length;
+
+      await this.db.from('psi_relief_systems')
+        .update({
+          moc_update_required: true,
+          pssr_blocker: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('company_id', tenantId)
+        .in('protected_equipment_id', equipmentIds);
+    }
+
+    if (unitId) {
+      const updatedSols = await this.safeMany<Row>(
+        this.db.from('psi_safe_operating_limits')
+          .update({
+            moc_update_required: true,
+            pssr_blocker: true,
+            status: 'Pending MOC Change',
+            updated_at: new Date().toISOString()
+          })
+          .eq('company_id', tenantId)
+          .eq('unit_id', unitId)
+          .select('id')
+      );
+      lockedCount += updatedSols.length;
+    }
+
+    if (docIds.length > 0) {
+      const updatedDrawings = await this.safeMany<Row>(
+        this.db.from('psi_drawings')
+          .update({
+            redline_status: 'Redlined - Pending MOC',
+            moc_required: true,
+            pssr_blocker: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('company_id', tenantId)
+          .in('controlled_document_id', docIds)
+          .select('id')
+      );
+      lockedCount += updatedDrawings.length;
+    }
+
+    await this.runMocImpact(tenantId, actorId, scope, mocId, moc);
+
+    const link = await this.ensureLink(tenantId, actorId, {
+      site_id: siteId,
+      unit_id: unitId,
+      integration_title: `MOC Active Change - ${moc.moc_number ?? mocId}`,
+      integration_type: 'MOC Required PSI Update',
+      source_module: 'MOC',
+      source_record_id: mocId,
+      source_record_title: moc.title ?? 'MOC',
+      relationship_type: 'Changed by MOC',
+      impact_type: 'Design basis impact',
+      impact_severity: 'Critical',
+      integration_status: 'Blocked',
+      sync_status: 'Out of Sync',
+      blocking_status: 'Blocking',
+      required_update: `PSI records locked for MOC ${moc.moc_number ?? mocId}. Technical baseline pending PSSR verification.`
+    });
+
+    await this.writeHistory(
+      tenantId,
+      actorId,
+      'psi.integration.moc.locked',
+      { site_id: siteId, unit_id: unitId, moc_id: mocId, integration_link_id: link.id },
+      null,
+      { lockedRecords: lockedCount, mocNumber: moc.moc_number },
+      `PSI technical baseline records locked for MOC ${moc.moc_number ?? mocId}`,
+      `${lockedCount} PSI record(s) flagged as Pending MOC Change and PSSR Blocker.`
+    );
+
+    return { mocId, lockedRecords: lockedCount, linkId: link.id };
+  }
+
+  async applyMocBaselineUpdate(tenantId: string, actorId: string, scope: Scope, mocId: string, dto?: Row) {
+    const moc = dto ?? await this.sourceRecord('moc', tenantId, mocId);
+    const unitId = moc?.unit_id ?? moc?.unitId;
+    const siteId = moc?.site_id ?? moc?.siteId ?? this.selectedSite(scope);
+
+    const [affectedEquipment, affectedDocs] = await Promise.all([
+      this.safeMany<Row>(this.db.from('moc_affected_equipment').select('equipment_id').eq('tenant_id', tenantId).eq('moc_id', mocId)),
+      this.safeMany<Row>(this.db.from('moc_engineering_documents').select('*').eq('tenant_id', tenantId).eq('moc_id', mocId))
+    ]);
+
+    const equipmentIds = affectedEquipment.map((e) => e.equipment_id).filter(Boolean);
+    const docIds = affectedDocs.map((d) => d.controlled_document_id ?? d.document_id).filter(Boolean);
+
+    let promotedDrawings = 0;
+    let promotedDesignBasis = 0;
+
+    if (docIds.length > 0) {
+      const updatedDrawings = await this.safeMany<Row>(
+        this.db.from('psi_drawings')
+          .update({
+            redline_status: 'Promoted to Baseline',
+            as_built_status: 'As-Built Verified',
+            moc_required: false,
+            pssr_blocker: false,
+            status: 'Approved',
+            as_built_verified_at: new Date().toISOString(),
+            as_built_verified_by: actorId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('company_id', tenantId)
+          .in('controlled_document_id', docIds)
+          .select('id')
+      );
+      promotedDrawings = updatedDrawings.length;
+    }
+
+    if (equipmentIds.length > 0) {
+      const updatedDesign = await this.safeMany<Row>(
+        this.db.from('psi_equipment_design_basis')
+          .update({
+            status: 'Approved',
+            moc_update_required: false,
+            pssr_blocker: false,
+            conflict_status: 'No Conflict',
+            review_status: 'Reviewed / Active',
+            last_review_date: new Date().toISOString().slice(0, 10),
+            notes: `Baseline updated and promoted from closed MOC ${moc?.moc_number ?? mocId}`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('company_id', tenantId)
+          .in('equipment_id', equipmentIds)
+          .select('id')
+      );
+      promotedDesignBasis = updatedDesign.length;
+
+      await this.db.from('mi_equipment')
+        .update({
+          status: 'In Service',
+          updated_at: new Date().toISOString()
+        })
+        .eq('company_id', tenantId)
+        .in('id', equipmentIds);
+
+      await this.db.from('psi_relief_systems')
+        .update({
+          status: 'Approved',
+          moc_update_required: false,
+          pssr_blocker: false,
+          conflict_status: 'No Conflict',
+          review_status: 'Reviewed / Active',
+          last_review_date: new Date().toISOString().slice(0, 10),
+          updated_at: new Date().toISOString()
+        })
+        .eq('company_id', tenantId)
+        .in('protected_equipment_id', equipmentIds);
+    }
+
+    if (unitId) {
+      await this.db.from('psi_safe_operating_limits')
+        .update({
+          status: 'Approved',
+          moc_update_required: false,
+          pssr_blocker: false,
+          conflict_status: 'No Conflict',
+          review_status: 'Reviewed / Active',
+          last_review_date: new Date().toISOString().slice(0, 10),
+          updated_at: new Date().toISOString()
+        })
+        .eq('company_id', tenantId)
+        .eq('unit_id', unitId);
+    }
+
+    await this.db.from('psi_moc_impact_assessments')
+      .update({
+        assessment_status: 'PSI Approved',
+        closure_blocked: false,
+        psi_update_required: false,
+        impact_summary: `MOC baseline changes successfully promoted into active PSI technical baseline on ${new Date().toISOString().slice(0, 10)}.`,
+        updated_at: new Date().toISOString()
+      })
+      .eq('company_id', tenantId)
+      .eq('moc_id', mocId);
+
+    await this.db.from('psi_integration_links')
+      .update({
+        integration_status: 'Closed',
+        sync_status: 'In Sync',
+        blocking_status: 'Not Blocking',
+        closed_at: new Date().toISOString(),
+        closed_by: actorId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('company_id', tenantId)
+      .eq('source_module', 'MOC')
+      .eq('source_record_id', mocId);
+
+    await this.writeHistory(
+      tenantId,
+      actorId,
+      'psi.integration.moc.baseline_promoted',
+      { site_id: siteId, unit_id: unitId, moc_id: mocId },
+      null,
+      { promotedDrawings, promotedDesignBasis, mocNumber: moc?.moc_number },
+      `MOC ${moc?.moc_number ?? mocId} technical baseline promoted into PSI`,
+      `Promoted ${promotedDrawings} drawing revision(s) and ${promotedDesignBasis} equipment design basis record(s).`
+    );
+
+    return {
+      mocId,
+      status: 'Promoted',
+      promotedDrawings,
+      promotedDesignBasis,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
   pssrOverview(tenantId: string, scope: Scope, query: Row = {}) {
     return this.safeMany<Row>(this.applyScope(this.db.from('psi_pssr_readiness_checks').select('*').eq('company_id', tenantId), scope).order('updated_at', { ascending: false }).limit(Math.min(100, Number(query.limit ?? 50))));
   }

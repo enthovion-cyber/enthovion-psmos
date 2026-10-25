@@ -64,7 +64,7 @@ const toneClasses: Record<string, { border: string; text: string; bg: string; gl
 };
 
 interface MOCKpiCardsProps {
-  kpis?: Array<Record<string, any>>;
+  kpis?: Array<Record<string, any>> | undefined;
 }
 
 export function MOCKpiCards({ kpis = [] }: MOCKpiCardsProps) {
@@ -78,7 +78,12 @@ export function MOCKpiCards({ kpis = [] }: MOCKpiCardsProps) {
       {cards.map(([key, label, tone, Icon, fallbackFilter]) => {
         const row: any = byId[key] ?? {};
         const activeTone = row.tone ?? tone;
-        const config = toneClasses[activeTone] || toneClasses.blue;
+        const config: { border: string; glow: string; text: string; bg: string } = (toneClasses as Record<string, { border: string; glow: string; text: string; bg: string }>)[activeTone] ?? {
+          border: 'border-sky-500/20 hover:border-sky-500/40',
+          glow: 'group-hover:bg-sky-500/5',
+          text: 'text-sky-400',
+          bg: 'bg-sky-500/[0.01]'
+        };
 
         return (
           <button
@@ -98,8 +103,8 @@ export function MOCKpiCards({ kpis = [] }: MOCKpiCardsProps) {
               duration-200 
               focus:outline-none 
               focus:ring-1 
-              focus:ring-slate-800
-              bg-slate-950
+              focus:ring-[var(--psm-line,#334155)]
+              bg-[var(--psm-surface,#0b1329)]
               w-full
               h-auto
               ${config.border}
@@ -114,14 +119,14 @@ export function MOCKpiCards({ kpis = [] }: MOCKpiCardsProps) {
               
               {/* Top Meta Line */}
               <div className="flex w-full items-start justify-between gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 line-clamp-1 group-hover:text-slate-300 transition-colors">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--psm-muted,#94a3b8)] line-clamp-1 group-hover:text-[var(--psm-fg,#f8fafc)] transition-colors">
                   {row.label ?? label}
                 </span>
-                <Icon className="text-slate-500 shrink-0 opacity-70 group-hover:opacity-100 group-hover:text-slate-400 transition-all duration-200" size={14} />
+                <Icon className="text-[var(--psm-muted,#94a3b8)] shrink-0 opacity-70 group-hover:opacity-100 group-hover:text-[var(--psm-fg,#f8fafc)] transition-all duration-200" size={14} />
               </div>
 
               {/* Data Metric Value */}
-              <div className="text-2xl font-black text-white leading-none tracking-tight my-1">
+              <div className="text-2xl font-black text-[var(--psm-fg,#f8fafc)] leading-none tracking-tight my-1">
                 {Number(row.count ?? 0).toLocaleString()}
               </div>
 

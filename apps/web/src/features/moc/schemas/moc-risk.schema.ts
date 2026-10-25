@@ -35,7 +35,7 @@ export const mocRiskSchema = z.object({
 }).superRefine((value, ctx) => {
   const total = value.safetyScore + value.environmentalScore + value.productionScore;
   const requireText = (field: string, message: string) => {
-    if (!String(value[field] ?? '').trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+    if (!String((value as Record<string, any>)[field] ?? '').trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
   };
   if (value.safetyScore > 0) requireText('safetyRationale', 'Safety rationale is required.');
   if (value.environmentalScore > 0) requireText('environmentalRationale', 'Environmental rationale is required.');

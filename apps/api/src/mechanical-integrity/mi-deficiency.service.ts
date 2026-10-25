@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ActionsService } from '../actions/actions.service';
 import { AuditService } from '../audit/audit.service';
 import { RequestUser } from '../common/decorators/current-user.decorator';
 import { JsonValue } from '../common/types/db.types';
 import { SupabaseService } from '../database/supabase.service';
 import { EquipmentService } from '../equipment/equipment.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type Query = Record<string, string | undefined>;
 
@@ -21,7 +23,9 @@ export class MiDeficiencyService {
   constructor(
     private readonly db: SupabaseService,
     private readonly equipment: EquipmentService,
-    private readonly audit: AuditService
+    private readonly audit: AuditService,
+    private readonly actions: ActionsService,
+    private readonly notifications: NotificationsService
   ) {}
 
   async listDeficiencies(user: RequestUser, query: Query) {
@@ -101,6 +105,26 @@ export class MiDeficiencyService {
     await this.upsertTemporaryControl(user, row, body).catch(() => null);
     await this.updateEquipmentDeficiencyImpact(user, row.equipment_id).catch(() => null);
     await this.writeEvent(user, row, 'Created', 'Deficiency created', null, row);
+    if (row.severity === 'Critical' || row.safety_critical || body.createAction) {
+      try {
+        await this.actions.create(user.tenantId, user.id, {
+          title: `MI Barrier Deficiency: ${row.title ?? row.deficiency_number}`,
+          description: `Deficiency logged against equipment ${row.equipment_tag || row.equipment_id}. Severity: ${row.severity}. Deficiency type: ${row.deficiency_type}. Immediate barrier assurance action required.`,
+          priority: 'SAFETY_CRITICAL',
+          sourceModule: 'MECHANICAL_INTEGRITY',
+          sourceRecordId: row.id,
+          sourceType: 'MI_DEFICIENCY',
+          equipmentId: row.equipment_id,
+          siteId: row.site_id,
+          ownerId: row.assigned_to_user_id ?? row.owner_id ?? user.id,
+          dueDate: row.due_date || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+          evidenceRequired: true,
+          verificationRequired: true,
+        });
+      } catch {
+        // non-blocking
+      }
+    }
     return this.deficiencyDetail(user, row.id);
   }
 
@@ -230,6 +254,7 @@ export class MiDeficiencyService {
 
   async approveDeviation(user: RequestUser, id: string, body: Record<string, any>) {
     const before = await this.getDeviation(user, id);
+    await this.assertApprovedMocIfRequired(user, id, before, body);
     await this.addApproval(user, null, before, body, 'Approved');
     const row = await this.patchDeviation(user, before, 'Active', { approved_by: user.id, approved_at: new Date().toISOString() });
     await this.writeEvent(user, row, 'Approved', 'Deviation approved', before, row, true);
@@ -267,6 +292,7 @@ export class MiDeficiencyService {
 
   async approveDeviationExtension(user: RequestUser, id: string, body: Record<string, any>) {
     const before = await this.getDeviation(user, id);
+    await this.assertApprovedMocIfRequired(user, id, before, body);
     const now = new Date().toISOString();
     const row = await this.patchDeviation(user, before, 'Extension Approved', {
       expiry_date: body.expiryDate ?? body.expiry_date ?? before.expiry_date,
@@ -319,6 +345,51 @@ export class MiDeficiencyService {
     if (!before) throw new NotFoundException('Linked record not found.');
     await this.db.single<any>(this.db.from('mi_deficiency_linked_records').delete().eq('id', linkId).select('id').single());
     await this.writeEvent(user, deficiency, 'Unlinked', 'Linked record removed', before, null);
+    return { ok: true };
+  }
+
+  async addDeviationLinkedRecord(user: RequestUser, id: string, body: Record<string, any>) {
+    const deviation = await this.getDeviation(user, id);
+    if (!(body.linkedModule ?? body.linked_module) || !(body.linkedRecordId ?? body.linked_record_id)) {
+      throw new BadRequestException('Linked module and record ID are required.');
+    }
+    const module = body.linkedModule ?? body.linked_module;
+    const recordId = body.linkedRecordId ?? body.linked_record_id;
+    let statusSnapshot = body.statusSnapshot ?? body.status_snapshot ?? null;
+    let recordNumber = body.linkedRecordNumber ?? body.linked_record_number ?? null;
+
+    if (/moc/i.test(module)) {
+      const moc = await this.db.single<any>(
+        this.db.from('mocs').select('id, moc_number, status, title').eq('id', recordId).eq('company_id', user.tenantId).maybeSingle()
+      ).catch(() => null);
+      if (moc) {
+        statusSnapshot = moc.status;
+        recordNumber = moc.moc_number;
+      }
+    }
+
+    const row = await this.db.single<any>(this.db.from('mi_deficiency_linked_records').insert({
+      company_id: deviation.company_id,
+      site_id: deviation.site_id,
+      deviation_id: id,
+      linked_module: module,
+      linked_record_id: recordId,
+      linked_record_number: recordNumber,
+      relationship_type: body.relationshipType ?? body.relationship_type ?? 'Reference',
+      required_for_close: body.requiredForClose ?? body.required_for_close ?? false,
+      status_snapshot: statusSnapshot,
+      created_by: user.id
+    }).select().single());
+    await this.writeEvent(user, deviation, 'Linked', 'Linked record added to deviation', null, row, true);
+    return row;
+  }
+
+  async removeDeviationLinkedRecord(user: RequestUser, id: string, linkId: string) {
+    const deviation = await this.getDeviation(user, id);
+    const before = await this.db.single<any>(this.db.from('mi_deficiency_linked_records').select('*').eq('id', linkId).eq('deviation_id', id).maybeSingle());
+    if (!before) throw new NotFoundException('Linked record not found.');
+    await this.db.single<any>(this.db.from('mi_deficiency_linked_records').delete().eq('id', linkId).select('id').single());
+    await this.writeEvent(user, deviation, 'Unlinked', 'Linked record removed from deviation', before, null, true);
     return { ok: true };
   }
 
@@ -518,11 +589,70 @@ export class MiDeficiencyService {
   private deviationReadiness(row: any, linkedRecords: any[]) {
     const blockers: string[] = [];
     const warnings: string[] = [];
+    const isIntervalExtension = /interval extension|deferral|extension/i.test(row.deviation_type ?? '');
+    const hasApprovedMoc = linkedRecords.some(
+      (item) => /moc/i.test(item.linked_module) && /approved|implemented|closed|completed/i.test(String(item.status_snapshot ?? ''))
+    );
+    if (isIntervalExtension && !hasApprovedMoc) {
+      blockers.push('OSHA 1910.119(j) Mandate: Interval extensions and proof-test deferrals require an Approved Management of Change (MOC).');
+    }
     if (new Date(row.expiry_date) < new Date() && !closedDeviationStatuses.includes(row.status)) blockers.push('Deviation is expired.');
     if (row.status === 'Draft') blockers.push('Deviation must be approved before active operation.');
     if (!row.owner_user_id) warnings.push('Deviation owner is not assigned.');
     if (!linkedRecords.length) warnings.push('No supporting links/documents are recorded.');
     return { status: blockers.length ? 'Blocked' : warnings.length ? 'Warning' : 'Ready', blockers, warnings };
+  }
+
+  private async assertApprovedMocIfRequired(user: RequestUser, deviationId: string, before: any, body: Record<string, any>) {
+    const isIntervalExtension = /interval extension|deferral|extension/i.test(before.deviation_type ?? '');
+    if (!isIntervalExtension) return;
+
+    let targetMocId = body.mocId ?? body.moc_id;
+    if (!targetMocId) {
+      const linkedRecords = await this.deviationLinkedRecords(user, deviationId);
+      const mocLink = linkedRecords.find((item) => /moc/i.test(item.linked_module));
+      if (mocLink) {
+        targetMocId = mocLink.linked_record_id;
+      }
+    }
+
+    if (!targetMocId) {
+      throw new BadRequestException('OSHA 1910.119(j) Compliance Error: Interval extensions and proof-test deferrals require an Approved Management of Change (MOC). Please link an approved MOC before approval.');
+    }
+
+    const moc = await this.db.single<any>(
+      this.db.from('mocs').select('id, moc_number, status, title').eq('id', targetMocId).eq('company_id', user.tenantId).maybeSingle()
+    ).catch(() => null);
+
+    if (!moc) {
+      throw new BadRequestException(`Management of Change record (${targetMocId}) was not found or is outside your company access.`);
+    }
+
+    const validStatuses = ['Approved', 'Implemented', 'Closed', 'Completed'];
+    if (!validStatuses.includes(moc.status)) {
+      throw new BadRequestException(`OSHA 1910.119(j) Compliance Error: Interval extensions require an APPROVED MOC. Linked MOC (${moc.moc_number}) has status "${moc.status}". Please ensure MOC is approved before activating this deviation.`);
+    }
+
+    const existingLink = await this.db.single<any>(
+      this.db.from('mi_deficiency_linked_records').select('id').eq('deviation_id', deviationId).eq('linked_record_id', moc.id).maybeSingle()
+    ).catch(() => null);
+
+    if (!existingLink) {
+      await this.db.single<any>(
+        this.db.from('mi_deficiency_linked_records').insert({
+          company_id: user.tenantId,
+          site_id: before.site_id,
+          deviation_id: deviationId,
+          linked_module: 'mocs',
+          linked_record_id: moc.id,
+          linked_record_number: moc.moc_number,
+          relationship_type: 'Regulatory Requirement (OSHA 1910.119(j))',
+          required_for_close: true,
+          status_snapshot: moc.status,
+          created_by: user.id
+        }).select().single()
+      ).catch(() => null);
+    }
   }
 
   private async resolveEquipment(user: RequestUser, equipmentId: string) {

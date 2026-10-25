@@ -26,6 +26,7 @@ export function useLopaSilDeterminationMutations(id: string) {
     addLink: useMutation({ mutationFn: (values: LopaSilLinkInput) => lopaSilDeterminationService.addLink(id, values), onSuccess: refresh }),
     createAction: useMutation({ mutationFn: (values: LopaSilActionCreateInput) => lopaSilDeterminationService.createAction(id, values), onSuccess: refresh }),
     compareSnapshot: useMutation({ mutationFn: (snapshotId: string) => lopaSilDeterminationService.compareSnapshot(id, snapshotId) }),
-    checkReassessment: useMutation({ mutationFn: () => lopaSilDeterminationService.checkReassessment(id), onSuccess: refresh })
+    checkReassessment: useMutation({ mutationFn: () => lopaSilDeterminationService.checkReassessment(id), onSuccess: refresh }),
+    syncToEquipmentAndMi: useMutation({ mutationFn: () => lopaSilDeterminationService.syncToEquipmentAndMi(id), onSuccess: refresh })
   };
 }

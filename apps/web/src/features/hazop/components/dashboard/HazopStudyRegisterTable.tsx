@@ -5,7 +5,7 @@ import { HazopDashboardRiskBadge } from './HazopDashboardRiskBadge';
 import { HazopDashboardStatusBadge } from './HazopDashboardStatusBadge';
 
 interface Study {
-  id: string | number;
+  id?: string | number;
   study_number: string;
   title: string;
   description?: string;
@@ -59,22 +59,22 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
   return (
     <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] shadow-xl overflow-hidden backdrop-blur-sm">
       {/* Header Section */}
-      <div className="flex items-center justify-between border-b border-[var(--psm-line)] px-5 py-4 bg-[var(--psm-surface)]">
+      <div className="flex items-center justify-between border-b border-[var(--psm-line)] px-4 py-3 sm:px-5 sm:py-3.5 bg-[var(--psm-surface)]">
         <div>
-          <h2 className="text-base font-semibold text-slate-100 tracking-wide">Study Register</h2>
+          <h2 className="text-sm sm:text-base font-semibold text-[var(--psm-text)] tracking-wide">Study Register</h2>
           <p className="text-xs text-[var(--psm-muted)] mt-0.5">
             Real studies scoped by company, site, and user access.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-medium text-[var(--psm-muted)] border border-slate-700/50">
+          <span className="rounded-full bg-[var(--psm-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--psm-muted)] border border-[var(--psm-line)]">
             Showing {studies.length} studies
           </span>
         </div>
       </div>
 
       {/* Table Container with Premium Scrollbar Styling */}
-      <div className="max-h-[560px] overflow-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+      <div className="max-h-[560px] overflow-auto scrollbar-thin scrollbar-thumb-slate-400/30 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
         <style jsx global>{`
           /* Custom cross-browser sleek scrollbar styling */
           .scrollbar-thin::-webkit-scrollbar {
@@ -93,27 +93,27 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
           }
         `}</style>
         
-        <table className="w-full min-w-[1400px] text-sm border-collapse select-none">
-          <thead className="sticky top-0 z-20 bg-[var(--psm-surface-2)] text-xs font-semibold uppercase tracking-wider text-[var(--psm-muted)] border-b border-[var(--psm-line)] shadow-sm">
+        <table className="w-full min-w-[1200px] text-xs sm:text-sm border-collapse select-none">
+          <thead className="sticky top-0 z-20 bg-[var(--psm-surface-2)] text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[var(--psm-muted)] border-b border-[var(--psm-line)] shadow-sm">
             <tr>
-              <th className="px-4 py-3.5 text-left font-semibold">Study No.</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Study Title</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Type</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Site / Unit / Area</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Status</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Risk Priority</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Progress</th>
-              <th className="px-4 py-3.5 text-center font-semibold">Nodes</th>
-              <th className="px-4 py-3.5 text-center font-semibold">Scenarios</th>
-              <th className="px-4 py-3.5 text-center font-semibold">High / Critical</th>
-              <th className="px-4 py-3.5 text-center font-semibold">Open Recs</th>
-              <th className="px-4 py-3.5 text-center font-semibold">Open Actions</th>
-              <th className="px-4 py-3.5 text-center font-semibold">LOPA Req.</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Leader</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Target Completion</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Revalidation Due</th>
-              <th className="px-4 py-3.5 text-left font-semibold">Last Updated</th>
-              <th className="sticky right-0 bg-[var(--psm-surface-2)] px-4 py-3.5 text-center font-semibold shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.3)] z-30">Actions</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Study No.</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Study Title</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Type</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Site / Unit / Area</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Status</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Risk Priority</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Progress</th>
+              <th className="px-3 py-3 text-center font-semibold">Nodes</th>
+              <th className="px-3 py-3 text-center font-semibold">Scenarios</th>
+              <th className="px-3 py-3 text-center font-semibold">High / Crit</th>
+              <th className="px-3 py-3 text-center font-semibold">Open Recs</th>
+              <th className="px-3 py-3 text-center font-semibold">Open Acts</th>
+              <th className="px-3 py-3 text-center font-semibold">LOPA Req.</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Leader</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Target Comp.</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Reval Due</th>
+              <th className="px-3.5 py-3 text-left font-semibold">Last Updated</th>
+              <th className="sticky right-0 bg-[var(--psm-surface-2)] px-3.5 py-3 text-center font-semibold shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.15)] z-30">Actions</th>
             </tr>
           </thead>
           
@@ -121,21 +121,21 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
             {studies.map((study) => (
               <tr 
                 key={study.id} 
-                className="group border-t border-[var(--psm-line)] hover:bg-slate-800/30 transition-colors duration-150"
+                className="group border-t border-[var(--psm-line)] hover:bg-[var(--psm-surface-2)]/60 transition-colors duration-150"
               >
                 {/* Study No */}
-                <td className="px-4 py-3.5 whitespace-nowrap">
+                <td className="px-3.5 py-3 whitespace-nowrap">
                   <Link 
                     href={`/hazop/${study.id}`} 
-                    className="font-semibold text-blue-400 hover:text-blue-300 transition-colors duration-150 hover:underline decoration-blue-400/40"
+                    className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-150 hover:underline decoration-blue-400/40"
                   >
                     {study.study_number}
                   </Link>
                 </td>
                 
                 {/* Study Title & Reason */}
-                <td className="max-w-[260px] px-4 py-3.5">
-                  <div className="truncate font-medium text-slate-200" title={study.title}>
+                <td className="max-w-[240px] px-3.5 py-3">
+                  <div className="truncate font-medium text-[var(--psm-text)]" title={study.title}>
                     {study.title}
                   </div>
                   <div className="truncate text-xs text-[var(--psm-muted)] mt-0.5" title={study.description ?? study.study_reason}>
@@ -144,13 +144,13 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
                 </td>
                 
                 {/* Type */}
-                <td className="px-4 py-3.5 whitespace-nowrap font-medium text-slate-300">
+                <td className="px-3.5 py-3 whitespace-nowrap font-medium text-[var(--psm-muted)]">
                   {study.study_type ?? '—'}
                 </td>
                 
                 {/* Site / Unit / Area */}
-                <td className="px-4 py-3.5 text-xs text-slate-400 leading-normal">
-                  <div className="font-medium text-slate-300">
+                <td className="px-3.5 py-3 text-xs text-[var(--psm-muted)] leading-normal">
+                  <div className="font-medium text-[var(--psm-text)]">
                     {[study.site_name, study.unit_name].filter(Boolean).join(' / ') || '—'}
                   </div>
                   {study.area_name && (
@@ -159,64 +159,64 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
                 </td>
                 
                 {/* Status Badge */}
-                <td className="px-4 py-3.5 whitespace-nowrap">
+                <td className="px-3.5 py-3 whitespace-nowrap">
                   <HazopDashboardStatusBadge value={study.status} />
                 </td>
                 
                 {/* Risk Priority Badge */}
-                <td className="px-4 py-3.5 whitespace-nowrap">
+                <td className="px-3.5 py-3 whitespace-nowrap">
                   <HazopDashboardRiskBadge value={study.risk_priority ?? (study.highRiskCount ? 'High' : 'Low')} />
                 </td>
                 
                 {/* Progress Bar Component */}
-                <td className="px-4 py-3.5 whitespace-nowrap">
+                <td className="px-3.5 py-3 whitespace-nowrap">
                   <Progress value={Number(study.progress_percent ?? study.progress ?? 0)} />
                 </td>
                 
                 {/* Numeric Columns */}
-                <td className="px-4 py-3.5 text-center font-medium text-slate-300 whitespace-nowrap">
+                <td className="px-3 py-3 text-center font-medium text-[var(--psm-text)] whitespace-nowrap">
                   {study.nodeCount ?? 0}
                 </td>
-                <td className="px-4 py-3.5 text-center font-medium text-slate-300 whitespace-nowrap">
+                <td className="px-3 py-3 text-center font-medium text-[var(--psm-text)] whitespace-nowrap">
                   {study.scenarioCount ?? 0}
                 </td>
                 
                 {/* Colored Metrics matching UI Dashboard */}
-                <td className="px-4 py-3.5 text-center font-bold text-red-400 whitespace-nowrap">
+                <td className="px-3 py-3 text-center font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">
                   {study.highRiskCount ?? 0}
                 </td>
-                <td className="px-4 py-3.5 text-center font-bold text-orange-400 whitespace-nowrap">
+                <td className="px-3 py-3 text-center font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
                   {study.openRecommendationCount ?? 0}
                 </td>
-                <td className="px-4 py-3.5 text-center font-bold text-amber-400 whitespace-nowrap">
+                <td className="px-3 py-3 text-center font-bold text-yellow-600 dark:text-yellow-500 whitespace-nowrap">
                   {study.openActionCount ?? 0}
                 </td>
-                <td className="px-4 py-3.5 text-center font-bold text-cyan-400 whitespace-nowrap">
+                <td className="px-3 py-3 text-center font-bold text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
                   {study.lopaRequiredCount ?? 0}
                 </td>
                 
                 {/* Leader Profile Bubble */}
-                <td className="px-4 py-3.5 whitespace-nowrap">
+                <td className="px-3.5 py-3 whitespace-nowrap">
                   <Avatar name={study.study_leader_name ?? study.leader_name ?? study.study_leader_id ?? 'Unassigned'} />
                 </td>
                 
                 {/* Dates */}
-                <td className="px-4 py-3.5 text-slate-300 whitespace-nowrap text-xs font-medium">
+                <td className="px-3.5 py-3 text-[var(--psm-text)] whitespace-nowrap text-xs font-medium">
                   {study.target_completion_date ?? '—'}
                 </td>
-                <td className="px-4 py-3.5 text-slate-300 whitespace-nowrap text-xs font-medium">
+                <td className="px-3.5 py-3 text-[var(--psm-text)] whitespace-nowrap text-xs font-medium">
                   {study.revalidation_due_date ?? '—'}
                 </td>
-                <td className="px-4 py-3.5 text-xs text-[var(--psm-muted)] whitespace-nowrap">
+                <td className="px-3.5 py-3 text-xs text-[var(--psm-muted)] whitespace-nowrap">
                   {study.updated_at ? new Date(study.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                 </td>
                 
                 {/* Actions Panel sticky alignment */}
-                <td className="sticky right-0 bg-[var(--psm-surface)] group-hover:bg-[#1b2436] transition-colors duration-150 px-4 py-3.5 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.3)] z-10">
+                <td className="sticky right-0 bg-[var(--psm-surface)] group-hover:bg-[var(--psm-surface-2)] transition-colors duration-150 px-3.5 py-3 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.15)] z-10">
                   <div className="flex items-center justify-center gap-2 relative">
                     <Link 
                       href={`/hazop/${study.id}`} 
-                      className="rounded-md border border-[var(--psm-line)] bg-slate-800/40 px-2.5 py-1 text-xs font-medium text-slate-200 hover:bg-slate-700 hover:border-slate-500 transition-all duration-150"
+                      className="rounded-md border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--psm-text)] hover:bg-[var(--psm-surface)] hover:border-blue-400/50 transition-all duration-150"
                     >
                       View Details
                     </Link>
@@ -224,11 +224,11 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
                     {/* Interactive Dropdown Context Menu Trigger */}
                     <div className="relative">
                       <button 
-                        onClick={() => toggleMenu(study.id)}
+                        onClick={() => toggleMenu(study.id ?? study.study_number)}
                         className={`rounded-md border border-[var(--psm-line)] p-1 transition-all duration-150 ${
                           activeMenuId === study.id 
-                            ? 'text-blue-400 bg-slate-700 border-slate-500' 
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                            ? 'text-blue-500 bg-[var(--psm-surface-2)] border-blue-400/50' 
+                            : 'text-[var(--psm-muted)] hover:text-[var(--psm-text)] hover:bg-[var(--psm-surface-2)]'
                         }`}
                         title="More actions"
                       >
@@ -239,40 +239,40 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
                       {activeMenuId === study.id && (
                         <div 
                           ref={menuRef}
-                          className="absolute right-0 mt-2 w-48 rounded-lg border border-slate-700 bg-[#161d2a] p-1 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-100"
+                          className="absolute right-0 mt-2 w-48 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] p-1 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-100"
                         >
                           <Link 
                             href={`/hazop/${study.id}`}
-                            className="flex items-center gap-2 rounded-md px-3 py-2 text-xs text-slate-200 hover:bg-slate-800/80 hover:text-white transition-colors"
+                            className="flex items-center gap-2 rounded-md px-3 py-2 text-xs text-[var(--psm-text)] hover:bg-[var(--psm-surface-2)] transition-colors"
                           >
-                            <Eye size={14} className="text-slate-400" />
+                            <Eye size={14} className="text-[var(--psm-muted)]" />
                             <span>View Overview</span>
                           </Link>
                           <button 
                             onClick={() => { alert(`Edit Study ${study.study_number}`); setActiveMenuId(null); }}
-                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-slate-200 hover:bg-slate-800/80 hover:text-white transition-colors text-left"
+                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-[var(--psm-text)] hover:bg-[var(--psm-surface-2)] transition-colors text-left"
                           >
-                            <Edit size={14} className="text-slate-400" />
+                            <Edit size={14} className="text-[var(--psm-muted)]" />
                             <span>Edit Configuration</span>
                           </button>
                           <button 
                             onClick={() => { alert(`Generate Report for ${study.study_number}`); setActiveMenuId(null); }}
-                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-slate-200 hover:bg-slate-800/80 hover:text-white transition-colors text-left"
+                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-[var(--psm-text)] hover:bg-[var(--psm-surface-2)] transition-colors text-left"
                           >
-                            <FileText size={14} className="text-slate-400" />
+                            <FileText size={14} className="text-[var(--psm-muted)]" />
                             <span>Generate PHA Report</span>
                           </button>
                           <button 
                             onClick={() => { alert(`Trigger Revalidation ${study.study_number}`); setActiveMenuId(null); }}
-                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-slate-200 hover:bg-slate-800/80 hover:text-white transition-colors text-left"
+                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-[var(--psm-text)] hover:bg-[var(--psm-surface-2)] transition-colors text-left"
                           >
-                            <RefreshCw size={14} className="text-slate-400" />
+                            <RefreshCw size={14} className="text-[var(--psm-muted)]" />
                             <span>Trigger Revalidation</span>
                           </button>
-                          <div className="my-1 border-t border-slate-800" />
+                          <div className="my-1 border-t border-[var(--psm-line)]" />
                           <button 
                             onClick={() => { if(confirm('Archive this PHA study?')) alert('Archived'); setActiveMenuId(null); }}
-                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left"
+                            className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 transition-colors text-left"
                           >
                             <Trash2 size={14} />
                             <span>Delete / Archive</span>
@@ -288,10 +288,10 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
             {/* Empty State */}
             {!studies.length && (
               <tr>
-                <td colSpan={18} className="px-4 py-16 text-center text-[var(--psm-muted)] bg-slate-900/10">
+                <td colSpan={18} className="px-4 py-16 text-center text-[var(--psm-muted)] bg-[var(--psm-surface-2)]/30">
                   <div className="flex flex-col items-center justify-center gap-1">
-                    <span className="text-sm font-medium text-slate-400">No records found</span>
-                    <span className="text-xs text-slate-500">No HAZOP/PHA studies match the current filters.</span>
+                    <span className="text-sm font-medium text-[var(--psm-text)]">No records found</span>
+                    <span className="text-xs text-[var(--psm-muted)]">No HAZOP/PHA studies match the current filters.</span>
                   </div>
                 </td>
               </tr>
@@ -307,9 +307,9 @@ export function HazopStudyRegisterTable({ studies = [] }: { studies: Study[] }) 
 function Progress({ value }: { value: number }) {
   const safeValue = Math.min(100, Math.max(0, value));
   return (
-    <div className="min-w-[100px] flex items-center gap-2">
-      <span className="text-xs font-semibold text-slate-300 w-8 tabular-nums">{safeValue}%</span>
-      <div className="h-1.5 w-full rounded-full bg-slate-800 border border-slate-700/30 overflow-hidden">
+    <div className="min-w-[90px] flex items-center gap-2">
+      <span className="text-xs font-semibold text-[var(--psm-text)] w-8 tabular-nums">{safeValue}%</span>
+      <div className="h-1.5 w-full rounded-full bg-[var(--psm-surface-2)] border border-[var(--psm-line)] overflow-hidden">
         <div 
           className="h-full rounded-full bg-blue-500 transition-all duration-500 ease-out" 
           style={{ width: `${safeValue}%` }} 
@@ -330,10 +330,10 @@ function Avatar({ name }: { name: string }) {
 
   return (
     <div className="flex items-center gap-2" title={name}>
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-500/15 border border-blue-400/20 text-[11px] font-bold text-blue-300 tracking-wider">
+      <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-blue-500/15 border border-blue-400/30 text-[10px] sm:text-[11px] font-bold text-blue-600 dark:text-blue-300 tracking-wider">
         {initials}
       </span>
-      <span className="max-w-[110px] truncate text-xs font-medium text-slate-200">
+      <span className="max-w-[100px] truncate text-xs font-medium text-[var(--psm-text)]">
         {name}
       </span>
     </div>

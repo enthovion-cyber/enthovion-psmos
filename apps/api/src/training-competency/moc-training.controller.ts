@@ -7,7 +7,7 @@ import { SiteGuard } from '../common/guards/site.guard';
 import { TrainingMocRequirementService } from './training-moc-requirement.service';
 
 @UseGuards(JwtAuthGuard, SiteGuard, PermissionsGuard)
-@Controller('moc')
+@Controller('training-competency/moc')
 export class MocTrainingController {
   constructor(private readonly mocTraining: TrainingMocRequirementService) {}
 

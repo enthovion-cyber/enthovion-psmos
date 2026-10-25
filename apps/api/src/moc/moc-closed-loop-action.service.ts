@@ -146,6 +146,12 @@ export class MocClosedLoopActionService {
     const required = await this.actionsFor(tenantId, id);
     const created = [];
     for (const row of required.filter((item) => item.required !== false && !item.action_id && !item.no_longer_required)) {
+      const timingGate = row.required_before_startup
+        ? 'PRE_STARTUP'
+        : row.required_before_closure
+        ? 'POST_STARTUP'
+        : 'NOT_APPLICABLE';
+
       const action = await this.actions.create(tenantId, actorId, {
         title: row.title,
         description: row.description ?? row.title,
@@ -158,7 +164,8 @@ export class MocClosedLoopActionService {
         departmentId: moc.department_id,
         dueDate: row.due_date ?? this.dueDate(14),
         evidenceRequired: row.evidence_required,
-        verificationRequired: row.verification_required
+        verificationRequired: row.verification_required,
+        timingGate
       } as any);
       await this.db.single(this.db.from('moc_required_actions').update({ action_id: action.id, status: 'Created', updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', row.id).select().single());
       await this.db.single(this.db.from('moc_action_links').upsert({ id: `${id}_${action.id}_${row.source_type ?? 'moc'}`.replace(/[^a-zA-Z0-9_-]/g, '_'), tenant_id: tenantId, moc_id: id, action_id: action.id, company_id: moc.company_id, site_id: moc.site_id, linked_module: row.linked_module, linked_record_id: row.id, source_type: row.source_type ?? 'MOC' }, { onConflict: 'moc_id,action_id,source_type' }).select().single());
@@ -266,8 +273,65 @@ export class MocClosedLoopActionService {
     return 'Manual';
   }
 
-  private actionsFor(tenantId: string, mocId: string) {
-    return this.db.many<any>(this.db.from('moc_required_actions').select('*').eq('tenant_id', tenantId).eq('moc_id', mocId).order('created_at'));
+  private async actionsFor(tenantId: string, mocId: string) {
+    const rows = await this.db.many<any>(
+      this.db
+        .from('moc_required_actions')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('moc_id', mocId)
+        .order('created_at')
+    );
+
+    const linkedActionIds = rows.map((r) => r.action_id).filter(Boolean);
+    if (linkedActionIds.length > 0) {
+      const liveActions = await this.db.many<any>(
+        this.db
+          .from('Action')
+          .select('id,status,evidenceRequired,verificationRequired,timingGate')
+          .eq('tenantId', tenantId)
+          .in('id', linkedActionIds)
+      );
+
+      const liveMap = new Map(liveActions.map((a: any) => [a.id, a]));
+      for (const row of rows) {
+        if (!row.action_id) continue;
+        const live = liveMap.get(row.action_id);
+        if (!live) continue;
+
+        if (['CLOSED', 'VERIFIED'].includes(live.status)) {
+          if (row.status !== 'Completed' && row.status !== 'Closed') {
+            row.status = 'Completed';
+            row.verification_status = 'Verified';
+            row.evidence_status = 'Approved';
+            this.db.single(
+              this.db
+                .from('moc_required_actions')
+                .update({
+                  status: 'Completed',
+                  verification_status: 'Verified',
+                  evidence_status: 'Approved',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', row.id)
+            ).catch(() => null);
+          }
+        } else if (live.status === 'IN_PROGRESS' && row.status === 'Created') {
+          row.status = 'In Progress';
+          this.db.single(
+            this.db
+              .from('moc_required_actions')
+              .update({
+                status: 'In Progress',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', row.id)
+          ).catch(() => null);
+        }
+      }
+    }
+
+    return rows;
   }
 
   private async requiredAction(tenantId: string, mocId: string, id: string) {

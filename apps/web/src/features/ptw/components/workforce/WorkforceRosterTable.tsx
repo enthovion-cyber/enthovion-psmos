@@ -1,8 +1,9 @@
-import { ClipboardCheck, Edit, LogIn, LogOut, Trash2 } from 'lucide-react';
+import { AlertTriangle, ClipboardCheck, Edit, LogIn, LogOut, ShieldCheck, Trash2 } from 'lucide-react';
 import type { PermitWorkerRecord } from '../../services/ptw-workforce.service';
 
 export function WorkforceRosterTable({ 
   workers, 
+  competencyResults,
   onEdit, 
   onDelete, 
   onBriefing, 
@@ -10,6 +11,7 @@ export function WorkforceRosterTable({
   onSignOut 
 }: { 
   workers: PermitWorkerRecord[]; 
+  competencyResults?: Record<string, { compliant: boolean; missingOrExpiredCerts: string[] }>;
   onEdit: (worker: PermitWorkerRecord) => void; 
   onDelete: (id: string) => void; 
   onBriefing: (id: string) => void; 
@@ -20,9 +22,14 @@ export function WorkforceRosterTable({
     <section className="rounded-xl border border-slate-800/80 bg-slate-900 p-5 shadow-2xl backdrop-blur-md">
       {/* Header Profile Info Strip */}
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-          Workforce Roster
-        </h3>
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+            Workforce Roster
+          </h3>
+          <p className="mt-0.5 text-xs text-slate-400">
+            Authorized personnel, trade certifications & real-time competency clearance
+          </p>
+        </div>
         <span className="rounded-full border border-slate-700/60 bg-slate-950 px-2.5 py-0.5 text-xs font-semibold tracking-wide text-slate-300">
           {workers.length} {workers.length === 1 ? 'person' : 'people'}
         </span>
@@ -40,7 +47,7 @@ export function WorkforceRosterTable({
             hover:[&::-webkit-scrollbar-thumb]:bg-slate-700
             [&::-webkit-scrollbar-corner]:bg-transparent"
         >
-          <table className="w-full min-w-[1320px] text-left text-sm border-collapse">
+          <table className="w-full min-w-[1440px] text-left text-sm border-collapse">
             <thead>
               <tr className="bg-slate-950/95 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md">
                 {[
@@ -51,6 +58,7 @@ export function WorkforceRosterTable({
                   'Badge ID', 
                   'Contact Number', 
                   'Role on Permit', 
+                  'Competency Gate',
                   'Briefing Status', 
                   'Sign-In Time', 
                   'Sign-Out Time', 
@@ -67,7 +75,14 @@ export function WorkforceRosterTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
-              {workers.map((worker) => (
+              {workers.map((worker) => {
+                const comp = competencyResults ? (
+                  competencyResults[worker.id] ?? 
+                  (worker.user_id ? competencyResults[worker.user_id] : undefined) ?? 
+                  competencyResults[worker.worker_name]
+                ) : undefined;
+
+                return (
                 <tr 
                   key={worker.id} 
                   className="group hover:bg-slate-800/30 transition-colors duration-150 ease-in-out"
@@ -93,6 +108,33 @@ export function WorkforceRosterTable({
                   <td className="px-4 py-3 text-slate-300 font-medium whitespace-nowrap">
                     {worker.role_on_permit ?? worker.role ?? '-'}
                   </td>
+                  
+                  {/* Competency Gate Status Column */}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {comp ? (
+                      comp.compliant ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
+                          <ShieldCheck size={12} className="text-emerald-400" />
+                          Certified & Authorized
+                        </span>
+                      ) : (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
+                            <AlertTriangle size={12} className="text-rose-400" />
+                            Non-Compliant
+                          </span>
+                          {comp.missingOrExpiredCerts && comp.missingOrExpiredCerts.length > 0 && (
+                            <span className="text-[10px] text-rose-400/90 font-mono">
+                              Missing: {comp.missingOrExpiredCerts.join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    ) : (
+                      <span className="text-[11px] text-slate-500 italic">Not Audited</span>
+                    )}
+                  </td>
+
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge 
                       good={worker.briefing_completed === true || worker.signed_briefing === true} 
@@ -157,7 +199,8 @@ export function WorkforceRosterTable({
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

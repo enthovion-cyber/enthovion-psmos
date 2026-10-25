@@ -1,7 +1,6 @@
 'use client';
 
 import { useHazopOverview } from '../../hooks/useHazopOverview';
-import { HazopStudyHeader } from '../overview/HazopStudyHeader';
 import { HazopOverviewKpiCards } from '../overview/HazopOverviewKpiCards';
 import { HazopStudyOverviewCard } from '../overview/HazopStudyOverviewCard';
 import { HazopStudyProgressCard } from '../overview/HazopStudyProgressCard';
@@ -23,7 +22,6 @@ export function HazopOverviewTab({ study, onNavigate }: { study: any; onNavigate
   if (!data) return <State title="No overview data" text="No Overview data was returned for this study." />;
   return (
     <div className="space-y-4">
-      <HazopStudyHeader header={data.header} permissions={data.permissions} />
       <HazopOverviewKpiCards kpis={data.kpis} onNavigate={onNavigate} />
       {data.header?.readOnly ? <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-200">This HAZOP study is closed or approved. Overview is read-only unless an authorized user reopens it.</div> : null}
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr_1fr]">

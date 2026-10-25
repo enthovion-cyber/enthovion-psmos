@@ -329,6 +329,30 @@ export class PsiController {
     return this.integrations.mocOverview(user.tenantId, this.scope(user), query);
   }
 
+  @Get('integrations/moc/:mocId/impact')
+  @Permissions('psi.integration.moc.view')
+  integrationMocImpact(@CurrentUser() user: RequestUser, @Param('mocId') mocId: string) {
+    return this.integrations.mocImpact(user.tenantId, this.scope(user), mocId);
+  }
+
+  @Post('integrations/moc/:mocId/run-impact')
+  @Permissions('psi.integration.moc.run')
+  integrationMocRunImpact(@CurrentUser() user: RequestUser, @Param('mocId') mocId: string, @Body() dto: Record<string, any>) {
+    return this.integrations.runMocImpact(user.tenantId, user.id, this.scope(user), mocId, dto);
+  }
+
+  @Post('integrations/moc/:mocId/lock')
+  @Permissions('psi.integration.moc.edit')
+  integrationMocLock(@CurrentUser() user: RequestUser, @Param('mocId') mocId: string, @Body() dto: Record<string, any>) {
+    return this.integrations.lockPsiRecordsForMoc(user.tenantId, user.id, this.scope(user), mocId, dto);
+  }
+
+  @Post('integrations/moc/:mocId/apply-baseline')
+  @Permissions('psi.integration.moc.edit')
+  integrationMocApplyBaseline(@CurrentUser() user: RequestUser, @Param('mocId') mocId: string, @Body() dto: Record<string, any>) {
+    return this.integrations.applyMocBaselineUpdate(user.tenantId, user.id, this.scope(user), mocId, dto);
+  }
+
   @Get('integrations/pssr')
   @Permissions('psi.integration.pssr.view')
   integrationPssr(@CurrentUser() user: RequestUser, @Query() query: Record<string, any>) {
@@ -3139,6 +3163,18 @@ export class PsiController {
   @Permissions(PermissionKeys.PSICompletenessView)
   completeness(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string) {
     return this.completenessEngine.unitCompleteness(user.tenantId, this.scope(user), unitId);
+  }
+
+  @Get('units/:unitId/completeness/live-equipment')
+  @Permissions(PermissionKeys.PSICompletenessView)
+  unitLiveEquipmentCompleteness(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string) {
+    return this.completenessEngine.liveEquipmentCompleteness(user.tenantId, this.scope(user), unitId);
+  }
+
+  @Post('units/:unitId/completeness/sync-equipment-tags')
+  @Permissions(PermissionKeys.PSICompletenessRunUnit)
+  syncUnitLiveEquipmentTags(@CurrentUser() user: RequestUser, @Param('unitId') unitId: string) {
+    return this.completenessEngine.syncLiveEquipmentTags(user.tenantId, user.id, this.scope(user), unitId);
   }
 
   @Post('units/:unitId/completeness/run')

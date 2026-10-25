@@ -1,6 +1,7 @@
 'use client';
 
-import { Archive, Lock, RefreshCw, RotateCcw, Unlock } from 'lucide-react';
+import { useState } from 'react';
+import { Archive, Lock, RefreshCw, RotateCcw, Unlock, Zap } from 'lucide-react';
 import { RegulatoryButton, RegulatoryCard, formatRegulatoryError } from './shared/RegulatoryUi';
 import { RegulatoryStatusBadge } from './shared/RegulatoryStatusBadge';
 import { RegulatoryApplicabilityBadge } from './shared/RegulatoryApplicabilityBadge';
@@ -8,9 +9,11 @@ import { RegulatoryComplianceStatusBadge } from './shared/RegulatoryComplianceSt
 import { RegulatoryCriticalityBadge } from './shared/RegulatoryCriticalityBadge';
 import type { RegulatoryItem } from './types/regulatory.types';
 import { useRegulatoryItemMutations } from './hooks/useRegulatoryItemMutations';
+import { SpawnAuditChecklistModal } from './audit-mapping/dialogs/SpawnAuditChecklistModal';
 
 export function RegulatoryItemDetailHeader({ item, onRefresh }: { item: RegulatoryItem; onRefresh: () => void }) {
   const mutations = useRegulatoryItemMutations(item.id);
+  const [spawnModalOpen, setSpawnModalOpen] = useState(false);
   const readOnlyReason = item.readOnlyReason ?? (item.locked ? 'Item is locked.' : undefined);
   const busy = mutations.archive.isPending || mutations.reactivate.isPending || mutations.lock.isPending || mutations.unlock.isPending;
 
@@ -40,6 +43,15 @@ export function RegulatoryItemDetailHeader({ item, onRefresh }: { item: Regulato
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSpawnModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-500/20 dark:border-teal-400/30 dark:bg-teal-500/20 dark:text-teal-300 dark:hover:bg-teal-500/30 transition-colors"
+            title="Auto-spawn OSHA/EPA audit checklist protocol into Module 4.4"
+          >
+            <Zap size={14} className="text-teal-600 dark:text-teal-400" />
+            <span>Spawn Audit Checklist</span>
+          </button>
           <RegulatoryButton variant="secondary" onClick={onRefresh}><RefreshCw size={16} />Refresh</RegulatoryButton>
           <RegulatoryButton variant="secondary" href={`/regulatory/${item.id}/edit`} disabled={!!item.readOnly} title={readOnlyReason ?? 'Edit item'}>Edit</RegulatoryButton>
           {item.locked ? (
@@ -54,6 +66,15 @@ export function RegulatoryItemDetailHeader({ item, onRefresh }: { item: Regulato
           )}
         </div>
       </div>
+      <SpawnAuditChecklistModal
+        isOpen={spawnModalOpen}
+        onClose={() => setSpawnModalOpen(false)}
+        onSuccess={onRefresh}
+        sourceType="regulation"
+        sourceId={item.id}
+        sourceCode={item.requirement_code}
+        sourceTitle={item.requirement_title}
+      />
     </RegulatoryCard>
   );
 }

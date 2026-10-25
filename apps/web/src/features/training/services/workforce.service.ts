@@ -17,5 +17,8 @@ export const workforceService = {
   linkAccount: (workerId: string, values: Record<string, any>) => post<Record<string, any>>(`/training-competency/workforce/${workerId}/account-link`, values),
   inviteAccount: (workerId: string, values: Record<string, any>) => post<Record<string, any>>(`/training-competency/workforce/${workerId}/invite-user-account`, values),
   linkDocument: (workerId: string, values: Record<string, any>) => post<Array<Record<string, any>>>(`/training-competency/workforce/${workerId}/documents/link`, values),
-  recalculateStatus: (workerId: string) => post<Record<string, any>>(`/training-competency/workforce/${workerId}/status/recalculate`)
+  recalculateStatus: (workerId: string) => post<Record<string, any>>(`/training-competency/workforce/${workerId}/status/recalculate`),
+  verifyCompetency: (workerId: string, options: Record<string, any> = {}) => post<Record<string, any>>(`/training-competency/workforce/${workerId}/verify-competency`, options),
+  verifyUser: (payload: Record<string, any>) => post<Record<string, any>>('/training-competency/verify-user', payload),
+  qualificationPassport: (workerId: string) => get<Record<string, any>>(`/training-competency/workforce/${workerId}/qualification-passport`)
 };

@@ -15,7 +15,7 @@ export function SidebarModuleGroup({ title, items, pathname, collapsed, onNaviga
           <SidebarModuleItem
             key={item.href}
             {...item}
-            active={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
+            active={pathname === item.href || (item.href !== '/executive' && pathname.startsWith(item.href))}
             collapsed={collapsed}
             onNavigate={onNavigate}
           />

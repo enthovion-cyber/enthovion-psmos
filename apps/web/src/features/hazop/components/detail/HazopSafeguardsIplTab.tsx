@@ -82,7 +82,7 @@ export function HazopSafeguardsIplTab({ study }: Props) {
 
       <HazopSafeguardSummaryCards summary={queries.summary.data} loading={loading} />
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">
           <HazopSafeguardFilters filters={filters} onChange={setFilters} onExport={can('hazop.safeguards.export') ? exportRegister : undefined} exporting={mutations.exportRegister.isPending} />
           <HazopSafeguardRegister

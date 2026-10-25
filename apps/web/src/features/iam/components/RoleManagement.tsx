@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ChevronDown, Search, ShieldPlus } from 'lucide-react';
+import { ChevronDown, Search, ShieldPlus, Grid3X3, ListFilter } from 'lucide-react';
 import { useMutationToast } from '@/providers/ToastProvider';
 import { getModuleDisplayName } from '@/features/permissions/utils/getModuleDisplayName';
 import { type IamPermission, type IamRole } from '@/services/iam.service';
+import { RolePermissionMatrix } from '@/features/admin/roles/RolePermissionMatrix';
 import { useIamMutations, useIamPermissions, useIamRoles } from '../hooks/useIam';
 
 export function RoleManagement() {
@@ -16,6 +17,7 @@ export function RoleManagement() {
   const [selectedRole, setSelectedRole] = useState<IamRole | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
   const [permissionSearch, setPermissionSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'matrix' | 'granular'>('matrix');
 
   const grouped = useMemo(() => {
     return (permissionsQuery.data ?? []).reduce<Record<string, IamPermission[]>>((acc, permission) => {
@@ -93,65 +95,108 @@ export function RoleManagement() {
         </section>
 
         <section className="psm-card overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b border-[var(--psm-line)] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--psm-line)] p-4">
             <div>
               <div className="text-sm font-semibold uppercase tracking-wide">Permission Matrix</div>
               <div className="mt-1 text-xs text-[var(--psm-muted)]">{selectedRole ? selectedRole.name : 'Select a role to edit permissions'}</div>
             </div>
-            <button
-              disabled={!selectedRole}
-              onClick={() => selectedRole && run(() => mutations.setRolePermissions.mutateAsync({ roleId: selectedRole.id, permissionIds: [...selectedPermissions] }), 'Role permissions updated')}
-              className="psm-button psm-button-primary"
-            >
-              Save Permissions
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('matrix')}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    viewMode === 'matrix' ? 'bg-primary text-white shadow-sm' : 'text-[var(--psm-muted)] hover:text-white'
+                  }`}
+                >
+                  <Grid3X3 size={13} /> 5-Verb Matrix
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('granular')}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                    viewMode === 'granular' ? 'bg-primary text-white shadow-sm' : 'text-[var(--psm-muted)] hover:text-white'
+                  }`}
+                >
+                  <ListFilter size={13} /> All Permission Keys
+                </button>
+              </div>
+
+              <button
+                disabled={!selectedRole}
+                onClick={() => selectedRole && run(() => mutations.setRolePermissions.mutateAsync({ roleId: selectedRole.id, permissionIds: [...selectedPermissions] }), 'Role permissions updated')}
+                className="psm-button psm-button-primary text-xs"
+              >
+                Save Permissions
+              </button>
+            </div>
           </div>
           <div className="max-h-[calc(100vh-260px)] overflow-auto p-4">
             {!selectedRole ? <div className="text-sm text-[var(--psm-muted)]">Choose a role from the left panel.</div> : null}
-            <label className="relative mb-4 block">
-              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--psm-muted)]" />
-              <input className="psm-input w-full py-2 pl-9 pr-3 text-sm" value={permissionSearch} onChange={(event) => setPermissionSearch(event.target.value)} placeholder="Search permissions or modules" />
-            </label>
-            <div className="space-y-3">
-              {Object.entries(filteredGrouped).map(([moduleKey, permissions]) => (
-                <details key={moduleKey} className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)]">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-                    <div>
-                      <h3 className="text-sm font-semibold">{getModuleDisplayName(moduleKey)}</h3>
-                      <div className="mt-1 text-xs text-[var(--psm-muted)]">{moduleKey}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="psm-badge psm-badge-info">{permissions.length} permissions</span>
-                      <ChevronDown size={16} className="text-[var(--psm-muted)]" />
-                    </div>
-                  </summary>
-                  <div className="grid gap-2 border-t border-[var(--psm-line)] p-4 md:grid-cols-2 xl:grid-cols-3">
-                    {(permissions ?? []).map((permission) => (
-                      <label key={permission.id} className="flex cursor-pointer items-start gap-2 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={selectedPermissions.has(permission.id)}
-                          disabled={!selectedRole}
-                          onChange={(event) => {
-                            setSelectedPermissions((current) => {
-                              const next = new Set(current);
-                              if (event.target.checked) next.add(permission.id);
-                              else next.delete(permission.id);
-                              return next;
-                            });
-                          }}
-                        />
-                        <span>
-                          <span className="block font-semibold">{permission.label}</span>
-                          <span className="text-xs text-[var(--psm-muted)]">{permission.key}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </details>
-              ))}
-              {permissionSearch && !Object.keys(filteredGrouped).length ? <div className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-4 text-sm text-[var(--psm-muted)]">No permissions match your search.</div> : null}
-            </div>
+
+            {selectedRole && viewMode === 'matrix' && (
+              <RolePermissionMatrix
+                allPermissions={permissionsQuery.data ?? []}
+                selectedIds={selectedPermissions}
+                onToggle={(id) => {
+                  setSelectedPermissions((current) => {
+                    const next = new Set(current);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  });
+                }}
+              />
+            )}
+
+            {selectedRole && viewMode === 'granular' && (
+              <>
+                <label className="relative mb-4 block">
+                  <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--psm-muted)]" />
+                  <input className="psm-input w-full py-2 pl-9 pr-3 text-sm" value={permissionSearch} onChange={(event) => setPermissionSearch(event.target.value)} placeholder="Search permissions or modules" />
+                </label>
+                <div className="space-y-3">
+                  {Object.entries(filteredGrouped).map(([moduleKey, permissions]) => (
+                    <details key={moduleKey} className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)]">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+                        <div>
+                          <h3 className="text-sm font-semibold">{getModuleDisplayName(moduleKey)}</h3>
+                          <div className="mt-1 text-xs text-[var(--psm-muted)]">{moduleKey}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="psm-badge psm-badge-info">{permissions.length} permissions</span>
+                          <ChevronDown size={16} className="text-[var(--psm-muted)]" />
+                        </div>
+                      </summary>
+                      <div className="grid gap-2 border-t border-[var(--psm-line)] p-4 md:grid-cols-2 xl:grid-cols-3">
+                        {(permissions ?? []).map((permission) => (
+                          <label key={permission.id} className="flex cursor-pointer items-start gap-2 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={selectedPermissions.has(permission.id)}
+                              disabled={!selectedRole}
+                              onChange={(event) => {
+                                setSelectedPermissions((current) => {
+                                  const next = new Set(current);
+                                  if (event.target.checked) next.add(permission.id);
+                                  else next.delete(permission.id);
+                                  return next;
+                                });
+                              }}
+                            />
+                            <span>
+                              <span className="block font-semibold">{permission.label}</span>
+                              <span className="text-xs text-[var(--psm-muted)]">{permission.key}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </details>
+                  ))}
+                  {permissionSearch && !Object.keys(filteredGrouped).length ? <div className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-4 text-sm text-[var(--psm-muted)]">No permissions match your search.</div> : null}
+                </div>
+              </>
+            )}
           </div>
         </section>
       </div>

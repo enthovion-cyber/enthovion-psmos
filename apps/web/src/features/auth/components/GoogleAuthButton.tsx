@@ -1,6 +1,5 @@
 'use client';
 
-import { Chrome } from 'lucide-react';
 import { useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { readStoredMarketingIntent, storeMarketingIntent } from '@/features/marketing/utils/cta-routing';
@@ -37,8 +36,8 @@ export function GoogleAuthButton({ flow = 'login', label = 'Continue with Google
 
   return (
     <div>
-      <button type="button" className="psm-button psm-button-secondary w-full" disabled={loading} onClick={() => void run()} title={loading ? 'Opening Google sign-in' : label}>
-        <Chrome size={16} /> {loading ? 'Opening Google...' : label}
+      <button type="button" className="psm-button psm-button-secondary w-full bg-white dark:border-[#355477] dark:bg-[#0c1b32]" disabled={loading} onClick={() => void run()} title={loading ? 'Opening Google sign-in' : label}>
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" aria-hidden="true" className="h-[18px] w-[18px]" /> {loading ? 'Opening Google...' : label}
       </button>
       {error ? <div className="mt-2 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger">{error}</div> : null}
     </div>

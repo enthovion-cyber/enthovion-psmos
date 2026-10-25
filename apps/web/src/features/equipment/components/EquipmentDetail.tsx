@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { EquipmentDetailsView } from './EquipmentDetailsView';
 import { EquipmentForm } from './EquipmentForm';
 import { EquipmentHeader } from './EquipmentHeader';
 import { EquipmentHierarchyTree } from './EquipmentHierarchyTree';
@@ -209,6 +210,20 @@ export function EquipmentDetail({ id }: { id: string }) {
         <main className="space-y-5">
           {activePanel === 'overview' ? (
             <>
+              {openPermits.length > 0 && (
+                <div className="flex items-center justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-300">
+                  <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                    <div>
+                      <strong className="text-amber-200">Simultaneous Operations (SimOps) Active:</strong>{' '}
+                      {openPermits.length} concurrent permit{openPermits.length > 1 ? 's are' : ' is'} currently authorized on this tag.
+                    </div>
+                  </div>
+                  <button onClick={() => setActivePanel('linked-records')} className="psm-button psm-button-secondary text-xs py-1">
+                    View Permits
+                  </button>
+                </div>
+              )}
               <section className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
                 <DesignConditionsCard equipment={equipment} />
                 <OperatingConditionsCard equipment={equipment} />
@@ -261,10 +276,16 @@ export function EquipmentDetail({ id }: { id: string }) {
               </section>
             </>
           ) : null}
-          {activePanel === 'details' ? <EquipmentForm equipment={equipment} onSave={(values) => saveEquipment(values)} /> : null}
+          {activePanel === 'details' ? (
+            <EquipmentDetailsView
+              equipment={equipment}
+              onEdit={() => setModal('edit')}
+            />
+          ) : null}
           {activePanel === 'documents' ? (
             <EquipmentDocumentsPanel
               documents={documents}
+              equipmentTag={equipment.tag}
               onUpload={(input) => runMutation(() => mutations.uploadDocument.mutateAsync(input), 'Document uploaded')}
               onReplace={(documentId, input) => runMutation(() => mutations.replaceDocument.mutateAsync({ documentId, input }), 'Document replaced')}
               onDelete={(documentId) => requestDelete('Delete document?', 'This removes the controlled document link and stored file from this equipment record. This action cannot be undone.', async () => { await runMutation(() => mutations.deleteDocument.mutateAsync(documentId), 'Document deleted'); })}
@@ -276,6 +297,7 @@ export function EquipmentDetail({ id }: { id: string }) {
           {activePanel === 'actions' ? (
             <EquipmentActionsPanel
               actions={actions}
+              equipmentTag={equipment.tag}
               onUpdateStatus={(actionId, status) => runMutation(() => mutations.updateActionStatus.mutateAsync({ actionId, status: status as EquipmentAction['status'] }), 'Action status updated')}
               onUploadEvidence={() => setModal('attachment')}
             />
@@ -284,6 +306,7 @@ export function EquipmentDetail({ id }: { id: string }) {
           {activePanel === 'inspection' ? (
             <EquipmentInspectionPanel
               inspections={inspections}
+              equipmentTag={equipment.tag}
               onCreate={(input) => runMutation(() => mutations.createInspection.mutateAsync(input as CreateEquipmentInspectionInput), 'Inspection added')}
               onUpdate={(inspectionId, input) => runMutation(() => mutations.updateInspection.mutateAsync({ inspectionId, input }), 'Inspection updated')}
               onDelete={(inspectionId) => requestDelete('Delete inspection?', 'This removes the inspection history item from this equipment record. This action cannot be undone.', async () => { await runMutation(() => mutations.deleteInspection.mutateAsync(inspectionId), 'Inspection deleted'); })}

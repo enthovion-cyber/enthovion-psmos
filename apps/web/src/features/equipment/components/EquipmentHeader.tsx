@@ -3,7 +3,7 @@
 import type { Equipment } from '@/services/equipment.service';
 import { QRCodeDisplay } from './QRCodeDisplay';
 import { EquipmentField } from './EquipmentField';
-import { Camera, MapPin } from 'lucide-react';
+import { Camera, MapPin, ShieldAlert } from 'lucide-react';
 
 export function EquipmentHeader({ equipment }: { equipment: Equipment }) {
   const photoUrl = typeof equipment.metadata?.photoUrl === 'string' ? equipment.metadata.photoUrl : null;
@@ -35,6 +35,16 @@ export function EquipmentHeader({ equipment }: { equipment: Equipment }) {
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{equipment.tag}</h1>
             <span className="psm-badge psm-badge-muted">{equipment.type.toUpperCase()}</span>
             <span className={`psm-badge ${equipment.criticality === 'LOW' ? 'psm-badge-success' : equipment.criticality === 'MEDIUM' ? 'psm-badge-warning' : 'psm-badge-danger'}`}>{equipment.criticality.replaceAll('_', ' ')}</span>
+            {(equipment.safetyCritical || equipment.isSafetyCritical) && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-xs font-bold text-red-400">
+                <ShieldAlert size={14} /> SAFETY CRITICAL (SCE)
+              </span>
+            )}
+            {equipment.silRating && (
+              <span className="inline-flex items-center gap-1 rounded-lg border border-purple-500/40 bg-purple-500/15 px-2.5 py-1 text-xs font-bold text-purple-300">
+                {equipment.silRating}
+              </span>
+            )}
           </div>
           <p className="mt-2 text-xl text-[var(--psm-text)]">{equipment.name}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">

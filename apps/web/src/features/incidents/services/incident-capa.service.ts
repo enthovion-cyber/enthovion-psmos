@@ -16,6 +16,8 @@ export const incidentCapaService = {
   requestRework: incidentDetailService.requestCapaRework,
   escalate: incidentDetailService.escalateCapa,
   linkExistingAction: incidentDetailService.linkExistingCapaAction,
+  syncAction: incidentDetailService.syncCapaAction,
+  spawnMoc: incidentDetailService.spawnCapaMoc,
   requestReview: incidentDetailService.requestCapaReview,
   approveReview: incidentDetailService.approveCapaReview,
   rejectReview: incidentDetailService.rejectCapaReview,

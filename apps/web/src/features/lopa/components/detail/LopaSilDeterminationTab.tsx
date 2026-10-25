@@ -63,7 +63,25 @@ export function LopaSilDeterminationTab({ id }: { id: string }) {
     {error ? <Banner tone="danger" text={error} onClose={() => setError(null)}/> : null}
     {data.readOnly ? <Banner tone="warning" text="Read-only: the study is approved/closed or the SIL basis is locked. Unlock or reopen through its controlled workflow before editing."/> : null}
     {data.header.needsReassessment ? <Banner tone="warning" text="Needs Reassessment: a Risk Calculation, credited IPL, tolerable-risk, SIF, or evidence change has affected the SIL basis."/> : null}
-    <SilDeterminationHeader header={data.header} readOnly={data.readOnly} busy={busy} canDetermine={canDetermine} {...(lockReason ? { lockDisabledReason: lockReason } : {})} onDetermine={() => setDialog('determine')} onReassess={() => setDialog('reassess')} onLock={() => setDialog('lock')} onUnlock={() => setDialog('unlock')}/>
+    <SilDeterminationHeader
+      header={data.header}
+      readOnly={data.readOnly}
+      busy={busy}
+      canDetermine={canDetermine}
+      {...(lockReason ? { lockDisabledReason: lockReason } : {})}
+      onDetermine={() => setDialog('determine')}
+      onReassess={() => setDialog('reassess')}
+      onLock={() => setDialog('lock')}
+      onUnlock={() => setDialog('unlock')}
+      onSyncToEquipmentAndMi={() => {
+        mutations.syncToEquipmentAndMi.mutate(undefined, {
+          onSuccess: (res: any) => {
+            setNotice(res?.message ?? 'Promoted Safety Critical Elements to Equipment Registry and synced proof-test intervals to Mechanical Integrity.');
+          },
+          onError: (e: any) => fail(e, 'Could not sync SIL data to Equipment Registry and Mechanical Integrity.')
+        });
+      }}
+    />
     <SilDeterminationFilters value={search} onChange={setSearch}/>
     <SilSummaryCards summary={data.summary}/>
     <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2"><SilReadinessBlockersPanel readiness={data.readiness}/><SilRiskCalculationSnapshotPanel calculation={data.riskCalculation}/></div>

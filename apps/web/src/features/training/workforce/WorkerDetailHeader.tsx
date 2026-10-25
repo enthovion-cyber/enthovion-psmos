@@ -19,6 +19,7 @@ export function WorkerDetailHeader({ detail }: { detail: WorkerDetail }) {
           <p className="mt-2 text-sm text-[var(--psm-muted)]">{worker.work_email ?? worker.employee_id ?? worker.contractor_id ?? worker.badge_number} · {worker.job_title ?? 'Role missing'}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <TrainingButton href={`/training-competency/workforce/${worker.id}/moc-pssr-readiness`} variant="primary">Qualification Passport</TrainingButton>
           <TrainingButton href={`/training-competency/workforce/${worker.id}/edit`} variant="secondary">Edit</TrainingButton>
           <TrainingButton href="/training-competency/workforce" variant="secondary">Registry</TrainingButton>
         </div>

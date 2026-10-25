@@ -44,21 +44,30 @@ export function MOCRiskRankingTab({ moc }: { moc: any }) {
   if (riskQuery.isError) return <ErrorState message="Unable to load MOC risk ranking from API." />;
 
   return (
-    <form onSubmit={onSave} className="space-y-4">
+    <form onSubmit={onSave} className="space-y-6 w-full">
+      {/* Risk Summary Header */}
       <RiskSummaryCard risk={risk} summary={riskQuery.data?.summary} readOnly={readOnly} />
-      <div className="grid gap-4 2xl:grid-cols-[1fr_380px]">
-        <div className="space-y-4">
+
+      {/* Main Form & Supporting Panels */}
+      <div className="grid grid-cols-1 gap-6 w-full">
+        <div className="space-y-6">
           <RiskImpactScoreForm register={form.register} watch={form.watch} errors={form.formState.errors} disabled={readOnly} />
-          <RiskRationaleForm register={form.register} errors={form.formState.errors} disabled={readOnly} />
           <BeforeAfterRiskComparison watch={form.watch} risk={risk} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <RiskLevelExplanation />
+            <ApprovalImpactPanel risk={risk} />
+          </div>
+          <RequiredSafetyReviewsPanel
+            requirements={reviewRequirements}
+            onApply={() => mutations.applyReviewRequirements.mutate()}
+            applying={mutations.applyReviewRequirements.isPending}
+          />
+          <RiskRationaleForm register={form.register} errors={form.formState.errors} disabled={readOnly} />
           <RiskHistoryTable history={history} />
         </div>
-        <aside className="space-y-4">
-          <RiskLevelExplanation />
-          <ApprovalImpactPanel risk={risk} />
-          <RequiredSafetyReviewsPanel requirements={reviewRequirements} onApply={() => mutations.applyReviewRequirements.mutate()} applying={mutations.applyReviewRequirements.isPending} />
-        </aside>
       </div>
+
+      {/* Floating Action Controls */}
       <RiskActionBar
         readOnly={readOnly}
         isLocked={isLocked}

@@ -40,16 +40,21 @@ import {
   HazopTeamMemberDto,
   HazopTeamReplaceDto,
   ReorderHazopNodesDto,
-  UpdateHazopStudyDto
+  UpdateHazopStudyDto,
+  EscalateScenarioToLopaDto
 } from './dto/hazop.dto';
 import { HazopService } from './hazop.service';
+import { HazopLopaTriggerService } from './hazop-lopa-trigger.service';
 
 @ApiTags('hazop')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, SiteGuard, PermissionsGuard)
 @Controller('hazop')
 export class HazopController {
-  constructor(private readonly hazop: HazopService) {}
+  constructor(
+    private readonly hazop: HazopService,
+    private readonly lopaTrigger: HazopLopaTriggerService
+  ) {}
 
   @Get()
   @Permissions(PermissionKeys.HAZOPRead)
@@ -505,6 +510,12 @@ export class HazopController {
   @Permissions(PermissionKeys.HAZOPRiskLopaMark)
   markScenarioLopa(@CurrentUser() user: RequestUser, @Param('id') id: string, @Param('scenarioId') scenarioId: string, @Body() dto: HazopCommentDto) {
     return this.hazop.markScenarioLopaRequired(user.tenantId, user.id, id, scenarioId, dto.reason ?? dto.comment ?? 'Manual LOPA trigger', this.scope(user));
+  }
+
+  @Post(':id/scenarios/:scenarioId/escalate-to-lopa')
+  @Permissions(PermissionKeys.HAZOPRiskLopaMark)
+  escalateScenarioToLopa(@CurrentUser() user: RequestUser, @Param('id') id: string, @Param('scenarioId') scenarioId: string, @Body() dto: EscalateScenarioToLopaDto) {
+    return this.lopaTrigger.escalateScenarioToLopa(user.tenantId, user.id, id, scenarioId, dto, this.scope(user));
   }
 
   @Post(':id/scenarios/:scenarioId/clear-lopa-required')

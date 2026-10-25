@@ -9,25 +9,29 @@ export function MOCAttachmentsTable({ rows, onPreview, onDownload, onDelete }: a
       {rows?.length ? (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-left text-sm">
-            <thead className="sticky top-0 bg-[#07182a] text-xs uppercase text-slate-500">
-              <tr>{['Title', 'Type', 'Section', 'File', 'Size', 'Uploaded By', 'Uploaded At', 'Status', 'Actions'].map((h) => <th key={h} className="border-b border-white/10 px-3 py-2">{h}</th>)}</tr>
+            <thead className="sticky top-0 border-b border-[var(--psm-line)] bg-[var(--psm-surface-2)] text-xs uppercase text-[var(--psm-muted)]">
+              <tr>
+                {['Title', 'Type', 'Section', 'File', 'Size', 'Uploaded By', 'Uploaded At', 'Status', 'Actions'].map((h) => (
+                  <th key={h} className="px-3 py-2.5 font-bold">{h}</th>
+                ))}
+              </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[var(--psm-line)]">
               {rows.map((row: any) => (
-                <tr key={row.id} className="border-b border-white/5 text-slate-300">
-                  <td className="px-3 py-3 font-bold text-white">{row.title}</td>
-                  <td className="px-3 py-3">{row.attachment_type}</td>
-                  <td className="px-3 py-3">{row.related_section ?? '-'}</td>
-                  <td className="px-3 py-3">{row.file_name ?? row.file_key ?? '-'}</td>
-                  <td className="px-3 py-3">{formatBytes(row.file_size ?? 0)}</td>
-                  <td className="px-3 py-3">{row.uploaded_by ?? '-'}</td>
-                  <td className="px-3 py-3">{row.uploaded_at ? new Date(row.uploaded_at).toLocaleDateString() : '-'}</td>
+                <tr key={row.id} className="text-[var(--psm-fg)] transition-colors hover:bg-[var(--psm-surface-2)]">
+                  <td className="px-3 py-3 font-bold text-[var(--psm-fg)]">{row.title}</td>
+                  <td className="px-3 py-3 text-[var(--psm-muted)]">{row.attachment_type}</td>
+                  <td className="px-3 py-3 text-[var(--psm-muted)]">{row.related_section ?? '-'}</td>
+                  <td className="px-3 py-3 text-[var(--psm-muted)]">{row.file_name ?? row.file_key ?? '-'}</td>
+                  <td className="px-3 py-3 text-[var(--psm-muted)]">{formatBytes(row.file_size ?? 0)}</td>
+                  <td className="px-3 py-3 text-[var(--psm-muted)]">{row.uploaded_by ?? '-'}</td>
+                  <td className="px-3 py-3 text-[var(--psm-muted)]">{row.uploaded_at ? new Date(row.uploaded_at).toLocaleDateString() : '-'}</td>
                   <td className="px-3 py-3"><Badge tone={statusTone(row.status)}>{row.status ?? 'Uploaded'}</Badge></td>
                   <td className="px-3 py-3">
-                    <div className="flex gap-2">
-                      <button className="rounded-md border border-cyan-300/15 p-2 text-slate-100 hover:bg-blue-500/10" onClick={() => onPreview(row)} aria-label="Preview attachment"><Eye className="h-4 w-4" /></button>
-                      <button className="rounded-md border border-cyan-300/15 p-2 text-slate-100 hover:bg-blue-500/10" onClick={() => onDownload(row.id)} aria-label="Download attachment"><Download className="h-4 w-4" /></button>
-                      <button className="rounded-md border border-red-300/20 p-2 text-red-200 hover:bg-red-500/10" onClick={() => onDelete(row.id)} aria-label="Delete attachment"><Trash2 className="h-4 w-4" /></button>
+                    <div className="flex gap-1.5">
+                      <button className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-2 text-primary hover:bg-[var(--psm-surface)] transition-all" onClick={() => onPreview(row)} aria-label="Preview attachment"><Eye className="h-4 w-4" /></button>
+                      <button className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-2 text-[var(--psm-fg)] hover:bg-[var(--psm-surface)] transition-all" onClick={() => onDownload(row.id)} aria-label="Download attachment"><Download className="h-4 w-4" /></button>
+                      <button className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-red-600 dark:text-red-300 hover:bg-red-500/20 transition-all" onClick={() => onDelete(row.id)} aria-label="Delete attachment"><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -35,7 +39,9 @@ export function MOCAttachmentsTable({ rows, onPreview, onDownload, onDelete }: a
             </tbody>
           </table>
         </div>
-      ) : <EmptyState title="No MOC attachments uploaded yet." detail="Upload engineering evidence, field photos, meeting notes, vendor documents, and closure proof here." />}
+      ) : (
+        <EmptyState title="No MOC attachments uploaded yet." detail="Upload engineering evidence, field photos, meeting notes, vendor documents, and closure proof here." />
+      )}
     </DetailCard>
   );
 }

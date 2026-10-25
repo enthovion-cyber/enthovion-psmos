@@ -1,5 +1,5 @@
 export const routes = {
-  dashboard: '/dashboard',
+  dashboard: '/executive',
   login: '/login',
   equipment: '/equipment',
   actions: '/actions',

@@ -19,16 +19,16 @@ export function PermitTimeline({
   // Loading Placeholder View State
   if (loading) {
     return (
-      <section className="rounded-xl border border-slate-800/80 bg-slate-900 p-5 shadow-2xl backdrop-blur-md">
-        <div className="mb-4 flex items-center gap-2 pb-3 border-b border-slate-800/60 animate-pulse">
-          <div className="h-4 w-4 rounded bg-slate-800" />
-          <div className="h-4 w-32 rounded bg-slate-800" />
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 shadow-sm dark:shadow-2xl backdrop-blur-md">
+        <div className="mb-4 flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800/60 animate-pulse">
+          <div className="h-4 w-4 rounded bg-slate-200 dark:bg-slate-800" />
+          <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
         </div>
         <div className="space-y-3">
           {[1, 2, 3].map((item) => (
             <div 
               key={item} 
-              className="h-28 animate-pulse rounded-xl bg-slate-950/60 border border-slate-800/40" 
+              className="h-28 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/40" 
             />
           ))}
         </div>
@@ -39,8 +39,8 @@ export function PermitTimeline({
   // Pure Empty Database State Fallback View State
   if (!rows?.length) {
     return (
-      <section className="rounded-xl border border-dashed border-slate-800 bg-slate-950/20 p-8 text-center text-xs font-medium text-slate-500">
-        <div className="mb-2 flex justify-center text-slate-600">
+      <section className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/20 p-8 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="mb-2 flex justify-center text-slate-400 dark:text-slate-600">
           <History size={24} />
         </div>
         No history timelines or structural tracking events recorded yet.
@@ -53,22 +53,22 @@ export function PermitTimeline({
   const hasHiddenRows = rows.length > 5;
 
   return (
-    <section className="rounded-xl border border-slate-800/80 bg-slate-900 p-5 shadow-2xl backdrop-blur-md w-full text-slate-100">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 shadow-sm dark:shadow-2xl backdrop-blur-md w-full text-slate-800 dark:text-slate-100">
       
       {/* Premium Standardized Title Header Strip */}
-      <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-800/60 gap-3">
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-slate-200 dark:border-slate-800/60 gap-3">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <ListOrdered size={16} className="text-sky-400" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+            <ListOrdered size={16} className="text-sky-500 dark:text-sky-400" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
               Permit Lifecycle Timeline
             </h3>
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
             Sequential system audit trail tracking authorizations, gas reviews, and structural transitions.
           </p>
         </div>
-        <div className="inline-flex items-center justify-center rounded-full border border-slate-800 bg-slate-950 px-2.5 py-0.5 text-[11px] font-mono font-bold tracking-wide text-slate-400 self-start sm:self-auto shadow-inner">
+        <div className="inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-mono font-bold tracking-wide text-slate-600 dark:text-slate-400 self-start sm:self-auto shadow-inner">
           {rows.length} Total Snapshots
         </div>
       </div>
@@ -86,20 +86,20 @@ export function PermitTimeline({
 
       {/* Premium "View All" Action Expansion Toggle Block */}
       {hasHiddenRows && (
-        <div className="flex justify-center pt-3 mt-1 border-t border-slate-800/40">
+        <div className="flex justify-center pt-3 mt-1 border-t border-slate-200 dark:border-slate-800/40">
           <button
             type="button"
             onClick={() => setViewAll(!viewAll)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950 px-4 py-2 text-xs font-semibold tracking-wide text-slate-300 transition-all hover:bg-slate-800 hover:text-slate-100 active:scale-98 shadow-md"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 px-4 py-2 text-xs font-semibold tracking-wide text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 active:scale-98 shadow-sm"
           >
-            <History size={13} className="text-sky-400" />
+            <History size={13} className="text-sky-500 dark:text-sky-400" />
             <span>
               {viewAll ? 'Show Recent 5 Logs' : `View Full Audit Trail (${rows.length})`}
             </span>
             {viewAll ? (
-              <ChevronUp size={14} className="text-sky-400" />
+              <ChevronUp size={14} className="text-sky-500 dark:text-sky-400" />
             ) : (
-              <ChevronDown size={14} className="text-sky-400" />
+              <ChevronDown size={14} className="text-sky-500 dark:text-sky-400" />
             )}
           </button>
         </div>

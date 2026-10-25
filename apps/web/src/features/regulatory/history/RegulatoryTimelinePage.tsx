@@ -1,0 +1,17 @@
+'use client';
+
+import { useState } from 'react';
+import { RegulatoryHeader } from '../RegulatoryHeader';
+import { RegulatoryLayout } from '../layout/RegulatoryLayout';
+import { RegulatoryCard, RegulatoryEmptyState, RegulatoryErrorState, RegulatoryLoadingState, regulatoryInputClass } from '../shared/RegulatoryUi';
+import { RegulatoryHistoryEventBadge } from '../shared/RegulatoryTrendBadges';
+import { useRegulatoryTimeline } from '../hooks/useRegulatoryTrends';
+
+export function RegulatoryTimelinePage({ dimension }: { dimension?: string }) {
+  const [filters, setFilters] = useState<Record<string, unknown>>({ limit: 50 });
+  const query = useRegulatoryTimeline(filters);
+  if (query.isLoading) return <RegulatoryLayout current="History"><RegulatoryLoadingState rows={8} /></RegulatoryLayout>;
+  if (query.isError) return <RegulatoryLayout current="History"><RegulatoryErrorState message={query.error} onRetry={() => query.refetch()} /></RegulatoryLayout>;
+  const rows = query.data?.rows ?? [];
+  return <RegulatoryLayout current="History"><div className="space-y-5"><RegulatoryHeader title={dimension ? `History ${dimension.replace('by-', 'by ')}` : 'Unified Regulatory Timeline'} subtitle="Append-only event stream. Restricted source values are safely redacted by the backend." onRefresh={() => query.refetch()} /><RegulatoryCard title="Filters"><div className="grid gap-3 md:grid-cols-4"><input className={regulatoryInputClass()} placeholder="Search events" value={String(filters.search ?? '')} onChange={(event) => setFilters({ ...filters, search: event.target.value })} /><input className={regulatoryInputClass()} placeholder="Source module" value={String(filters.sourceModule ?? '')} onChange={(event) => setFilters({ ...filters, sourceModule: event.target.value })} /><input className={regulatoryInputClass()} placeholder="Event type" value={String(filters.eventType ?? '')} onChange={(event) => setFilters({ ...filters, eventType: event.target.value })} /><select className={regulatoryInputClass()} value={String(filters.systemEvent ?? '')} onChange={(event) => setFilters({ ...filters, systemEvent: event.target.value })}><option value="">User and system events</option><option value="false">User events</option><option value="true">System events</option></select></div></RegulatoryCard><RegulatoryCard title={`Timeline (${query.data?.total ?? 0})`}>{rows.length ? <ol className="space-y-3 border-l border-[var(--psm-line)] pl-5">{rows.map((event) => <li key={event.id} className="relative"><span className="absolute -left-[1.75rem] top-4 h-3 w-3 rounded-full bg-primary ring-4 ring-[var(--psm-surface)]" /><div className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-semibold text-[var(--psm-fg)]">{event.event_title}</h2><p className="mt-1 text-xs text-[var(--psm-muted)]">{event.source_module} - {new Date(event.created_at).toLocaleString()}</p></div><RegulatoryHistoryEventBadge value={event.event_type} /></div>{event.event_description ? <p className="mt-3 text-sm text-[var(--psm-muted)]">{event.event_description}</p> : null}{event.restricted ? <p className="mt-3 text-xs font-medium text-amber-600">Restricted source values are masked.</p> : null}</div></li>)}</ol> : <RegulatoryEmptyState title="No history events" message="No permitted Regulatory events match these filters." />}</RegulatoryCard></div></RegulatoryLayout>;
+}

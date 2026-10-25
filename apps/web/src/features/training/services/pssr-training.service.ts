@@ -53,11 +53,11 @@ export const pssrTrainingService = {
   workerAssignments: (workerId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingAssignment>>(`/training-competency/workforce/${workerId}/pssr-training-assignments`, params),
   workerHistory: (workerId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister>(`/training-competency/workforce/${workerId}/pssr-training-history`, params),
   scoped: (scope: 'sites' | 'units' | 'areas', id: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingReadiness>>(`/training-competency/${scope}/${id}/pssr-training-readiness`, params),
-  pssrReadinessRecords: (pssrId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingReadiness>>(`/pssr/${pssrId}/training-requirements`, params),
-  pssrReadiness: (pssrId: string) => get<Record<string, unknown>>(`/pssr/${pssrId}/training-readiness`),
-  runPssrReadiness: (pssrId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`/pssr/${pssrId}/training-readiness/run`, payload),
-  pssrBlockers: (pssrId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingBlocker>>(`/pssr/${pssrId}/training-blockers`, params),
-  pssrEvidence: (pssrId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingAssignment>>(`/pssr/${pssrId}/training-evidence`, params),
+  pssrReadinessRecords: (pssrId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingReadiness>>(`/training-competency/pssr/${pssrId}/training-requirements`, params),
+  pssrReadiness: (pssrId: string) => get<Record<string, unknown>>(`/training-competency/pssr/${pssrId}/training-readiness`),
+  runPssrReadiness: (pssrId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`/training-competency/pssr/${pssrId}/training-readiness/run`, payload),
+  pssrBlockers: (pssrId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingBlocker>>(`/training-competency/pssr/${pssrId}/training-blockers`, params),
+  pssrEvidence: (pssrId: string, params?: Record<string, unknown>) => get<PssrTrainingRegister<PssrTrainingAssignment>>(`/training-competency/pssr/${pssrId}/training-evidence`, params),
   pssrImpactCheck: (pssrId: string, params?: Record<string, unknown>) => get<Record<string, unknown>>(`/pssr/${pssrId}/training-impact-check`, params),
   runPssrImpactCheck: (pssrId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`/pssr/${pssrId}/training-impact-check/run`, payload)
 };

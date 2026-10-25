@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { EquipmentDesignDetailHeader } from './EquipmentDesignDetailHeader';
 import { PsiButton, PsiErrorState, PsiLoadingState } from '../shared/PsiUi';
+import { PsiMocLockBanner } from '../shared/PsiMocLockBanner';
 import { useEquipmentDesignDetail } from '../hooks/useEquipmentDesignDetail';
 import { useEquipmentDesignMutations } from '../hooks/useEquipmentDesignMutations';
 import { AssumptionsLimitationsTab } from './tabs/AssumptionsLimitationsTab';
@@ -69,6 +70,10 @@ export function EquipmentDesignDetailPage({ designBasisId }: { designBasisId: st
         onRunConflict={() => void mutations.runConflictCheck.mutateAsync()}
         onCompareMi={() => void mutations.compareMi.mutateAsync()}
         onSubmitReview={() => void mutations.submitReview.mutateAsync({ reason: 'Submitted from Equipment Design Basis detail tab.' })}
+      />
+      <PsiMocLockBanner
+        isLocked={detail.data.designBasis.moc_update_required || detail.data.designBasis.status === 'Pending MOC Change'}
+        lockReason={detail.data.designBasis.status === 'Pending MOC Change' ? 'Record locked pending MOC physical verification and PSSR authorization.' : undefined}
       />
       <div className="overflow-x-auto rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-2">
         <div className="flex min-w-max gap-2">

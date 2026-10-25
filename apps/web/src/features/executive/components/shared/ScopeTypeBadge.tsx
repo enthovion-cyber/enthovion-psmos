@@ -1,0 +1,1 @@
+export function ScopeTypeBadge({ type }: { type: string }) { return <span className="rounded border border-[var(--psm-line)] px-2 py-0.5 text-xs font-medium capitalize text-[var(--psm-muted)]">{type}</span>; }

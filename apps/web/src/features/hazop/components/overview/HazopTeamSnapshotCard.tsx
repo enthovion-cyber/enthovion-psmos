@@ -32,9 +32,9 @@ export function HazopTeamSnapshotCard({ teamSnapshot, onNavigate }: { teamSnapsh
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <Mini label="Required" value={teamSnapshot.requiredMembers ?? 0} />
         <Mini label="Optional" value={teamSnapshot.optionalMembers ?? 0} />
-        <Mini label="Pending Sign-Offs" value={teamSnapshot.pendingSignoffs ?? 0} tone="text-amber-300" />
+        <Mini label="Pending Sign-Offs" value={teamSnapshot.pendingSignoffs ?? 0} tone="text-amber-600 dark:text-amber-400" />
       </div>
-      <div className="mt-4 rounded-lg border border-[var(--psm-line)] p-3">
+      <div className="mt-4 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)]/40 p-3">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><CalendarDays size={15} className="text-primary" />Next Session</div>
         {teamSnapshot.nextSession ? (
           <div className="text-sm text-[var(--psm-muted)]">
@@ -49,5 +49,5 @@ export function HazopTeamSnapshotCard({ teamSnapshot, onNavigate }: { teamSnapsh
 }
 
 function Mini({ label, value, tone = 'text-[var(--psm-text)]' }: { label: string; value: any; tone?: string }) {
-  return <div className="rounded-lg border border-[var(--psm-line)] p-3"><div className={`text-xl font-semibold ${tone}`}>{value}</div><div className="text-xs text-[var(--psm-muted)]">{label}</div></div>;
+  return <div className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)]/40 p-3"><div className={`text-xl font-bold ${tone}`}>{value}</div><div className="text-xs text-[var(--psm-muted)]">{label}</div></div>;
 }

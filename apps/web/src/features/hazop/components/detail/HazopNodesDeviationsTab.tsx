@@ -35,6 +35,7 @@ import { HazopNodeOverviewPanel } from "../nodes-deviations/HazopNodeOverviewPan
 import { HazopWorksheetToolbar } from "../nodes-deviations/HazopWorksheetToolbar";
 import { HazopDeviationWorksheet as RealHazopDeviationWorksheet } from "../nodes-deviations/HazopDeviationWorksheet";
 import { AddRecommendationFromScenarioDialog } from "../nodes-deviations/AddRecommendationFromScenarioDialog";
+import { EscalateToLopaDialog } from "../nodes-deviations/EscalateToLopaDialog";
 import { HazopWorksheetExportButton } from "../nodes-deviations/HazopWorksheetExportButton";
 import { HazopNodeCompletionCard } from "../nodes-deviations/HazopNodeCompletionCard";
 import { HazopRiskDistributionCard } from "../nodes-deviations/HazopRiskDistributionCard";
@@ -98,6 +99,7 @@ export function HazopNodesDeviationsTab({ study, initialAction }: { study: any; 
   const [drawerScenario, setDrawerScenario] = useState<any>(null);
   const [recommendationScenario, setRecommendationScenario] = useState<any>(null);
   const [lopaScenario, setLopaScenario] = useState<any>(null);
+  const [escalateScenario, setEscalateScenario] = useState<any>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const notify = (tone: "success" | "error" | "info", text: string) => {
@@ -303,6 +305,16 @@ export function HazopNodesDeviationsTab({ study, initialAction }: { study: any; 
                   onAddSafeguard: (scenario: any) => setDrawerScenario(scenario),
                   onRankRisk: (scenario: any) => setScenarioDialog({ mode: "edit", scenario, nodeId: scenario.node_id }),
                   onMarkLopa: openLopaDialog,
+                  onEscalateToLopa: (scenario: any) => setEscalateScenario(scenario),
+                  onInlineSave: (scenarioId: string, values: any) => {
+                    scenarioMutations.updateScenario.mutate(
+                      { scenarioId, values },
+                      {
+                        onSuccess: () => notify("success", "Worksheet scenario updated."),
+                        onError: (err: any) => notify("error", err?.message ?? "Update failed."),
+                      }
+                    );
+                  },
                   onDuplicate: (scenario: any) => scenarioMutations.duplicateScenario.mutate(scenario.id),
                   onDelete: (scenario: any) => confirm("Delete this scenario row?") && scenarioMutations.deleteScenario.mutate(scenario.id),
                 }}
@@ -421,6 +433,39 @@ export function HazopNodesDeviationsTab({ study, initialAction }: { study: any; 
               },
               onError: (error: any) => notify("error", error?.message ?? "LOPA update failed."),
             });
+          }}
+        />
+      ) : null}
+
+      {escalateScenario ? (
+        <EscalateToLopaDialog
+          scenario={escalateScenario}
+          node={nodes.find((n: any) => n.id === escalateScenario.node_id)}
+          saving={scenarioMutations.escalateToLopa?.isPending}
+          onClose={() => setEscalateScenario(null)}
+          onSubmit={(values: Record<string, any>) => {
+            scenarioMutations.escalateToLopa.mutate(
+              {
+                scenarioId: escalateScenario.id,
+                values: {
+                  reason: values.reason,
+                  initiatingEventFrequency: values.initiatingEventFrequency,
+                  createAction: values.createAction,
+                  actionDueDate: values.actionDueDate,
+                  ownerId: values.ownerId,
+                },
+              },
+              {
+                onSuccess: (result: any) => {
+                  setEscalateScenario(null);
+                  notify("success", `Successfully escalated scenario to LOPA study ${result?.lopaNumber || ""}!`);
+                  if (result?.lopaStudyId) {
+                    window.open(`/dashboard/lopa/${result.lopaStudyId}`, "_blank");
+                  }
+                },
+                onError: (error: any) => notify("error", error?.message ?? "LOPA escalation failed."),
+              }
+            );
           }}
         />
       ) : null}

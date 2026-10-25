@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { sidebarProfileService } from '../services/sidebar-profile.service';
+import { hasLocalSession } from '@/services/api';
 
 export function useSidebarProfile() {
-  return useQuery({ queryKey: ['app-shell', 'sidebar-profile'], queryFn: sidebarProfileService.profile, staleTime: 60_000 });
+  return useQuery({ queryKey: ['app-shell', 'sidebar-profile'], queryFn: sidebarProfileService.profile, staleTime: 60_000, enabled: hasLocalSession() });
 }

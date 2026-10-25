@@ -83,7 +83,7 @@ function Info({
   isTime = false 
 }: { 
   label: string; 
-  value?: string | null; 
+  value?: string | null | undefined; 
   highlight?: string;
   isTime?: boolean;
 }) {

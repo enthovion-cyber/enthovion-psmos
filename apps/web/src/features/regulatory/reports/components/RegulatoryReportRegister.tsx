@@ -1,0 +1,12 @@
+import Link from 'next/link';
+import { RegulatoryEmptyState } from '../../shared/RegulatoryUi';
+import { RegulatoryReportStatusBadge } from './RegulatoryReportStatusBadge';
+import type { RegulatoryReport } from '../types/regulatory-report.types';
+
+export function RegulatoryReportRegister({ rows }: { rows?: RegulatoryReport[] }) {
+  if (!rows?.length) return <RegulatoryEmptyState title="No regulatory reports" message="No controlled report records match the selected scope and filters." />;
+  return <>
+    <div className="grid gap-3 md:hidden">{rows.map((row) => <Link key={row.id} href={`/regulatory/reports/${row.id}`} className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4 transition hover:bg-[var(--psm-surface-2)]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-semibold text-primary">{String(row.report_code ?? row.id)}</p><p className="mt-1 truncate text-sm text-[var(--psm-muted)]">{row.report_title}</p></div><RegulatoryReportStatusBadge value={row.report_status} /></div><div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[var(--psm-muted)]"><span className="truncate">{row.report_type}</span><span>{row.export_format}</span><span className="col-span-2"><RegulatoryReportStatusBadge value={row.readiness_status} /></span></div></Link>)}</div>
+    <div className="hidden overflow-x-auto rounded-xl border border-[var(--psm-line)] md:block"><table className="min-w-[900px] w-full text-sm"><thead className="bg-[var(--psm-surface-2)] text-left text-xs uppercase tracking-[.12em] text-[var(--psm-muted)]"><tr><th className="p-3">Report</th><th className="p-3">Type</th><th className="p-3">Status</th><th className="p-3">Readiness</th><th className="p-3">Format</th><th className="p-3">Updated</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t border-[var(--psm-line)]"><td className="p-3"><Link className="font-semibold text-primary hover:underline" href={`/regulatory/reports/${row.id}`}>{String(row.report_code ?? row.id)}</Link><p className="mt-1 max-w-xs truncate text-[var(--psm-muted)]">{row.report_title}</p></td><td className="p-3">{row.report_type}</td><td className="p-3"><RegulatoryReportStatusBadge value={row.report_status} /></td><td className="p-3"><RegulatoryReportStatusBadge value={row.readiness_status} /></td><td className="p-3">{row.export_format}</td><td className="p-3 text-[var(--psm-muted)]">{row.updated_at ? new Date(String(row.updated_at)).toLocaleString() : '-'}</td></tr>)}</tbody></table></div>
+  </>;
+}

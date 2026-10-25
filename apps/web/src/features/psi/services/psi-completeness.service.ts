@@ -6,6 +6,8 @@ const base = '/process-safety-information';
 export const psiCompletenessService = {
   get: (unitId: string) => get<PsiCompletenessResponse>(`${base}/units/${unitId}/completeness`),
   unitCompleteness: (unitId: string) => get<PsiCompletenessResponse>(`${base}/units/${unitId}/completeness`),
+  liveEquipment: (unitId: string) => get<Record<string, unknown>>(`${base}/units/${unitId}/completeness/live-equipment`),
+  syncLiveEquipmentTags: (unitId: string) => post<{ unitId: string; createdCount: number; totalLive: number }>(`${base}/units/${unitId}/completeness/sync-equipment-tags`),
   equipmentCompleteness: (equipmentId: string) => get<Record<string, unknown>>(`${base}/equipment/${equipmentId}/completeness`),
   dashboard: (params: Record<string, unknown> = {}) => get<PsiCompletenessDashboard>(`${base}/completeness/dashboard`, params),
   scores: (params: Record<string, unknown> = {}) => get<PsiCompletenessScore[]>(`${base}/completeness/scores`, params),

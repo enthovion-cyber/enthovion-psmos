@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import { MarketingLayout } from '@/features/marketing/layout/MarketingLayout';
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 export const metadata: Metadata = {
   title: 'Enthovion PSM OS | Process Safety Management Software',
   description: 'AI-assisted process safety management software for MOC, PSSR, HAZOP/PHA, LOPA/SIL, incident investigation, actions, documents, and audit-ready industrial workflows.',

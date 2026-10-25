@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Building2, ChevronDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSiteContext } from '../context/useSiteContext';
@@ -12,6 +12,7 @@ import { ContextSwitchLoadingOverlay } from './ContextSwitchLoadingOverlay';
 const moduleQueryRoots = ['dashboard', 'equipment', 'actions', 'documents', 'notifications', 'search', 'ptw', 'moc', 'pssr', 'hazop', 'lopa', 'incidents', 'reports', 'settings', 'foundation', 'workspace', 'iam'];
 
 export function WorkspaceSiteSwitcher() {
+  const [mounted, setMounted] = useState(false);
   const queryClient = useQueryClient();
   const siteContext = useSiteContext();
   const setSelectedSite = useAuthStore((state) => state.setSelectedSite);
@@ -21,6 +22,10 @@ export function WorkspaceSiteSwitcher() {
   const sites = siteContext.allowedSites;
   const activeSiteId = siteContext.activeSiteId ?? null;
   const activeSite = sites.find((site) => site.id === activeSiteId) ?? null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function switchSite(siteId: string | null) {
     setError(null);
@@ -37,7 +42,7 @@ export function WorkspaceSiteSwitcher() {
     }
   }
 
-  if (siteContext.isLoading) {
+  if (!mounted || siteContext.isLoading) {
     return <div className="h-11 w-56 animate-pulse rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)]" />;
   }
 

@@ -5,7 +5,7 @@ import { changeCategories, changeTypes, priorities, type MOCCreateValues } from 
 import type { MocContext } from '../../services/moc.service';
 import { Field, inputClass, StepShell, textAreaClass } from './create-ui';
 
-export function MOCBasicInfoStep({ context }: { context?: MocContext }) {
+export function MOCBasicInfoStep({ context }: { context?: MocContext | undefined }) {
   const { register, formState: { errors } } = useFormContext<MOCCreateValues>();
   return (
     <StepShell eyebrow="Step 1" title="Basic Change Information">

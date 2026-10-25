@@ -22,5 +22,6 @@ export const lopaSilDeterminationService = {
   removeLink: (id: string, linkId: string, reason: string) => api.delete(`/lopa/${id}/sil-determination/links/${linkId}`, { data: { reason } }).then(unwrap<any>),
   createAction: (id: string, values: LopaSilActionCreateInput) => api.post(`/lopa/${id}/sil-determination/actions`, values).then(unwrap<any>),
   compareSnapshot: (id: string, snapshotId: string) => api.get(`/lopa/${id}/sil-determination/snapshots/${snapshotId}/compare`).then(unwrap<any>),
-  checkReassessment: (id: string) => api.post(`/lopa/${id}/sil-determination/reassessment-events/check`).then(unwrap<any>)
+  checkReassessment: (id: string) => api.post(`/lopa/${id}/sil-determination/reassessment-events/check`).then(unwrap<any>),
+  syncToEquipmentAndMi: (id: string) => api.post(`/lopa/${id}/sil-determination/sync-to-equipment-and-mi`).then(unwrap<any>)
 };

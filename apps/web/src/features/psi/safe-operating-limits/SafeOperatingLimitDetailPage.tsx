@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSafeOperatingLimitDetail } from '../hooks/useSafeOperatingLimitDetail';
 import { useSafeOperatingLimitMutations } from '../hooks/useSafeOperatingLimitMutations';
 import { PsiButton, PsiErrorState, PsiLoadingState } from '../shared/PsiUi';
+import { PsiMocLockBanner } from '../shared/PsiMocLockBanner';
 import { SafeOperatingLimitDetailHeader } from './SafeOperatingLimitDetailHeader';
 import { ControlsSafeguardsTab } from './tabs/ControlsSafeguardsTab';
 import { DeviationConsequencesTab } from './tabs/DeviationConsequencesTab';
@@ -30,6 +31,10 @@ export function SafeOperatingLimitDetailPage({ limitId }: { limitId: string }) {
   return (
     <div className="space-y-5">
       <SafeOperatingLimitDetailHeader detail={detail} onRunCompleteness={() => mutations.runCompleteness.mutate()} onRunConflict={() => mutations.runConflictCheck.mutate()} onSubmitReview={() => mutations.submitReview.mutate({ reason: 'Submitted from Safe Operating Limit detail.' })} busy={busy} />
+      <PsiMocLockBanner
+        isLocked={detail.limit.moc_update_required || detail.limit.status === 'Pending MOC Change'}
+        lockReason={detail.limit.status === 'Pending MOC Change' ? 'Safe Operating Limit is locked pending MOC authorization and operational baseline verification.' : undefined}
+      />
       <div className="flex gap-2 overflow-x-auto rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-2">{tabs.map((item) => <PsiButton key={item} variant={item === tab ? 'primary' : 'secondary'} onClick={() => setTab(item)}>{item}</PsiButton>)}</div>
       {content}
     </div>

@@ -1,7 +1,7 @@
 import { buttonPrimary, buttonSecondary } from '../shared/IncidentTabPrimitives';
 import { LinkedRecordHeaderFacts } from './LinkedRecordsPrimitives';
 
-export function LinkedRecordsHeader({ data, saving, message, onAdd, onAutoDetect, onCreateFollowup, onRefreshStatus, onRequestReview, onExport, onSaveChanges, onRefresh }: any) {
+export function LinkedRecordsHeader({ data, saving, message, onAdd, onAutoDetect, onCreateFollowup, onSpawnMoc, onRefreshStatus, onRequestReview, onExport, onSaveChanges, onRefresh }: any) {
   const actions = data.actions ?? [];
   const disabled = (key: string) => actions.find((action: any) => action.key === key)?.enabled === false || saving;
   const title = (key: string) => actions.find((action: any) => action.key === key)?.disabledReason ?? undefined;
@@ -10,6 +10,7 @@ export function LinkedRecordsHeader({ data, saving, message, onAdd, onAutoDetect
       <div><h2 className="text-xl font-black">Linked Records</h2><p className="text-sm text-slate-500">PSM, EHS, engineering, maintenance, document, action, and compliance records connected to this incident.</p></div>
       <div className="flex flex-wrap gap-2">
         <button className={buttonPrimary} disabled={disabled('link-record')} title={title('link-record')} onClick={onAdd}>Link Record</button>
+        <button className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-500/20 dark:border-indigo-400/30 dark:bg-indigo-500/20 dark:text-indigo-300 dark:hover:bg-indigo-500/30 transition-colors" title="Spawn 1-Click Management of Change for this incident" onClick={onSpawnMoc}>⚡ Spawn 1-Click MOC</button>
         <button className={buttonSecondary} disabled={disabled('auto-detect')} title={title('auto-detect')} onClick={onAutoDetect}>Auto-Detect Related Records</button>
         <button className={buttonSecondary} disabled={disabled('create-followup')} title={title('create-followup')} onClick={onCreateFollowup}>Create Follow-up Action</button>
         <button className={buttonSecondary} disabled={disabled('refresh-status')} title={title('refresh-status')} onClick={onRefreshStatus}>Refresh Link Status</button>

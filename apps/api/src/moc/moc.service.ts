@@ -6,6 +6,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { SearchIndexService } from '../search/search-index.service';
 import { WorkflowsService } from '../workflows/workflows.service';
 import { ActionsService } from '../actions/actions.service';
+import { PsiIntegrationService } from '../psi/psi-integration.service';
 import { CreateMocDto } from './dto/create-moc.dto';
 
 type Scope = { allowedSiteIds?: string[]; selectedSiteId?: string | null; corporateView?: boolean };
@@ -19,7 +20,8 @@ export class MocService {
     private readonly notifications: NotificationsService,
     private readonly searchIndex: SearchIndexService,
     private readonly workflows: WorkflowsService,
-    private readonly actions: ActionsService
+    private readonly actions: ActionsService,
+    private readonly psiIntegration: PsiIntegrationService
   ) {}
 
   async context(tenantId: string, scope: Scope) {
@@ -250,6 +252,18 @@ export class MocService {
     if (!target) throw new BadRequestException('Unsupported MOC transition');
     this.validateTransition(before, target);
     const updated = await this.db.single<any>(this.db.from('mocs').update({ status: target, updated_at: new Date().toISOString() }).eq('tenant_id', tenantId).eq('id', id).select().single());
+    if (target === 'Approved' || target === 'Implementation') {
+      await this.psiIntegration.lockPsiRecordsForMoc(tenantId, actorId, scope, id, updated).catch((err) => {
+        console.warn('Failed to lock PSI records for MOC:', err);
+      });
+      await this.lockMocDocumentControlRecords(tenantId, actorId, id, updated.moc_number || id);
+    }
+    if (target === 'Closed') {
+      await this.psiIntegration.applyMocBaselineUpdate(tenantId, actorId, scope, id, updated).catch((err) => {
+        console.warn('Failed to promote PSI baseline for MOC:', err);
+      });
+      await this.promoteDocumentControlRevisions(tenantId, actorId, id, updated.moc_number || id);
+    }
     await this.history(tenantId, id, actorId, `MOC_${target.toUpperCase().replaceAll(' ', '_')}`, body?.comment || `MOC moved to ${target}`, before, updated);
     await this.audit.write({ tenantId, actorId, action: `MOC_${target.toUpperCase().replaceAll(' ', '_')}`, entityType: 'MOC', entityId: id, before: before as JsonValue, after: updated as JsonValue });
     await this.indexMoc(tenantId, id);
@@ -852,5 +866,149 @@ export class MocService {
   private assertSiteAccess(siteId: string | null | undefined, scope: Scope) {
     if (!siteId || scope.corporateView) return;
     if (scope.allowedSiteIds?.length && !scope.allowedSiteIds.includes(siteId)) throw new ForbiddenException('MOC is outside your site access scope');
+  }
+
+  private async safeMany<T = any>(query: any): Promise<T[]> {
+    try {
+      return await this.db.many<T>(query);
+    } catch {
+      return [];
+    }
+  }
+
+  private async safeSingle<T = any>(query: any): Promise<T | null> {
+    try {
+      return await this.db.single<T>(query);
+    } catch {
+      return null;
+    }
+  }
+
+  private async lockMocDocumentControlRecords(tenantId: string, actorId: string, mocId: string, mocNumber: string) {
+    try {
+      const [engDocs, relations, attachments] = await Promise.all([
+        this.safeMany<any>(this.db.from('moc_engineering_documents').select('document_id,controlled_document_id').eq('tenant_id', tenantId).eq('moc_id', mocId).is('deleted_at', null)),
+        this.safeMany<any>(this.db.from('document_relations').select('document_id').eq('tenant_id', tenantId).eq('related_record_id', mocId)),
+        this.safeMany<any>(this.db.from('moc_attachments').select('document_id').eq('tenant_id', tenantId).eq('moc_id', mocId).is('deleted_at', null))
+      ]);
+      const docIds = Array.from(new Set([
+        ...engDocs.map((d: any) => d.controlled_document_id || d.document_id),
+        ...relations.map((r: any) => r.document_id),
+        ...attachments.map((a: any) => a.document_id)
+      ].filter(Boolean)));
+      if (!docIds.length) return;
+      const now = new Date().toISOString();
+      for (const docId of docIds) {
+        await this.db.single(
+          this.db.from('documents')
+            .update({ status: 'Redlined - Pending MOC', updated_at: now })
+            .eq('tenant_id', tenantId)
+            .eq('id', docId)
+            .neq('status', 'Archived')
+            .select()
+            .maybeSingle()
+        );
+        await this.safeSingle(
+          this.db.from('document_comments').insert({
+            id: crypto.randomUUID(),
+            tenant_id: tenantId,
+            document_id: docId,
+            user_id: actorId,
+            comment: `Controlled document locked: Under active modification for MOC ${mocNumber}. Field redline pending startup.`,
+            created_at: now
+          }).select().maybeSingle()
+        );
+        await this.safeSingle(
+          this.db.from('document_access_logs').insert({
+            id: crypto.randomUUID(),
+            tenant_id: tenantId,
+            document_id: docId,
+            user_id: actorId,
+            action: 'locked_for_moc',
+            created_at: now
+          }).select().maybeSingle()
+        );
+      }
+    } catch (err) {
+      console.warn('Failed to lock document control records for MOC:', err);
+    }
+  }
+
+  private async promoteDocumentControlRevisions(tenantId: string, actorId: string, mocId: string, mocNumber: string) {
+    try {
+      const [engDocs, relations, attachments] = await Promise.all([
+        this.safeMany<any>(this.db.from('moc_engineering_documents').select('document_id,controlled_document_id').eq('tenant_id', tenantId).eq('moc_id', mocId).is('deleted_at', null)),
+        this.safeMany<any>(this.db.from('document_relations').select('document_id').eq('tenant_id', tenantId).eq('related_record_id', mocId)),
+        this.safeMany<any>(this.db.from('moc_attachments').select('document_id').eq('tenant_id', tenantId).eq('moc_id', mocId).is('deleted_at', null))
+      ]);
+      const docIds = Array.from(new Set([
+        ...engDocs.map((d: any) => d.controlled_document_id || d.document_id),
+        ...relations.map((r: any) => r.document_id),
+        ...attachments.map((a: any) => a.document_id)
+      ].filter(Boolean)));
+      if (!docIds.length) return;
+      const now = new Date().toISOString();
+      for (const docId of docIds) {
+        const versions = await this.safeMany<any>(
+          this.db.from('document_versions')
+            .select('*')
+            .eq('tenant_id', tenantId)
+            .eq('document_id', docId)
+            .order('uploaded_at', { ascending: false })
+        );
+        const latest = versions[0];
+        if (latest) {
+          await this.db.many(
+            this.db.from('document_versions')
+              .update({ is_current: false })
+              .eq('tenant_id', tenantId)
+              .eq('document_id', docId)
+              .select()
+          );
+          await this.db.single(
+            this.db.from('document_versions')
+              .update({ is_current: true })
+              .eq('tenant_id', tenantId)
+              .eq('id', latest.id)
+              .select()
+              .maybeSingle()
+          );
+        }
+        await this.db.single(
+          this.db.from('documents')
+            .update({
+              status: 'Approved',
+              current_version_id: latest?.id ?? undefined,
+              updated_at: now
+            })
+            .eq('tenant_id', tenantId)
+            .eq('id', docId)
+            .select()
+            .maybeSingle()
+        );
+        await this.safeSingle(
+          this.db.from('document_comments').insert({
+            id: crypto.randomUUID(),
+            tenant_id: tenantId,
+            document_id: docId,
+            user_id: actorId,
+            comment: `Controlled document promoted to Approved baseline following MOC ${mocNumber} closure and PSSR sign-off.`,
+            created_at: now
+          }).select().maybeSingle()
+        );
+        await this.safeSingle(
+          this.db.from('document_access_logs').insert({
+            id: crypto.randomUUID(),
+            tenant_id: tenantId,
+            document_id: docId,
+            user_id: actorId,
+            action: 'promoted_via_moc_closure',
+            created_at: now
+          }).select().maybeSingle()
+        );
+      }
+    } catch (err) {
+      console.warn('Failed to promote document control records for MOC:', err);
+    }
   }
 }

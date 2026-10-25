@@ -1,1 +1,11 @@
-import{AuditChecklistAssignToPlanPage}from'@/features/audit/checklists/AuditChecklistAssignToPlanPage';export default function Page({params}:{params:{planId:string}}){return<AuditChecklistAssignToPlanPage planId={params.planId}/>}
+import{AuditChecklistAssignToPlanPage}from'@/features/audit/checklists/AuditChecklistAssignToPlanPage';
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function Page(props:{params: Promise<{planId:string}>}) {
+  const params = await props.params;
+  return<AuditChecklistAssignToPlanPage planId={params.planId}/>
+}

@@ -94,6 +94,8 @@ export type RegulatoryObligationGap = {
   due_date?: string | null;
   recommended_fix?: string | null;
   action_id?: string | null;
+  universal_action_id?: string | null;
+  action_number_snapshot?: string | null;
   waiver_reason?: string | null;
   detected_at?: string | null;
   resolved_at?: string | null;

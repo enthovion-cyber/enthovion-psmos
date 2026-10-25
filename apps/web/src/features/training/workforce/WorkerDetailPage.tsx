@@ -36,10 +36,11 @@ export function WorkerDetailPage({ workerId, tab = 'overview' }: { workerId: str
           ['roles', 'Roles'],
           ['training-summary', 'Training Summary'],
           ['sop', 'SOP Acknowledgements'],
+          ['moc-pssr', 'MOC / PSSR Readiness'],
           ['documents', 'Documents'],
           ['account', 'Account'],
           ['history', 'History']
-        ].map(([key, label]) => <a key={key} href={`/training-competency/workforce/${workerId}${key === 'overview' ? '' : `/${key === 'account' ? 'profile' : key === 'sop' ? 'sop-acknowledgements' : key}`}`} className={`shrink-0 rounded-lg px-3 py-2 ${tab === key || (tab === 'overview' && key === 'overview') ? 'bg-primary text-white' : 'text-[var(--psm-muted)] hover:bg-[var(--psm-surface-2)]'}`}>{label}</a>)}
+        ].map(([key, label]) => <a key={key} href={`/training-competency/workforce/${workerId}${key === 'overview' ? '' : `/${key === 'account' ? 'profile' : key === 'sop' ? 'sop-acknowledgements' : key === 'moc-pssr' ? 'moc-pssr-readiness' : key}`}`} className={`shrink-0 rounded-lg px-3 py-2 ${tab === key || (tab === 'overview' && key === 'overview') ? 'bg-primary text-white' : 'text-[var(--psm-muted)] hover:bg-[var(--psm-surface-2)]'}`}>{label}</a>)}
       </nav>
       {current}
     </div>
@@ -55,7 +56,7 @@ function tabComponent(tab: string, detail: any) {
   if (tab === 'certifications') return <WorkerCertificationsSummaryTab summary={detail.trainingSummary} />;
   if (tab === 'ptw') return <WorkerPtwAuthorizationFoundationTab summary={detail.trainingSummary} />;
   if (tab === 'sop') return <WorkerSopAcknowledgementsPage workerId={detail.worker.id} />;
-  if (tab === 'moc-pssr') return <WorkerMocPssrReadinessTab summary={detail.trainingSummary} />;
+  if (tab === 'moc-pssr') return <WorkerMocPssrReadinessTab workerId={detail.worker.id} worker={detail.worker} summary={detail.trainingSummary} />;
   if (tab === 'documents') return <WorkerDocumentsTab rows={detail.documents} />;
   if (tab === 'account') return <WorkerAccountLinkTab row={detail.accountLink} />;
   if (tab === 'review') return <WorkerReviewApprovalTab />;

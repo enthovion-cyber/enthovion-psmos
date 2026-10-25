@@ -47,6 +47,10 @@ import { ClosureCompleteValidator } from './validators/closure-complete.validato
 import { GasLimitsValidator } from './validators/gas-limits.validator';
 import { IsolationCompleteValidator } from './validators/isolation-complete.validator';
 import { PermitConflictValidator } from './validators/permit-conflict.validator';
+import { WorkerCompetencyValidator } from './validators/worker-competency.validator';
+import { SceBypassValidator } from './validators/sce-bypass.validator';
+import { AuthorizeBypassDto } from './dto/authorize-bypass.dto';
+import { EmergencySuspendDto } from './dto/emergency-suspend.dto';
 
 type Scope = { allowedSiteIds?: string[]; selectedSiteId?: string | null; corporateView?: boolean };
 type UploadedPtwFile = { originalname: string; mimetype: string; size: number; buffer: Buffer };
@@ -82,7 +86,9 @@ export class PtwService {
     private readonly closureComplete: ClosureCompleteValidator,
     private readonly issuePolicy: IssuePermitPolicy,
     private readonly closePolicy: ClosePermitPolicy,
-    private readonly extendPolicy: ExtendPermitPolicy
+    private readonly extendPolicy: ExtendPermitPolicy,
+    private readonly workerCompetency: WorkerCompetencyValidator,
+    private readonly sceBypass: SceBypassValidator
   ) {}
 
   async list(tenantId: string, filters: PermitFilterDto, scope: Scope) {
@@ -303,6 +309,7 @@ export class PtwService {
     this.issuePolicy.assertCanIssue(permit);
     const full = await this.get(tenantId, id, scope);
     this.assertLifecycleSignatures(full, 'Issued', ['Permit Holder', 'Permit Issuer', 'Area Authority']);
+    await this.workerCompetency.assertCompetency(tenantId, full);
     const issued = await this.transition(tenantId, actorId, id, 'Issued', 'PERMIT_ISSUED', 'Permit issued', scope, { issued_at: new Date().toISOString() });
     await this.signature(tenantId, actorId, issued, 'Issue', dto.signature ?? dto.acknowledgement);
     this.events.emit('permit.issued', new PermitIssuedEvent({ tenantId, permitId: id }));
@@ -314,7 +321,9 @@ export class PtwService {
     if (!['Issued', 'Extended'].includes(full.status)) throw new BadRequestException(`Cannot activate permit from ${full.status}`);
     this.assertLifecycleSignatures(full, 'Active', ['Permit Holder', 'Permit Issuer', 'Area Authority']);
     this.assertWorkforceReady(full);
+    await this.workerCompetency.assertCompetency(tenantId, full);
     this.isolationComplete.assertComplete(full, full.isolations);
+    await this.sceBypass.assertBypassesAuthorized(tenantId, full, full.isolations ?? []);
     await this.assertRequiredAttachmentsReady(tenantId, id, scope);
     const gasSummary = await this.gasTestSummary(tenantId, id, scope);
     if (gasSummary.blockers.length) throw new BadRequestException(gasSummary.blockers.join(' '));
@@ -340,6 +349,113 @@ export class PtwService {
     if (suspended.equipment_id) actionInput.equipmentId = suspended.equipment_id;
     await this.actions.create(tenantId, actorId, actionInput);
     return suspended;
+  }
+
+  async emergencySuspend(tenantId: string, actorId: string, dto: EmergencySuspendDto, scope: Scope) {
+    if (!dto.siteId) throw new BadRequestException('siteId is required for emergency suspension');
+    if (!dto.reason) throw new BadRequestException('Emergency reason is required');
+
+    let query = this.repo.permits()
+      .select('id, permit_number, site_id, process_unit_id, area_id, status, job_area, equipment_tag, holder_id')
+      .eq('tenant_id', tenantId)
+      .eq('site_id', dto.siteId)
+      .in('status', ['Issued', 'Active', 'Extended']);
+
+    if (dto.unitId) {
+      query = query.eq('process_unit_id', dto.unitId);
+    }
+    if (dto.areaId) {
+      query = query.eq('area_id', dto.areaId);
+    }
+
+    const activePermits = await this.repo.db.many<any>(query);
+    const suspendedIds: string[] = [];
+    const nowIso = new Date().toISOString();
+    const alarmType = dto.alarmType ?? 'PLANT_ESD';
+    const emergencyReason = `[EMERGENCY ${alarmType}] ${dto.reason}`;
+
+    for (const permit of activePermits) {
+      try {
+        await this.transition(tenantId, actorId, permit.id, 'Suspended', 'PERMIT_SUSPENDED', emergencyReason, scope, {
+          suspended_at: nowIso,
+          emergency_suspended: true,
+          emergency_alarm_type: alarmType
+        });
+        this.events.emit('permit.suspended', new PermitSuspendedEvent({ tenantId, permitId: permit.id, reason: emergencyReason }));
+        suspendedIds.push(permit.id);
+      } catch {
+        // Continue suspending remaining permits even if one fails
+      }
+    }
+
+    const suspensionId = crypto.randomUUID();
+    try {
+      await this.repo.db.single(this.repo.db.from('permit_emergency_suspensions').insert({
+        id: suspensionId,
+        tenant_id: tenantId,
+        site_id: dto.siteId,
+        unit_id: dto.unitId ?? null,
+        area_id: dto.areaId ?? null,
+        alarm_type: alarmType,
+        reason: dto.reason,
+        suspended_by: actorId,
+        suspended_at: nowIso,
+        permits_affected_count: suspendedIds.length,
+        affected_permit_ids_json: suspendedIds,
+        status: 'Active'
+      }));
+    } catch {
+      // Non-blocking log
+    }
+
+    try {
+      await this.actions.create(tenantId, actorId, {
+        sourceModule: 'PTW',
+        sourceType: 'EmergencySuspension',
+        sourceRecordId: suspensionId,
+        title: `Emergency PTW Shutdown (${alarmType}): ${dto.reason}`,
+        description: `Emergency shutdown activated for ${suspendedIds.length} active permits. Verify safe plant condition before re-authorization.`,
+        priority: 'CRITICAL',
+        siteId: dto.siteId,
+        unitId: dto.unitId ?? null,
+        areaId: dto.areaId ?? null
+      } as any);
+    } catch {
+      // Non-blocking action center creation
+    }
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'PTW_EMERGENCY_SUSPEND',
+      entityType: 'PermitEmergencySuspension',
+      entityId: suspensionId,
+      after: {
+        siteId: dto.siteId,
+        unitId: dto.unitId,
+        areaId: dto.areaId,
+        alarmType,
+        reason: dto.reason,
+        permitsAffected: suspendedIds.length,
+        suspendedPermitIds: suspendedIds
+      } as any
+    });
+
+    return {
+      success: true,
+      suspensionId,
+      alarmType,
+      reason: dto.reason,
+      totalPermitsSuspended: suspendedIds.length,
+      affectedPermitIds: suspendedIds,
+      suspendedPermits: activePermits.map((p) => ({
+        id: p.id,
+        permitNumber: p.permit_number,
+        area: p.job_area,
+        equipmentTag: p.equipment_tag
+      })),
+      timestamp: nowIso
+    };
   }
 
   async extend(tenantId: string, actorId: string, id: string, dto: ExtendPermitDto, scope: Scope) {
@@ -626,6 +742,79 @@ export class PtwService {
     }
     await this.history(tenantId, actorId, permit, 'ISOLATION_IMPORTED', `Imported ${rows.length} isolation point(s) from equipment`, null, rows);
     return { imported: rows.length, rows };
+  }
+
+  async isolationSceBypassStatus(tenantId: string, id: string, scope: Scope) {
+    const full = await this.get(tenantId, id, scope);
+    return this.sceBypass.evaluateBypassStatus(tenantId, full, full.isolations ?? []);
+  }
+
+  async authorizeIsolationBypass(
+    tenantId: string,
+    actorId: string,
+    permitId: string,
+    isolationId: string,
+    dto: AuthorizeBypassDto,
+    scope: Scope
+  ) {
+    const full = await this.get(tenantId, permitId, scope);
+    const isolation = (full.isolations ?? []).find((iso: any) => iso.id === isolationId);
+    if (!isolation) throw new NotFoundException('Isolation point not found on permit');
+
+    const nowIso = new Date().toISOString();
+    const updated = await this.repo.db.single<any>(
+      this.repo.isolations().update({
+        is_safety_critical: true,
+        is_sif_bypass: Boolean(dto.sifTag || isolation.is_sif_bypass),
+        sif_tag: dto.sifTag ?? isolation.sif_tag ?? null,
+        sil_rating: dto.silRating ?? isolation.sil_rating ?? null,
+        bypass_certificate_number: dto.bypassCertificateNumber,
+        bypass_reason: dto.bypassReason,
+        bypass_authorized_by: actorId,
+        bypass_authorized_at: nowIso,
+        bypass_status: 'Approved',
+        bypass_risk_assessment_attached: Boolean(dto.riskAssessmentReference || isolation.bypass_risk_assessment_attached)
+      })
+      .eq('tenant_id', tenantId)
+      .eq('id', isolationId)
+      .select().single()
+    );
+
+    try {
+      await this.repo.db.single(
+        this.repo.isolationHistory().insert({
+          id: crypto.randomUUID(),
+          tenant_id: tenantId,
+          permit_id: permitId,
+          isolation_point_id: isolationId,
+          site_id: full.site_id,
+          event_type: 'SCE_BYPASS_AUTHORIZED',
+          description: `Safety Critical Element / SIF Bypass authorized with Certificate #${dto.bypassCertificateNumber}: ${dto.bypassReason}`,
+          user_id: actorId,
+          before_value: { bypass_status: isolation.bypass_status },
+          after_value: {
+            bypass_certificate_number: dto.bypassCertificateNumber,
+            bypass_status: 'Approved',
+            bypass_authorized_by: actorId,
+            bypass_authorized_at: nowIso,
+            sil_rating: dto.silRating
+          }
+        })
+      );
+    } catch {
+      // Non-blocking history record
+    }
+
+    await this.audit.write({
+      tenantId,
+      actorId,
+      action: 'PTW_SCE_BYPASS_AUTHORIZED',
+      entityType: 'PermitIsolation',
+      entityId: isolationId,
+      after: updated as JsonValue
+    });
+
+    return updated;
   }
 
   async startDeIsolation(tenantId: string, actorId: string, permitId: string, scope: Scope) {
@@ -1040,6 +1229,11 @@ export class PtwService {
       filled: workers.some((worker: any) => this.workerHasRole(worker, role)),
       workers: workers.filter((worker: any) => this.workerHasRole(worker, role))
     }));
+  }
+
+  async workforceCompetencyCheck(tenantId: string, id: string, scope: Scope) {
+    const full = await this.get(tenantId, id, scope);
+    return this.workerCompetency.auditPermitWorkforce(tenantId, full);
   }
 
   async workforceHistoryForPermit(tenantId: string, permitId: string, scope: Scope) {
@@ -2734,7 +2928,24 @@ export class PtwService {
           highRisk,
           criticalEquipment: enriched.filter((permit) => permit.equipment?.safetyCritical),
           hotWork: enriched.filter((permit) => permit.permit_type === 'HOT_WORK'),
-          confinedSpace: enriched.filter((permit) => permit.permit_type === 'CONFINED_SPACE')
+          confinedSpace: enriched.filter((permit) => permit.permit_type === 'CONFINED_SPACE'),
+          activeBypasses: enriched.flatMap((permit) =>
+            (permit.isolations ?? [])
+              .filter((iso: any) => iso.is_safety_critical || iso.is_sif_bypass || permit.equipment?.safetyCritical)
+              .map((iso: any) => ({
+                permitId: permit.id,
+                permitNumber: permit.permit_number,
+                area: permit.job_area,
+                isolationId: iso.id,
+                isolationPointTag: iso.isolation_point_tag ?? iso.tag ?? 'ISO-POINT',
+                equipmentTag: iso.equipment_tag ?? permit.equipment?.tag,
+                silRating: iso.sil_rating ?? 'SIL-2',
+                bypassStatus: iso.bypass_status ?? (iso.bypass_authorized_by ? 'Approved' : 'Pending Authorization'),
+                bypassCertificateNumber: iso.bypass_certificate_number ?? 'CERT-PENDING',
+                authorizedBy: iso.bypass_authorized_by,
+                authorizedAt: iso.bypass_authorized_at
+              }))
+          )
         }
       }
     };

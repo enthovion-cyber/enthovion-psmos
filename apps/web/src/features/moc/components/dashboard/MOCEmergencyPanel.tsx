@@ -6,10 +6,10 @@ import { Flame, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Local High-Fidelity implementation of Badge matching global styling constants
 const Badge = ({ tone, children }: { tone: string; children: React.ReactNode }) => {
-  let colors = 'bg-slate-900 text-slate-400 border-slate-800';
-  if (tone === 'red') colors = 'bg-red-500/10 text-red-400 border-red-500/20';
-  if (tone === 'amber') colors = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-  if (tone === 'green') colors = 'bg-green-500/10 text-green-400 border-green-500/20';
+  let colors = 'bg-[var(--psm-surface-2,#1e293b)] text-[var(--psm-muted,#94a3b8)] border-[var(--psm-line,#334155)]';
+  if (tone === 'red') colors = 'bg-red-500/10 text-red-500 border-red-500/20';
+  if (tone === 'amber') colors = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+  if (tone === 'green') colors = 'bg-green-500/10 text-green-500 border-green-500/20';
   return (
     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border tracking-wide whitespace-nowrap ${colors}`}>
       {children}
@@ -20,7 +20,7 @@ const Badge = ({ tone, children }: { tone: string; children: React.ReactNode }) 
 // Local custom UI fallback components
 const EmptyState = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center py-6 text-center">
-    <p className="text-xs font-medium text-slate-500">{title}</p>
+    <p className="text-xs font-medium text-[var(--psm-muted,#94a3b8)]">{title}</p>
   </div>
 );
 
@@ -37,15 +37,15 @@ const DEFAULT_MOCK_DATA = {
 };
 
 interface MOCEmergencyPanelProps {
-  data?: Record<string, any>;
+  data?: Record<string, any> | undefined;
 }
 
 export function MOCEmergencyPanel({ data = {} }: MOCEmergencyPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Fallback cleanly to high-fidelity default operational records if passed items are empty
-  const items = data.items ?? data.openReviews ?? (data.summary === undefined ? DEFAULT_MOCK_DATA.items : []);
-  const summary = data.summary ?? (data.reviewDueCount !== undefined ? data : DEFAULT_MOCK_DATA.summary);
+  const items = data?.items ?? data?.openReviews ?? (data?.summary === undefined ? DEFAULT_MOCK_DATA.items : []);
+  const summary = data?.summary ?? (data?.reviewDueCount !== undefined ? data : DEFAULT_MOCK_DATA.summary);
   
   const due = Number(summary.due ?? summary.reviewDue ?? summary.reviewDueCount ?? 0);
 
@@ -54,12 +54,12 @@ export function MOCEmergencyPanel({ data = {} }: MOCEmergencyPanelProps) {
   const hasMoreThanFour = items.length > 4;
 
   return (
-    <div className="w-full rounded-xl border border-slate-800 bg-slate-950 p-4 shadow-md md:p-5 flex flex-col justify-between h-full overflow-hidden">
+    <div className="w-full rounded-xl border border-[var(--psm-line,#1e293b)] bg-[var(--psm-surface,#0b1329)] p-4 shadow-md md:p-5 flex flex-col justify-between h-full overflow-hidden text-[var(--psm-fg,#f8fafc)]">
       
       {/* Dynamic Enhanced Header Frame - Static shrink locked */}
-      <div className="mb-4 flex items-center justify-between border-b border-slate-900 pb-2 shrink-0">
+      <div className="mb-4 flex items-center justify-between border-b border-[var(--psm-line,#1e293b)] pb-2 shrink-0">
         <div>
-          <h3 className="text-base font-bold tracking-tight text-white">
+          <h3 className="text-base font-bold tracking-tight text-[var(--psm-fg,#f8fafc)]">
             Emergency Change Review
           </h3>
         </div>
@@ -76,16 +76,16 @@ export function MOCEmergencyPanel({ data = {} }: MOCEmergencyPanelProps) {
           {displayedItems.length ? (
             displayedItems.map((item: any) => {
               const hours = Number(item.hoursRemaining ?? 0);
-              const cardBorder = item.overdue ? 'border-red-500/20 bg-red-500/[0.02] hover:border-red-500/40' : 'border-slate-900 bg-slate-900/30 hover:border-slate-800';
+              const cardBorder = item.overdue ? 'border-red-500/20 bg-red-500/[0.04] hover:border-red-500/40' : 'border-[var(--psm-line,#1e293b)] bg-[var(--psm-surface-2,#111e38)] hover:border-[var(--psm-muted,#475569)]';
 
               return (
                 <Link 
                   key={item.id ?? item.moc_id} 
                   href={item.href ?? `/moc/${item.moc_id ?? item.mocId ?? item.id}`} 
-                  className={`block rounded-xl border p-3 transition-all duration-200 group focus:outline-none focus:ring-1 focus:ring-slate-800 ${cardBorder}`}
+                  className={`block rounded-xl border p-3 transition-all duration-200 group focus:outline-none focus:ring-1 focus:ring-[var(--psm-line,#334155)] ${cardBorder}`}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
-                    <p className="font-bold text-xs text-slate-200 group-hover:text-white transition-colors truncate max-w-[70%]">
+                    <p className="font-bold text-xs text-[var(--psm-fg,#f8fafc)] group-hover:text-blue-400 transition-colors truncate max-w-[70%]">
                       {item.moc_number ?? item.mocNumber ?? item.title}
                     </p>
                     <Badge tone={item.overdue ? 'red' : 'amber'}>
@@ -94,14 +94,14 @@ export function MOCEmergencyPanel({ data = {} }: MOCEmergencyPanelProps) {
                   </div>
 
                   {/* Operational Log Metadata Subtext Line */}
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-medium text-slate-400">
-                    <span className="flex items-center gap-1 text-slate-500 group-hover:text-slate-400 transition-colors shrink-0">
-                      <Flame size={12} className={item.overdue ? 'text-red-400' : 'text-slate-500'} /> {item.implementedBy ?? '-'}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-medium text-[var(--psm-muted,#94a3b8)]">
+                    <span className="flex items-center gap-1 text-[var(--psm-muted,#94a3b8)] group-hover:text-[var(--psm-fg,#f8fafc)] transition-colors shrink-0">
+                      <Flame size={12} className={item.overdue ? 'text-red-400' : 'text-[var(--psm-muted,#94a3b8)]'} /> {item.implementedBy ?? '-'}
                     </span>
-                    <span className="text-slate-800/80">•</span>
+                    <span className="text-[var(--psm-line,#334155)]">•</span>
                     <span>Due: {item.reviewDueAt ?? '-'}</span>
-                    <span className="text-slate-800/80">•</span>
-                    <span className={`font-semibold ${hours < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                    <span className="text-[var(--psm-line,#334155)]">•</span>
+                    <span className={`font-semibold ${hours < 0 ? 'text-red-400' : 'text-[var(--psm-muted,#94a3b8)]'}`}>
                       {hours < 0 ? `${Math.abs(hours)}h overdue` : `${hours}h remaining`}
                     </span>
                   </div>
@@ -117,17 +117,17 @@ export function MOCEmergencyPanel({ data = {} }: MOCEmergencyPanelProps) {
         {hasMoreThanFour && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-900/60 bg-slate-950 py-2 text-xs font-bold text-slate-400 hover:text-white hover:border-slate-800 transition-all duration-200 shrink-0 focus:outline-none"
+            className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--psm-line,#1e293b)] bg-[var(--psm-surface-2,#111e38)] py-2 text-xs font-bold text-[var(--psm-muted,#94a3b8)] hover:text-[var(--psm-fg,#f8fafc)] hover:border-[var(--psm-muted,#475569)] transition-all duration-200 shrink-0 focus:outline-none"
           >
             {isExpanded ? (
               <>
                 <span>View Less</span>
-                <ChevronUp size={14} className="text-slate-500" />
+                <ChevronUp size={14} className="text-[var(--psm-muted,#94a3b8)]" />
               </>
             ) : (
               <>
                 <span>View All ({items.length})</span>
-                <ChevronDown size={14} className="text-slate-500" />
+                <ChevronDown size={14} className="text-[var(--psm-muted,#94a3b8)]" />
               </>
             )}
           </button>

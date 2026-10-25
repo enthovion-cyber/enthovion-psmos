@@ -20,8 +20,12 @@ const nav: Array<[string, string]> = [
   ['Audit Mapping', '/regulatory/audit-mapping'],
   ['Actions / CAPA Foundation', '/regulatory/actions'],
   ['Review & Approval Foundation', '/regulatory/review-approval'],
-  ['Reports / Export Foundation', '/regulatory/reports'],
+  ['Reports / Export', '/regulatory/reports'],
+  ['Change Management', '/regulatory/changes'],
+  ['Update Monitoring Foundation', '/regulatory/changes/watchlist'],
   ['History', '/regulatory/history'],
+  ['Trends', '/regulatory/trends'],
+  ['Management Review Readiness', '/regulatory/management-review-readiness'],
   ['Settings', '/regulatory/settings']
 ];
 

@@ -7,6 +7,9 @@ export type DocumentRecord = {
   description?: string | null;
   document_type: string;
   status: string;
+  lifecycle_status?: string | null;
+  active_moc_id?: string | null;
+  redline_markup_url?: string | null;
   site_id: string;
   unit_id?: string | null;
   area_id?: string | null;

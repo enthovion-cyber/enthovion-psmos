@@ -19,6 +19,7 @@ import { MocImpactAssessmentService } from './moc-impact-assessment.service';
 import { MocRiskService } from './moc-risk.service';
 import { MocStartupReadinessService } from './moc-startup-readiness.service';
 import { MocTemporaryEmergencyService } from './moc-temporary-emergency.service';
+import { MocTemporaryExpiryWorker } from './moc-temporary-expiry.worker';
 import { MocWorkflowService } from './moc-workflow.service';
 import { MocService } from './moc.service';
 import { PssrService } from '../pssr/pssr.service';
@@ -37,6 +38,7 @@ export class MocController {
     private readonly closedLoopService: MocClosedLoopActionService,
     private readonly workflowService: MocWorkflowService,
     private readonly temporaryEmergencyService: MocTemporaryEmergencyService,
+    private readonly temporaryExpiryWorker: MocTemporaryExpiryWorker,
     private readonly startupService: MocStartupReadinessService,
     private readonly communicationTrainingService: MocCommunicationTrainingService,
     private readonly historyService: MocHistoryService,
@@ -740,6 +742,12 @@ export class MocController {
   @Permissions(PermissionKeys.MOCTemporaryView)
   temporaryNormalizationRisk(@CurrentUser() user: RequestUser) {
     return this.temporaryEmergencyService.normalizationRisk(user.tenantId, this.scope(user));
+  }
+
+  @Post('temporary/run-expiry-check')
+  @Permissions(PermissionKeys.MOCTemporaryView)
+  runTemporaryExpiryCheck(@CurrentUser() user: RequestUser) {
+    return this.temporaryExpiryWorker.runExpiryCheck(user.tenantId);
   }
 
   @Get(':id/emergency-control')

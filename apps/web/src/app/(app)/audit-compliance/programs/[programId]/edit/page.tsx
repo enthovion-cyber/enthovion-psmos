@@ -1,8 +1,10 @@
-'use client';
+'use client';;
+import { use } from "react";
 import { AuditProgramFormPage } from '@/features/audit/programs/AuditProgramFormPage';
 import { AuditErrorState, AuditLoadingState } from '@/features/audit/shared/AuditUi';
 import { useAuditProgramDetail } from '@/features/audit/hooks/useAuditProgramDetail';
-export default function Page({ params }: { params: { programId: string } }) {
+export default function Page(props: { params: Promise<{ programId: string }> }) {
+  const params = use(props.params);
   const query = useAuditProgramDetail(params.programId);
   if (query.isLoading) return <AuditLoadingState rows={8} />;
   if (query.isError || !query.data) return <AuditErrorState message={query.error ?? 'Program not found'} onRetry={() => query.refetch()} />;

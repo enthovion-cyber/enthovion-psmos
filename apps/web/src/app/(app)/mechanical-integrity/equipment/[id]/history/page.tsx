@@ -1,10 +1,12 @@
-'use client';
+'use client';;
+import { use } from "react";
 
 import { useEquipmentHistory } from '@/features/mechanical-integrity/hooks/useEquipmentHistory';
 import { MiHistoryHeader } from '@/features/mechanical-integrity/history/MiHistoryHeader';
 import { EquipmentHistoryTimeline } from '@/features/mechanical-integrity/history/EquipmentHistoryTimeline';
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const query = useEquipmentHistory(params.id);
   if (query.isLoading) return <div className="p-6">Loading equipment history...</div>;
   if (query.error) return <div className="m-6 rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-700 dark:text-red-200">Unable to load equipment history.</div>;

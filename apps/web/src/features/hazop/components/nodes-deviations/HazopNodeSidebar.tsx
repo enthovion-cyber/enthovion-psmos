@@ -45,20 +45,20 @@ export function HazopNodeSidebar({
   }), [nodes, riskFilter, search, statusFilter]);
 
   return (
-    <aside className="sticky top-4 flex max-h-[calc(100vh-140px)] min-h-[620px] flex-col overflow-hidden rounded-xl border border-[var(--psm-line)] bg-[#061827] shadow-2xl shadow-black/20">
-      <div className="border-b border-white/10 p-3">
+    <aside className="sticky top-4 flex max-h-[calc(100vh-140px)] min-h-[560px] flex-col overflow-hidden rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] shadow-md">
+      <div className="border-b border-[var(--psm-line)] p-3 bg-[var(--psm-surface)]">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-slate-100">Nodes ({nodes.length})</h3>
-            <p className="text-[11px] text-slate-500">Study worksheet sections</p>
+            <h3 className="text-sm font-semibold text-[var(--psm-text)]">Nodes ({nodes.length})</h3>
+            <p className="text-[11px] text-[var(--psm-muted)]">Study worksheet sections</p>
           </div>
-          {canCreate ? <button type="button" onClick={onAdd} className="grid h-8 w-8 place-items-center rounded-md bg-emerald-500 text-white" title="Add node"><Plus size={14} /></button> : null}
+          {canCreate ? <button type="button" onClick={onAdd} className="grid h-8 w-8 place-items-center rounded-md bg-emerald-600 dark:bg-emerald-500 text-white transition hover:opacity-90" title="Add node"><Plus size={14} /></button> : null}
         </div>
         <HazopNodeSearchFilter search={search} statusFilter={statusFilter} riskFilter={riskFilter} onSearch={setSearch} onStatusFilter={setStatusFilter} onRiskFilter={setRiskFilter} />
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-2">
         {loading ? <State text="Loading nodes..." /> : null}
-        {error ? <State text="Unable to load node context." tone="text-red-300" /> : null}
+        {error ? <State text="Unable to load node context." tone="text-rose-500" /> : null}
         {!loading && !filteredNodes.length ? <State text="No nodes match the current filters." /> : null}
         {filteredNodes.map((node) => (
           <HazopNodeSidebarItem
@@ -75,8 +75,8 @@ export function HazopNodeSidebar({
         ))}
       </div>
       {canCreate ? (
-        <div className="border-t border-white/10 p-3">
-          <button type="button" onClick={onAdd} className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.03] text-xs font-semibold text-slate-200 hover:border-emerald-400/40 hover:bg-emerald-500/10">
+        <div className="border-t border-[var(--psm-line)] p-2.5 bg-[var(--psm-surface)]">
+          <button type="button" onClick={onAdd} className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] text-xs font-semibold text-[var(--psm-text)] hover:border-emerald-500/40 hover:bg-emerald-500/10 transition">
             <Plus size={13} /> Add New Node
           </button>
         </div>
@@ -85,6 +85,6 @@ export function HazopNodeSidebar({
   );
 }
 
-function State({ text, tone = "text-slate-500" }: { text: string; tone?: string }) {
-  return <div className={`rounded-lg border border-dashed border-white/10 p-4 text-center text-xs ${tone}`}>{text}</div>;
+function State({ text, tone = "text-[var(--psm-muted)]" }: { text: string; tone?: string }) {
+  return <div className={`rounded-lg border border-dashed border-[var(--psm-line)] p-4 text-center text-xs ${tone}`}>{text}</div>;
 }

@@ -4,13 +4,43 @@ import { DetailCard, EmptyState } from '../moc-detail-ui';
 
 export function RiskHistoryTable({ history }: { history: any[] }) {
   return (
-    <DetailCard title="Risk History">
-      {!history.length ? <EmptyState title="No risk history yet" detail="Risk saves, recalculations, completion, locks, unlocks, and reassessment requests appear here." /> : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500"><tr><th className="border-b border-white/10 py-2">Event</th><th className="border-b border-white/10 py-2">Score</th><th className="border-b border-white/10 py-2">Level</th><th className="border-b border-white/10 py-2">Actor</th><th className="border-b border-white/10 py-2">Date</th></tr></thead>
-            <tbody>
-              {history.map((row) => <tr key={row.id} className="border-b border-white/5"><td className="py-3"><p className="font-bold text-white">{row.title}</p><p className="text-xs text-slate-500">{row.event_type}</p></td><td className="py-3 text-slate-300">{row.risk_score_before ?? '-'} {'->'} {row.risk_score_after ?? '-'}</td><td className="py-3 text-slate-300">{row.risk_level_before ?? '-'} {'->'} {row.risk_level_after ?? '-'}</td><td className="py-3 text-slate-400">{row.actor_id ?? '-'}</td><td className="py-3 text-slate-400">{row.created_at ? new Date(row.created_at).toLocaleString() : '-'}</td></tr>)}
+    <DetailCard title="HAZOP Risk Assessment Audit Log">
+      {!history.length ? (
+        <EmptyState
+          title="No risk revision history yet"
+          detail="Risk saves, recalculations, completions, locks, unlocks, and reassessment requests appear here."
+        />
+      ) : (
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[640px] text-left text-xs">
+            <thead className="border-b border-[var(--psm-line)] font-bold uppercase tracking-wider text-[var(--psm-muted)]">
+              <tr>
+                <th className="py-2.5 px-3">Event / Action</th>
+                <th className="py-2.5 px-3">Score Shift</th>
+                <th className="py-2.5 px-3">Level Shift</th>
+                <th className="py-2.5 px-3">Evaluator</th>
+                <th className="py-2.5 px-3">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--psm-line)]">
+              {history.map((row) => (
+                <tr key={row.id} className="hover:bg-[var(--psm-surface-2)] transition-colors">
+                  <td className="py-2.5 px-3">
+                    <p className="font-bold text-[var(--psm-fg)]">{row.title}</p>
+                    <p className="text-[10px] text-[var(--psm-muted)]">{row.event_type}</p>
+                  </td>
+                  <td className="py-2.5 px-3 font-mono font-bold text-[var(--psm-fg)]">
+                    {row.risk_score_before ?? '-'} → {row.risk_score_after ?? '-'}
+                  </td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--psm-fg)]">
+                    {row.risk_level_before ?? '-'} → {row.risk_level_after ?? '-'}
+                  </td>
+                  <td className="py-2.5 px-3 text-[var(--psm-muted)]">{row.actor_id ?? 'System'}</td>
+                  <td className="py-2.5 px-3 text-[var(--psm-muted)]">
+                    {row.created_at ? new Date(row.created_at).toLocaleString() : '-'}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

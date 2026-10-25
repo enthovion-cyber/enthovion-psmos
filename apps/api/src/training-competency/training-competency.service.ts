@@ -422,6 +422,253 @@ export class TrainingCompetencyService {
     return { snapshot, blockers, summary: this.trainingSummaryPayload({ ...worker, training_status: trainingStatus }) };
   }
 
+  async verifyWorkerCompetency(user: RequestUser, workerIdOrUserId: string, options: Row = {}) {
+    // 1. Resolve Worker
+    let worker = await this.db.single<Row>(
+      this.db.from('training_workers').select('*').eq('company_id', user.tenantId).eq('id', workerIdOrUserId).maybeSingle()
+    ).catch(() => null);
+
+    if (!worker) {
+      worker = await this.db.single<Row>(
+        this.db.from('training_workers').select('*').eq('company_id', user.tenantId).eq('linked_user_id', workerIdOrUserId).maybeSingle()
+      ).catch(() => null);
+    }
+    if (!worker) {
+      worker = await this.db.single<Row>(
+        this.db.from('training_workers').select('*').eq('company_id', user.tenantId).eq('worker_number', workerIdOrUserId).maybeSingle()
+      ).catch(() => null);
+    }
+    if (!worker) {
+      throw new NotFoundException(`Worker or linked user '${workerIdOrUserId}' not found in workforce registry.`);
+    }
+
+    const workerId = worker.id;
+    const now = new Date();
+    const blockers: Array<{ module: string; code: string; title: string; severity: 'Critical' | 'High' | 'Medium'; blocking: boolean; reason: string }> = [];
+    const warnings: Array<{ module: string; code: string; title: string; severity: 'Medium' | 'Low'; reason: string }> = [];
+
+    // 2. Worker Status Check
+    if (worker.employment_status !== 'Active') {
+      blockers.push({
+        module: 'Workforce',
+        code: 'INACTIVE_WORKER',
+        title: `Worker is ${worker.employment_status ?? 'Inactive'}`,
+        severity: 'Critical',
+        blocking: true,
+        reason: `Employment status is '${worker.employment_status}'. Only Active personnel can be verified for safety work.`
+      });
+    }
+    if (worker.worker_status === 'Blocked') {
+      blockers.push({
+        module: 'Workforce',
+        code: 'WORKER_BLOCKED',
+        title: 'Worker profile is administratively blocked',
+        severity: 'Critical',
+        blocking: true,
+        reason: 'Administrative block is active on worker profile.'
+      });
+    }
+
+    // 3. Certificates & Expiries
+    const certificates = await this.safeMany<Row>(
+      this.db.from('training_certificates').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).is('archived_at', null)
+    );
+    for (const cert of certificates) {
+      const isSafetyCritical = Boolean(cert.safety_critical);
+      const isExpired = cert.expires_at && new Date(cert.expires_at).getTime() < now.getTime();
+      const isPendingVerification = cert.verification_status === 'Pending' || cert.status === 'Pending Verification';
+
+      if (isExpired) {
+        if (isSafetyCritical) {
+          blockers.push({
+            module: 'Certifications',
+            code: 'EXPIRED_CRITICAL_CERT',
+            title: `Expired Safety-Critical Certificate: ${cert.title ?? cert.certificate_type}`,
+            severity: 'Critical',
+            blocking: true,
+            reason: `Certificate expired on ${cert.expires_at}.`
+          });
+        } else {
+          warnings.push({
+            module: 'Certifications',
+            code: 'EXPIRED_CERT',
+            title: `Expired Certificate: ${cert.title ?? cert.certificate_type}`,
+            severity: 'Medium',
+            reason: `Certificate expired on ${cert.expires_at}. Renewal required.`
+          });
+        }
+      } else if (isPendingVerification && isSafetyCritical) {
+        blockers.push({
+          module: 'Certifications',
+          code: 'UNVERIFIED_CRITICAL_CERT',
+          title: `Pending Verification: ${cert.title ?? cert.certificate_type}`,
+          severity: 'High',
+          blocking: true,
+          reason: 'Safety-critical certificate evidence is pending verification.'
+        });
+      }
+    }
+
+    // 4. SOP Acknowledgements
+    const sopAcks = await this.safeMany<Row>(
+      this.db.from('training_sop_acknowledgements').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId)
+    );
+    const pendingCriticalSops = sopAcks.filter((s: Row) => Boolean(s.safety_critical) && s.acknowledgement_status !== 'Acknowledged' && s.acknowledgement_status !== 'Verified' && s.acknowledgement_status !== 'Waived');
+    for (const sop of pendingCriticalSops) {
+      blockers.push({
+        module: 'SOP Acknowledgements',
+        code: 'PENDING_CRITICAL_SOP',
+        title: `Mandatory SOP Unacknowledged: ${sop.sop_title ?? sop.sop_number}`,
+        severity: 'Critical',
+        blocking: true,
+        reason: 'Worker has not acknowledged revised safety-critical standard operating procedure.'
+      });
+    }
+
+    // 5. MOC Delta-Training Blockers
+    let mocBlockerQuery = this.db.from('training_moc_blockers').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).eq('blocker_status', 'Open');
+    if (options.mocId) mocBlockerQuery = mocBlockerQuery.eq('moc_id', options.mocId);
+    const mocBlockers = await this.safeMany<Row>(mocBlockerQuery);
+    for (const mb of mocBlockers) {
+      if (mb.startup_blocker || mb.implementation_blocker) {
+        blockers.push({
+          module: 'MOC Delta-Training',
+          code: 'MOC_DELTA_TRAINING_BLOCKER',
+          title: `MOC Training Blocker: ${mb.blocker_title}`,
+          severity: mb.blocker_severity === 'Critical' ? 'Critical' : 'High',
+          blocking: Boolean(mb.startup_blocker || mb.implementation_blocker),
+          reason: `Uncompleted MOC training required before startup/execution (MOC ID: ${mb.moc_id}).`
+        });
+      }
+    }
+
+    // 6. PSSR Readiness Blockers
+    let pssrBlockerQuery = this.db.from('training_pssr_blockers').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).eq('blocker_status', 'Open');
+    if (options.pssrId) pssrBlockerQuery = pssrBlockerQuery.eq('pssr_id', options.pssrId);
+    const pssrBlockers = await this.safeMany<Row>(pssrBlockerQuery);
+    for (const pb of pssrBlockers) {
+      if (pb.startup_blocker) {
+        blockers.push({
+          module: 'PSSR Training',
+          code: 'PSSR_STARTUP_TRAINING_BLOCKER',
+          title: `PSSR Training Blocker: ${pb.blocker_title}`,
+          severity: pb.blocker_severity === 'Critical' ? 'Critical' : 'High',
+          blocking: true,
+          reason: `PSSR startup authorization blocked until training is completed (PSSR ID: ${pb.pssr_id}).`
+        });
+      }
+    }
+
+    // 7. PTW Authorization (if requested)
+    let ptwQualified = true;
+    if (options.permitType || options.permitRole) {
+      const ptwAuthorizations = await this.safeMany<Row>(
+        this.db.from('ptw_role_authorizations').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).eq('status', 'Authorized')
+      );
+      const roleMatch = ptwAuthorizations.find((a: Row) => !options.permitRole || a.ptw_role === options.permitRole);
+      if (!roleMatch) {
+        ptwQualified = false;
+        blockers.push({
+          module: 'PTW Authorization',
+          code: 'PTW_ROLE_NOT_AUTHORIZED',
+          title: `Not Authorized for PTW Role: ${options.permitRole ?? 'Permit Execution'}`,
+          severity: 'Critical',
+          blocking: true,
+          reason: `Worker has not achieved verified authorization for role '${options.permitRole ?? options.permitType}'.`
+        });
+      }
+    }
+
+    // 8. Overall Qualification Computation
+    const criticalCount = blockers.filter((b) => b.severity === 'Critical').length;
+    const blockingCount = blockers.filter((b) => b.blocking).length;
+    const qualified = blockingCount === 0;
+    const qualificationStatus = qualified ? (warnings.length === 0 ? 'QUALIFIED' : 'CONDITIONALLY_QUALIFIED') : 'BLOCKED';
+
+    // Quantitative score (0-100)
+    let totalChecks = 5;
+    let passedChecks = 5;
+    if (worker.employment_status !== 'Active' || worker.worker_status === 'Blocked') passedChecks -= 2;
+    if (certificates.some((c: Row) => c.expires_at && new Date(c.expires_at).getTime() < now.getTime())) passedChecks -= 1;
+    if (pendingCriticalSops.length > 0) passedChecks -= 1;
+    if (mocBlockers.length > 0 || pssrBlockers.length > 0) passedChecks -= 1;
+    const overallScore = Math.max(0, Math.min(100, Math.round((passedChecks / totalChecks) * 100)));
+
+    const result = {
+      worker: {
+        id: worker.id,
+        workerNumber: worker.worker_number,
+        fullName: `${worker.first_name ?? ''} ${worker.last_name ?? ''}`.trim() || worker.display_name,
+        email: worker.email,
+        jobTitle: worker.job_title,
+        employerType: worker.employer_type,
+        employmentStatus: worker.employment_status,
+        safetyCriticalRole: Boolean(worker.safety_critical_role),
+        primarySiteId: worker.primary_site_id
+      },
+      qualificationStatus,
+      qualified,
+      overallScore,
+      blockersCount: blockers.length,
+      criticalBlockersCount: criticalCount,
+      warningsCount: warnings.length,
+      blockers,
+      warnings,
+      breakdown: {
+        employment: worker.employment_status === 'Active' ? 'Pass' : 'Fail',
+        certificates: {
+          total: certificates.length,
+          expired: certificates.filter((c: Row) => c.expires_at && new Date(c.expires_at).getTime() < now.getTime()).length,
+          pendingVerification: certificates.filter((c: Row) => c.verification_status === 'Pending').length
+        },
+        sopAcknowledgements: {
+          total: sopAcks.length,
+          pendingCritical: pendingCriticalSops.length
+        },
+        mocDeltaTraining: {
+          openBlockers: mocBlockers.length
+        },
+        pssrReadiness: {
+          openBlockers: pssrBlockers.length
+        },
+        ptwAuthorization: ptwQualified ? 'Authorized' : 'Not Authorized'
+      },
+      verifiedAt: now.toISOString(),
+      verifiedBy: user.id
+    };
+
+    await this.audit.write({
+      tenantId: user.tenantId,
+      actorId: user.id,
+      action: 'training.worker.verified',
+      entityType: 'WorkerQualification',
+      entityId: worker.id,
+      after: { qualificationStatus, overallScore, blockersCount: blockers.length } as any
+    });
+
+    return result;
+  }
+
+  async qualificationPassport(user: RequestUser, workerIdOrUserId: string) {
+    const verification = await this.verifyWorkerCompetency(user, workerIdOrUserId);
+    const workerId = verification.worker.id;
+    const [certificates, sopAcks, roles, records] = await Promise.all([
+      this.safeMany<Row>(this.db.from('training_certificates').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).is('archived_at', null)),
+      this.safeMany<Row>(this.db.from('training_sop_acknowledgements').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId)),
+      this.safeMany<Row>(this.db.from('training_worker_role_assignments').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).is('removed_at', null)),
+      this.safeMany<Row>(this.db.from('training_records').select('*').eq('company_id', user.tenantId).eq('worker_id', workerId).order('training_date', { ascending: false }).limit(20))
+    ]);
+    return {
+      ...verification,
+      passportNumber: `PASS-${verification.worker.workerNumber || verification.worker.id.slice(0, 8).toUpperCase()}`,
+      validUntil: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+      roles,
+      activeCertificates: certificates.filter((c: Row) => !c.expires_at || new Date(c.expires_at).getTime() >= Date.now()),
+      sopAcknowledgements: sopAcks,
+      recentTrainingRecords: records
+    };
+  }
+
   async history(user: RequestUser, query: Row = {}) {
     const limit = Math.min(Math.max(Number(query.limit ?? 50), 1), 200);
     let req: any = this.db.from('training_worker_history_events').select('*').eq('company_id', user.tenantId);

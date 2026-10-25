@@ -1,5 +1,11 @@
 import { ReliefSystemFormPage } from '@/features/psi/relief-systems/ReliefSystemFormPage';
 
-export default function EditReliefSystemRoute({ params }: { params: { reliefBasisId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function EditReliefSystemRoute(props: { params: Promise<{ reliefBasisId: string }> }) {
+  const params = await props.params;
   return <ReliefSystemFormPage reliefBasisId={params.reliefBasisId} />;
 }

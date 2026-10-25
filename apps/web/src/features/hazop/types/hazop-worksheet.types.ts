@@ -9,6 +9,8 @@ export type HazopWorksheetActions = {
   onAddSafeguard: (scenario: HazopScenarioRow) => void;
   onRankRisk: (scenario: HazopScenarioRow) => void;
   onMarkLopa: (scenario: HazopScenarioRow) => void;
+  onEscalateToLopa?: (scenario: HazopScenarioRow) => void;
+  onInlineSave?: (scenarioId: string, values: Partial<HazopScenarioRow>) => Promise<void> | void;
   onDuplicate: (scenario: HazopScenarioRow) => void;
   onDelete: (scenario: HazopScenarioRow) => void;
 };

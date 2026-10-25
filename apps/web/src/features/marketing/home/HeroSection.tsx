@@ -1,64 +1,96 @@
+'use client';
+
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Network, ShieldCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  ShieldCheck,
+  Sparkles,
+  Layers,
+  ChevronRight,
+  Radio,
+  Clock,
+  Activity
+} from 'lucide-react';
 import { StartTrialButton } from '../cta/StartTrialButton';
 import { ContactSalesButton } from '../cta/ContactSalesButton';
-import { visualSignals } from './marketing-content';
+import { HeroPlatformPreview } from './HeroPlatformPreview';
 
 export function HeroSection() {
   return (
-    <section id="overview" className="relative isolate overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(37,99,235,.22),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(20,184,166,.18),transparent_30%),linear-gradient(180deg,var(--psm-surface),var(--psm-bg))]" />
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_520px] lg:px-8 lg:py-20">
-        <div className="flex flex-col justify-center">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3 py-1.5 text-xs font-black text-blue-300">
-            <ShieldCheck size={14} /> AI-powered Process Safety Management Operating System
+    <section id="overview" className="relative isolate overflow-hidden pt-8 pb-16 sm:pt-14 sm:pb-24 lg:pb-32 transition-colors">
+      {/* High-Tech Ambient Grid & Animated Glowing Atmosphere */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        {/* Crisp subtle dot grid */}
+        <div
+          className="absolute inset-0 opacity-[0.20] dark:opacity-[0.16]"
+          style={{
+            backgroundImage: `radial-gradient(var(--psm-line) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px'
+          }}
+        />
+
+        {/* Ambient Animated Gradient Orbs */}
+        <div className="absolute -top-24 left-1/4 h-[550px] w-[550px] rounded-full bg-gradient-to-br from-[var(--psm-primary)]/20 to-amber-500/10 blur-[120px] pointer-events-none animate-[psm-pulse-glow_7s_ease-in-out_infinite]" />
+        <div className="absolute top-1/3 right-1/6 h-[500px] w-[500px] rounded-full bg-gradient-to-bl from-blue-500/15 to-teal-500/10 blur-[130px] pointer-events-none animate-[psm-pulse-glow_9s_ease-in-out_infinite_reverse]" />
+        <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[var(--psm-bg)] to-transparent pointer-events-none" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Hero Top Content Block with Refined Typography */}
+        <div className="max-w-4xl">
+          {/* Animated High-Tech Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--psm-primary)]/30 bg-[var(--psm-surface)]/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--psm-primary)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--psm-primary)] hover:shadow-md cursor-pointer">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--psm-primary)] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--psm-primary)]" />
+            </span>
+            <Layers size={13} className="text-[var(--psm-primary)]" />
+            <span className="text-[11px] font-bold">Process Safety Management Operating System</span>
           </div>
-          <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[1.02] tracking-normal text-[var(--psm-text)] sm:text-6xl lg:text-7xl">
-            One operating system for Process Safety Management.
+
+          {/* Premium Refined Headline (Balanced Weight & Animated Flowing Gradient) */}
+          <h1 className="mt-5 text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[var(--psm-text)] leading-[1.12]">
+            Process Safety Workflows, Platform Controls, and{' '}
+            <span className="inline-block font-extrabold bg-gradient-to-r from-orange-500 via-amber-400 to-orange-400 bg-clip-text text-transparent psm-animated-gradient drop-shadow-xs">
+              Audit-Ready Evidence.
+            </span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--psm-muted)]">
-            Enthovion PSM OS helps industrial teams manage MOC, PSSR, HAZOP/PHA, LOPA/SIL, incidents, actions, documents, and audit-ready workflows in one secure workspace.
+
+          {/* Clean, Readable Subtitle with Proper Weight */}
+          <p className="mt-5 text-sm sm:text-base lg:text-lg leading-relaxed text-[var(--psm-muted)] max-w-2xl font-normal">
+            Connect MOC, PSSR, HAZOP, LOPA, Incident Investigation, and Field Permitting into one unified operating system. Engineered for zero blind spots across hazardous chemical, refining, and energy facilities.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <StartTrialButton />
-            <Link href="/pricing" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] px-4 text-sm font-bold hover:bg-[var(--psm-surface-2)]">View pricing</Link>
-            <ContactSalesButton />
+
+          {/* Dual Action Buttons */}
+          <div className="mt-8 flex flex-wrap items-center gap-3.5">
+            <StartTrialButton className="min-h-11 px-6 text-xs sm:text-sm font-bold shadow-lg shadow-[var(--action-primary)]/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all rounded-xl" />
+            <ContactSalesButton className="min-h-11 px-6 text-xs sm:text-sm font-semibold rounded-xl" />
           </div>
-          <div className="mt-7 grid gap-2 text-sm text-[var(--psm-muted)] sm:grid-cols-2">
-            {['No credit card required for trial', 'Built for multi-site industrial teams', 'Company/site data isolation', 'Audit-ready workflows'].map((item) => (
-              <div key={item} className="flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-500" /> {item}</div>
-            ))}
+
+          {/* Subtle Reassurance Points */}
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-[var(--psm-muted)]">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+              <span>Full 14-Day Free Trial (No Credit Card)</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+              <span>Multi-Site Scope Isolation</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+              <span>OSHA 1910.119 & IEC 61511 Audit-Ready</span>
+            </span>
           </div>
         </div>
-        <div className="flex items-center">
-          <div className="w-full rounded-2xl border border-[var(--psm-line)] bg-[color-mix(in_srgb,var(--psm-surface)_82%,transparent)] p-4 shadow-2xl backdrop-blur">
-            <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[.18em] text-[var(--psm-muted)]">Marketing dashboard preview</div>
-                  <div className="mt-1 text-xl font-black">PSM Command Workspace</div>
-                </div>
-                <Network className="text-blue-500" size={26} />
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {visualSignals.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3">
-                    <item.icon size={18} className="text-blue-500" />
-                    <div className="mt-3 text-xs font-bold uppercase text-[var(--psm-muted)]">{item.label}</div>
-                    <div className="text-sm font-black">{item.value}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 rounded-xl border border-blue-400/20 bg-blue-500/10 p-4">
-                <div className="text-sm font-black">Company - Site - Module hierarchy</div>
-                <div className="mt-3 grid gap-2 text-xs text-[var(--psm-muted)]">
-                  {['Company workspace', 'Site / plant scope', 'Process unit / area', 'MOC, PSSR, HAZOP, LOPA, Incident workflows', 'Action, evidence, approval, report'].map((step, index) => (
-                    <div key={step} className="flex items-center gap-2"><span className="grid h-5 w-5 place-items-center rounded-full bg-blue-600 text-[10px] font-black text-white">{index + 1}</span>{step}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-[var(--psm-muted)]">Illustrative product visual. Operational values are not customer data.</p>
+
+        {/* Full-Width Interactive Hero Platform Preview Container */}
+        <div className="mt-12 sm:mt-14">
+          <div className="relative mx-auto max-w-7xl">
+            {/* Luminous Glow Ring */}
+            <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-[var(--psm-primary)]/20 via-sky-500/15 to-emerald-500/20 blur-2xl opacity-70 -z-10" />
+            <HeroPlatformPreview />
           </div>
         </div>
       </div>

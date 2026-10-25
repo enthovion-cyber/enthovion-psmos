@@ -36,6 +36,7 @@ export function DeviationFormPage({ deviationId, preset = {} }: { deviationId?: 
   const [error, setError] = useState<string | null>(null);
   const mutations = useDeviationMutations(row?.id);
   const change = (key: string, value: unknown) => setValues((current) => ({ ...current, [key]: value }));
+  const isIntervalExtension = /interval extension|deferral|extension/i.test(values.deviationType ?? '');
   const save = async () => {
     const missing = validateDeviationDraft(values);
     if (missing.length) {
@@ -68,6 +69,18 @@ export function DeviationFormPage({ deviationId, preset = {} }: { deviationId?: 
           <Input value={values.ownerUserId} onChange={(value) => change('ownerUserId', value)} placeholder="Owner user ID" />
           <Input value={values.approverUserId} onChange={(value) => change('approverUserId', value)} placeholder="Approver user ID" />
           <Input value={values.closureRequirement} onChange={(value) => change('closureRequirement', value)} placeholder="Closure requirement" />
+          {isIntervalExtension ? (
+            <div className="md:col-span-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+              <strong className="font-bold">OSHA 1910.119(j) Requirement:</strong> Interval extensions and test deferrals mandate an Approved Management of Change (MOC). Please provide the approved MOC ID below:
+              <div className="mt-2">
+                <Input
+                  value={values.mocId ?? ''}
+                  onChange={(value) => change('mocId', value)}
+                  placeholder="Approved MOC ID (Required for interval extension approval)"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
         <div className="mt-3"><Check label="Extension allowed" checked={values.extensionAllowed} onChange={(value) => change('extensionAllowed', value)} /></div>
       </SectionCard>

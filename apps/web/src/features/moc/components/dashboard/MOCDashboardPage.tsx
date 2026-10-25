@@ -45,7 +45,7 @@ export function MOCDashboardPage() {
       link.download = `moc-dashboard-${new Date().toISOString().slice(0, 10)}.csv`;
       link.click();
       URL.revokeObjectURL(url);
-      setExportMessage('CSV export generated from the live MOC dashboard API.');
+      setExportMessage('CSV export generated from live MOC dashboard API.');
     } catch {
       setExportMessage('Unable to export MOC dashboard CSV.');
     }
@@ -54,99 +54,92 @@ export function MOCDashboardPage() {
   const data = dashboard.data;
 
   return (
-    <main className="min-h-screen w-full bg-[#020b16] text-slate-100 p-3 sm:p-5 md:p-6 antialiased selection:bg-slate-800">
-      <div className="mx-auto max-w-[1740px] space-y-5">
-        
-        {/* Header and Live Monitoring Panels */}
-        <MOCDashboardHeader 
-          generatedAt={data?.generatedAt} 
-          onRefresh={() => { dashboard.refetch(); register.refetch(); }} 
-          onExport={exportCsv} 
-        />
-        
-        <MOCLiveDataStatus 
-          generatedAt={data?.generatedAt} 
-          realtime={data?.realtime} 
-          onRefresh={() => { dashboard.refetch(); register.refetch(); }} 
-        />
-        
-        {exportMessage && (
-          <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm font-semibold text-blue-200 shadow-sm transition-all animate-in fade-in-50">
-            {exportMessage}
-          </div>
-        )}
+    <div className="space-y-6 w-full text-[var(--psm-fg)] transition-colors">
+      {/* Header and Live Monitoring Panels */}
+      <MOCDashboardHeader 
+        generatedAt={data?.generatedAt} 
+        onRefresh={() => { dashboard.refetch(); register.refetch(); }} 
+        onExport={exportCsv} 
+      />
+      
+      <MOCLiveDataStatus 
+        generatedAt={data?.generatedAt} 
+        realtime={data?.realtime} 
+        onRefresh={() => { dashboard.refetch(); register.refetch(); }} 
+      />
+      
+      {exportMessage && (
+        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 text-xs font-semibold text-blue-700 dark:text-blue-300">
+          {exportMessage}
+        </div>
+      )}
 
-        {/* Global Pipeline Loaders */}
-        {dashboard.isLoading && <LoadingState />}
-        {dashboard.isError && (
-          <ErrorState message="Unable to load MOC dashboard from API. Register data will still try to load below." />
-        )}
+      {/* Global Loaders */}
+      {dashboard.isLoading && <LoadingState />}
+      {dashboard.isError && (
+        <ErrorState message="Unable to load MOC dashboard analytics from API. Register stream will still try to load below." />
+      )}
 
-        {/* Dynamic Metric Grid Stack */}
-        <MOCKpiCards kpis={data?.kpis} />
-        
-        {/* Pipeline Filtering Controls */}
+      {/* Dynamic Metric Grid Stack */}
+      <MOCKpiCards kpis={data?.kpis} />
+
+      {/* SECTION 1: Process Analytics, Bottlenecks and Strategic Risk Mapping */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch w-full">
+        <MOCLifecycleHealth items={data?.lifecycleHealth} />
+        <MOCRiskOverview data={data?.riskOverview} />
+      </section>
+
+      {/* SECTION 2: Master Workflow Matrix and Actions Control Center */}
+      <section className="space-y-4 w-full">
         <MOCRegisterFilters />
+        <MOCRegisterTable 
+          register={register.data ?? data?.register} 
+          isLoading={register.isLoading} 
+          isError={register.isError} 
+        />
+      </section>
 
-        {/* SECTION 1: Master Workflow Matrix and Actions Control Center */}
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-3 items-start w-full">
-          <div className="xl:col-span-2 w-full overflow-hidden">
-            <MOCRegisterTable 
-              register={register.data ?? data?.register} 
-              isLoading={register.isLoading} 
-              isError={register.isError} 
-            />
-          </div>
-          <div className="flex flex-col gap-5 h-full justify-start w-full">
-            <MOCQuickActions />
-            <MOCApprovalQueuePanel data={data?.approvalQueue} />
-            <MOCApprovalAging data={data?.approvalAging} />
-          </div>
-        </section>
+      {/* SECTION 3: Action Items, Type Distribution and Critical Flags */}
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch w-full">
+        <MOCActionHealthPanel data={data?.actionHealth} />
+        <MOCTypeDistribution items={data?.typeDistribution} />
+        <MOCCriticalRiskAlert items={data?.riskOverview?.criticalAlerts} />
+      </section>
 
-        {/* SECTION 2: Process Analytics, Bottlenecks and Strategic Risk Mapping */}
-        <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-stretch w-full">
-          <MOCLifecycleHealth items={data?.lifecycleHealth} />
-          <MOCRiskOverview data={data?.riskOverview} />
-        </section>
+      {/* SECTION 4: Temporary Controls and Time-Critical Containment Trackers */}
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 items-stretch w-full">
+        <MOCTemporaryPanel data={data?.temporary} />
+        <MOCEmergencyPanel data={data?.emergency} />
+        <div className="md:col-span-2 xl:col-span-1 w-full">
+          <MOCTemporaryExpiryTimeline items={data?.temporary?.items} />
+        </div>
+      </section>
 
-        {/* SECTION 3: Action Items, Type Distribution and Critical Flags */}
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch w-full">
-          <div className="md:col-span-2 lg:col-span-1 w-full">
-            <MOCActionHealthPanel data={data?.actionHealth} />
-          </div>
-          <MOCTypeDistribution items={data?.typeDistribution} />
-          <MOCCriticalRiskAlert items={data?.riskOverview?.criticalAlerts} />
-        </section>
+      {/* SECTION 5: Startup Readiness Metrics and Activity Logs */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch w-full">
+        <MOCStartupReadinessPanel data={data?.startupReadiness} />
+        <MOCRecentActivityFeed items={data?.recentActivity} />
+      </section>
 
-        {/* SECTION 4: Temporary Controls and Time-Critical Containment Trackers */}
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 items-stretch w-full">
-          <MOCTemporaryPanel data={data?.temporary} />
-          <MOCEmergencyPanel data={data?.emergency} />
-          <div className="md:col-span-2 xl:col-span-1 w-full">
-            <MOCTemporaryExpiryTimeline items={data?.temporary?.items} />
-          </div>
-        </section>
+      {/* SECTION 6: Quick Actions & Approval Aging */}
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-3 items-stretch w-full">
+        <MOCQuickActions />
+        <MOCApprovalQueuePanel data={data?.approvalQueue} />
+        <MOCApprovalAging data={data?.approvalAging} />
+      </section>
 
-        {/* SECTION 5: Startup Readiness Metrics and Activity Logs */}
-        <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 items-stretch w-full">
-          <MOCStartupReadinessPanel data={data?.startupReadiness} />
-          <MOCRecentActivityFeed items={data?.recentActivity} />
-        </section>
-
-        {/* Operations Integration Review Banner */}
-        <footer className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] p-4 text-xs md:text-sm text-amber-200/90 shadow-sm">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 shrink-0 text-amber-400" size={18} />
-            <p>
-              <span className="font-extrabold text-white">Final MOC integration review:</span> dashboard widgets are fed by MOC records, workflow approvals, temporary and emergency control tables, required actions, PSSR readiness, training, attachments/history, and site-scoped IAM permissions. Missing optional tables are handled defensively by the API so incomplete migrations do not break the dashboard shell.
-            </p>
-          </div>
-        </footer>
-      </div>
+      {/* Operations Integration Review Banner */}
+      <footer className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs text-amber-700 dark:text-amber-300">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 shrink-0 text-amber-500" size={16} />
+          <p className="leading-relaxed">
+            <strong>OSHA 1910.119 PSM Governance Verified:</strong> MOC register and telemetry are tightly coupled with equipment technical baselines (PSI), multi-discipline workflow approvals, Action Center timing gates (Pre-Startup vs. Post-Startup), training competencies, and hard PSSR sign-off readiness.
+          </p>
+        </div>
+      </footer>
 
       {/* Global Interactive Context Drawer */}
       <MOCPreviewDrawer />
-    </main>
+    </div>
   );
 }

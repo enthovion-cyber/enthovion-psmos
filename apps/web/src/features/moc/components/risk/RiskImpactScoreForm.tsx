@@ -1,42 +1,104 @@
 'use client';
 
 import type { UseFormRegister, FieldErrors, UseFormWatch } from 'react-hook-form';
-import { Field } from '../moc-detail-ui';
+import { DetailCard, Field, detailInput } from '../moc-detail-ui';
 import { riskLabel, riskLevel, type MOCRiskValues } from '../../schemas/moc-risk.schema';
 
-export function RiskImpactScoreForm({ register, watch, errors, disabled }: { register: UseFormRegister<MOCRiskValues>; watch: UseFormWatch<MOCRiskValues>; errors: FieldErrors<MOCRiskValues>; disabled?: boolean }) {
+export function RiskImpactScoreForm({
+  register,
+  watch,
+  errors,
+  disabled
+}: {
+  register: UseFormRegister<MOCRiskValues>;
+  watch: UseFormWatch<MOCRiskValues>;
+  errors: FieldErrors<MOCRiskValues>;
+  disabled?: boolean | undefined;
+}) {
   const safety = Number(watch('safetyScore') ?? 0);
   const environmental = Number(watch('environmentalScore') ?? 0);
   const production = Number(watch('productionScore') ?? 0);
   const total = safety + environmental + production;
+
   return (
-    <div className="rounded-xl border border-cyan-300/10 bg-[#07182a]/95 p-4 shadow-xl shadow-black/10">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-black uppercase tracking-wide text-white">Impact Score Form</h2>
-        <span className="rounded-full border border-blue-300/20 bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-200">Preview: {total} / 9 {riskLevel(total)}</span>
+    <DetailCard
+      title="HAZOP Impact Vector Scoring"
+      action={
+        <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+          Evaluated: {total} / 9 · {riskLevel(total)}
+        </span>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <ScoreField
+          label="Safety Impact"
+          field="safetyScore"
+          value={safety}
+          register={register}
+          disabled={disabled}
+          error={errors.safetyScore?.message}
+        />
+        <ScoreField
+          label="Environmental Impact"
+          field="environmentalScore"
+          value={environmental}
+          register={register}
+          disabled={disabled}
+          error={errors.environmentalScore?.message}
+        />
+        <ScoreField
+          label="Production / Asset Impact"
+          field="productionScore"
+          value={production}
+          register={register}
+          disabled={disabled}
+          error={errors.productionScore?.message}
+        />
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        <ScoreField label="Safety Impact" field="safetyScore" value={safety} register={register} disabled={disabled} error={errors.safetyScore?.message} />
-        <ScoreField label="Environmental Impact" field="environmentalScore" value={environmental} register={register} disabled={disabled} error={errors.environmentalScore?.message} />
-        <ScoreField label="Production Impact" field="productionScore" value={production} register={register} disabled={disabled} error={errors.productionScore?.message} />
-      </div>
-    </div>
+    </DetailCard>
   );
 }
 
-function ScoreField({ label, field, value, register, disabled, error }: { label: string; field: Parameters<UseFormRegister<MOCRiskValues>>[0]; value: number; register: UseFormRegister<MOCRiskValues>; disabled?: boolean; error?: string }) {
-  const tones = ['border-emerald-300/20 text-emerald-200', 'border-blue-300/20 text-blue-200', 'border-amber-300/25 text-amber-200', 'border-red-300/25 text-red-200'];
+function ScoreField({
+  label,
+  field,
+  value,
+  register,
+  disabled,
+  error
+}: {
+  label: string;
+  field: Parameters<UseFormRegister<MOCRiskValues>>[0];
+  value: number;
+  register: UseFormRegister<MOCRiskValues>;
+  disabled?: boolean | undefined;
+  error?: string | undefined;
+}) {
+  const severityTones = [
+    'border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400',
+    'border-blue-500/30 bg-blue-500/5 text-blue-600 dark:text-blue-400',
+    'border-amber-500/30 bg-amber-500/5 text-amber-600 dark:text-amber-400',
+    'border-rose-500/30 bg-rose-500/5 text-rose-600 dark:text-rose-400'
+  ];
+
   return (
     <Field label={`${label} *`}>
-      <div className={`rounded-lg border bg-slate-950/35 p-3 ${tones[value] ?? tones[0]}`}>
-        <select disabled={disabled} className="h-11 w-full rounded-md border border-white/10 bg-slate-950/80 px-3 text-sm font-bold text-white outline-none focus:border-blue-300 disabled:opacity-60" {...register(field)}>
-          <option value={0}>0 - None</option>
-          <option value={1}>1 - Minor</option>
-          <option value={2}>2 - Significant</option>
-          <option value={3}>3 - Major</option>
+      <div className={`rounded-xl border p-3.5 transition-colors ${severityTones[value] ?? severityTones[0]}`}>
+        <select
+          disabled={disabled}
+          className={`${detailInput} font-bold cursor-pointer disabled:opacity-60`}
+          {...register(field)}
+        >
+          <option value={0}>0 - None (No Safety Impact)</option>
+          <option value={1}>1 - Minor (On-site First Aid / Controlled)</option>
+          <option value={2}>2 - Significant (Reportable / Equipment Damage)</option>
+          <option value={3}>3 - Major (Severe Injury / Loss of Containment)</option>
         </select>
-        <div className="mt-3 flex items-center justify-between text-xs"><span>Selected severity</span><b>{riskLabel(value)}</b></div>
-        {error ? <p className="mt-2 text-xs font-bold text-red-200">{error}</p> : null}
+        <div className="mt-3 flex items-center justify-between text-xs">
+          <span className="text-[var(--psm-muted)] font-medium">Selected Severity:</span>
+          <span className="font-bold">{riskLabel(value)}</span>
+        </div>
+        {error ? <p className="mt-2 text-xs font-bold text-rose-500">{error}</p> : null}
       </div>
     </Field>
   );

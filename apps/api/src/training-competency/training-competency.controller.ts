@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser, RequestUser } from '../common/decorators/current-user.decorator';
 import { Permissions } from '../common/decorators/permissions.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -3255,6 +3255,26 @@ export class TrainingCompetencyController {
   @Permissions('training.workforce.edit')
   recalculateStatus(@CurrentUser() user: RequestUser, @Param('workerId') workerId: string) {
     return this.training.recalculateStatus(user, workerId);
+  }
+
+  @Post('workforce/:workerId/verify-competency')
+  @Permissions('training.workforce.view')
+  verifyWorkerCompetency(@CurrentUser() user: RequestUser, @Param('workerId') workerId: string, @Body() dto: Record<string, any>) {
+    return this.training.verifyWorkerCompetency(user, workerId, dto);
+  }
+
+  @Post('verify-user')
+  @Permissions('training.workforce.view')
+  verifyUser(@CurrentUser() user: RequestUser, @Body() dto: Record<string, any>) {
+    const target = dto.workerId ?? dto.userId ?? dto.id;
+    if (!target) throw new BadRequestException('workerId, userId, or id is required in body.');
+    return this.training.verifyWorkerCompetency(user, target, dto);
+  }
+
+  @Get('workforce/:workerId/qualification-passport')
+  @Permissions('training.workforce.view')
+  qualificationPassport(@CurrentUser() user: RequestUser, @Param('workerId') workerId: string) {
+    return this.training.qualificationPassport(user, workerId);
   }
 
   @Get('workforce/:workerId/history')

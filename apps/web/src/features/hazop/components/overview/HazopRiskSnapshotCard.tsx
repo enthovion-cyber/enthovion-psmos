@@ -20,8 +20,8 @@ export function HazopRiskSnapshotCard({ riskSnapshot, onNavigate }: { riskSnapsh
           ))}
           <div className="border-t border-[var(--psm-line)] pt-3 text-xs text-[var(--psm-muted)]">
             <div>Total scenarios: <span className="font-semibold text-[var(--psm-text)]">{riskSnapshot.totalScenarios ?? 0}</span></div>
-            <div>High/Critical: <span className="font-semibold text-red-300">{riskSnapshot.highCriticalTotal ?? 0}</span></div>
-            <div>Unranked: <span className="font-semibold text-amber-300">{riskSnapshot.unrankedScenarios ?? 0}</span></div>
+            <div>High/Critical: <span className="font-semibold text-rose-600 dark:text-rose-400">{riskSnapshot.highCriticalTotal ?? 0}</span></div>
+            <div>Unranked: <span className="font-semibold text-amber-600 dark:text-amber-400">{riskSnapshot.unrankedScenarios ?? 0}</span></div>
           </div>
         </div>
       </div>

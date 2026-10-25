@@ -40,6 +40,16 @@ export type PermitIsolationPoint = {
   deisolated_at?: string | null;
   removal_verified_by?: string | null;
   removal_verified_at?: string | null;
+  is_safety_critical?: boolean;
+  is_sif_bypass?: boolean;
+  sif_tag?: string | null;
+  sil_rating?: string | null;
+  bypass_reason?: string | null;
+  bypass_certificate_number?: string | null;
+  bypass_authorized_by?: string | null;
+  bypass_authorized_at?: string | null;
+  bypass_risk_assessment_attached?: boolean;
+  bypass_status?: string | null;
   notes?: string | null;
   created_at?: string;
   updated_at?: string;

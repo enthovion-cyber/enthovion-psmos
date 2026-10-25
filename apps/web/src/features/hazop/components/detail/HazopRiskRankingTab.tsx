@@ -55,7 +55,7 @@ export function HazopRiskRankingTab({ study }: Props) {
 
       <HazopRiskSummaryCards summary={queries.summary.data} loading={loading} />
 
-      <div className="grid gap-4 2xl:grid-cols-[minmax(0,1.15fr)_420px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1.15fr)_420px]">
         <div className="space-y-4">
           <HazopRiskMatrixPanel data={queries.matrix.data} />
           <HazopRiskFilters filters={filters} onChange={setFilters} canExport={can('hazop.risk.export')} onExport={exportCsv} exporting={mutations.exportRegister.isPending} />

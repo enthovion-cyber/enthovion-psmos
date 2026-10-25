@@ -50,7 +50,7 @@ export function PSSRAttachmentPreviewDrawer({ attachment }: { attachment?: any }
 
             {/* Badges system properties wrapper layout */}
             <div className="flex flex-wrap items-center gap-1.5 pt-2">
-              <Badge tone="cyan">{attachment.attachment_type}</Badge>
+              <Badge tone="blue">{attachment.attachment_type}</Badge>
               <Badge tone="slate">{attachment.mime_type ?? 'Unknown type'}</Badge>
             </div>
           </div>

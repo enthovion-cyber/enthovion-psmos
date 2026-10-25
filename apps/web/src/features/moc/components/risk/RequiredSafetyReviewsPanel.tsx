@@ -1,26 +1,58 @@
 'use client';
 
 import { ShieldCheck } from 'lucide-react';
-import { Badge, DetailCard, EmptyState } from '../moc-detail-ui';
+import { Badge, DetailCard, EmptyState, MocButton } from '../moc-detail-ui';
 
-export function RequiredSafetyReviewsPanel({ requirements, onApply, applying }: { requirements: any[]; onApply: () => void; applying?: boolean }) {
+export function RequiredSafetyReviewsPanel({
+  requirements,
+  onApply,
+  applying
+}: {
+  requirements: any[];
+  onApply: () => void;
+  applying?: boolean;
+}) {
   return (
-    <DetailCard title="Required Safety Reviews" action={<button type="button" onClick={onApply} disabled={applying || !requirements.length} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50">{applying ? 'Applying...' : 'Apply Requirements'}</button>}>
-      {!requirements.length ? <EmptyState title="No generated risk reviews" detail="Save or recalculate the risk ranking to generate review requirements." /> : (
-        <div className="space-y-2">
+    <DetailCard
+      title="HAZOP & PHA Safety Reviews"
+      action={
+        <MocButton
+          variant="primary"
+          onClick={onApply}
+          disabled={applying || !requirements.length}
+        >
+          {applying ? 'Applying...' : 'Apply Requirements'}
+        </MocButton>
+      }
+    >
+      {!requirements.length ? (
+        <EmptyState
+          title="No generated risk reviews"
+          detail="Save or recalculate the risk ranking to generate review requirements."
+        />
+      ) : (
+        <div className="space-y-2.5">
           {requirements.map((item) => (
-            <div key={item.id ?? `${item.review_type}-${item.source}`} className="rounded-lg border border-white/10 bg-slate-950/35 p-3">
+            <div
+              key={item.id ?? `${item.review_type}-${item.source}`}
+              className="rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-xs transition-colors"
+            >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <p className="flex items-center gap-2 text-sm font-black text-white"><ShieldCheck className="h-4 w-4 text-emerald-300" />{item.title}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-400">{item.description}</p>
+                  <p className="flex items-center gap-1.5 font-bold text-[var(--psm-fg)]">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{item.title}</span>
+                  </p>
+                  <p className="mt-1 leading-relaxed text-[var(--psm-muted)]">{item.description}</p>
                 </div>
-                <Badge tone={item.status === 'Action Created' ? 'green' : item.status === 'Preview' ? 'blue' : 'amber'}>{item.status}</Badge>
+                <Badge tone={item.status === 'Action Created' ? 'green' : item.status === 'Preview' ? 'blue' : 'amber'}>
+                  {item.status}
+                </Badge>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-                <span>Owner: <b className="text-slate-200">{item.owner_role ?? '-'}</b></span>
-                <span>Before approval: <b className="text-slate-200">{item.required_before_approval ? 'Yes' : 'No'}</b></span>
-                <span>Before startup: <b className="text-slate-200">{item.required_before_startup ? 'Yes' : 'No'}</b></span>
+              <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--psm-muted)]">
+                <span>Owner: <strong className="text-[var(--psm-fg)]">{item.owner_role ?? '-'}</strong></span>
+                <span>Before Approval: <strong className="text-[var(--psm-fg)]">{item.required_before_approval ? 'Yes' : 'No'}</strong></span>
+                <span>Before Startup: <strong className="text-[var(--psm-fg)]">{item.required_before_startup ? 'Yes' : 'No'}</strong></span>
               </div>
             </div>
           ))}

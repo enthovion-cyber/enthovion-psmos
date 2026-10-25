@@ -6,13 +6,14 @@ import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { useMe } from '@/features/iam/hooks/useIam';
 import { notificationsService } from '@/services/notifications.service';
 import { useMutationToast } from '@/providers/ToastProvider';
+import { hasLocalSession } from '@/services/api';
 
 export function useNotifications(params?: Record<string, string>) {
-  return useQuery({ queryKey: ['notifications', params], queryFn: () => notificationsService.list(params), refetchInterval: 30000 });
+  return useQuery({ queryKey: ['notifications', params], queryFn: () => notificationsService.list(params), refetchInterval: 30000, enabled: hasLocalSession() });
 }
 
 export function useUnreadNotifications() {
-  return useQuery({ queryKey: ['notifications', 'unread-count'], queryFn: () => notificationsService.unreadCount(), refetchInterval: 15000 });
+  return useQuery({ queryKey: ['notifications', 'unread-count'], queryFn: () => notificationsService.unreadCount(), refetchInterval: 15000, enabled: hasLocalSession() });
 }
 
 export function useNotificationMutations() {

@@ -24,7 +24,7 @@ function SimpleHierarchyRow({
         href={`/equipment/${item.id}`}
         className={`flex-1 flex items-center gap-3 rounded-lg p-2.5 text-sm transition-all duration-200 ${
           isActive
-            ? 'border border-success/40 bg-success/5 text-white'
+            ? 'border border-success/40 bg-success/5 text-[var(--psm-text)]'
             : 'border border-transparent hover:bg-[var(--psm-surface-2)]/50 text-[var(--psm-text)]'
         }`}
       >
@@ -39,7 +39,7 @@ function SimpleHierarchyRow({
 
         {/* Text Node Metadata */}
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="font-semibold text-sm tracking-wide text-white group-hover:text-info transition-colors">
+          <div className="font-semibold text-sm tracking-wide text-[var(--psm-text)] group-hover:text-info transition-colors">
             {item.tag}
           </div>
           <div className="mt-0.5 text-xs text-[var(--psm-muted)] truncate">
@@ -62,7 +62,7 @@ export function EquipmentHierarchyTree({ equipment }: { equipment: Equipment }) 
       
       {/* Clean Header */}
       <div className="p-4 border-b border-[var(--psm-line)] flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Equipment Hierarchy</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--psm-text)]">Equipment Hierarchy</h2>
         <span className="text-xs text-[var(--psm-muted)] font-medium">
           {equipment.children?.length ?? 0} child assets
         </span>
@@ -119,7 +119,7 @@ export function EquipmentHierarchyTree({ equipment }: { equipment: Equipment }) 
                   <span className="inline-flex items-center gap-0.5"><GitBranch size={11} /> {rel.direction}</span>
                   <span>{rel.type.replaceAll('_', ' ')}</span>
                 </div>
-                <Link href={`/equipment/${rel.item.id}`} className="font-semibold text-white hover:text-info transition-colors">
+                <Link href={`/equipment/${rel.item.id}`} className="font-semibold text-[var(--psm-text)] hover:text-info transition-colors">
                   {rel.item.tag} <span className="font-normal text-[var(--psm-muted)]">— {rel.item.name}</span>
                 </Link>
                 {rel.description && <p className="mt-1 opacity-80 line-clamp-1">{rel.description}</p>}
@@ -129,15 +129,14 @@ export function EquipmentHierarchyTree({ equipment }: { equipment: Equipment }) 
         </div>
       )}
 
-      {/* Mockup Action Button Footer layer */}
+      {/* Action Button Footer layer */}
       <div className="p-3 bg-[var(--psm-surface)] border-t border-[var(--psm-line)] text-center">
-        <button 
-          type="button" 
-          className="w-full text-xs font-semibold text-info hover:underline bg-transparent border-0 cursor-pointer py-1"
-          onClick={() => {}} /* Hook up global full tree visualizer triggers if any */
+        <Link 
+          href="/settings/hierarchy" 
+          className="inline-block w-full text-xs font-semibold text-info hover:underline py-1"
         >
-          View Full Tree
-        </button>
+          Explore Entire Plant Hierarchy →
+        </Link>
       </div>
 
     </div>

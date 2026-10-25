@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMOCMutation } from '../../hooks/useMOCMutations';
 import { changeCategories, changeTypes, priorities } from '../../schemas/moc.schema';
-import { DetailCard, Field, detailInput, detailTextarea, EmptyState } from '../moc-detail-ui';
+import { DetailCard, Field, detailInput, detailTextarea, EmptyState, MocButton, Badge } from '../moc-detail-ui';
 
 export function MOCChangeDetailsTab({ moc }: { moc: any }) {
   const mutations = useMOCMutation(moc.id);
@@ -23,31 +23,192 @@ export function MOCChangeDetailsTab({ moc }: { moc: any }) {
     targetImplementationDate: moc.target_implementation_date ?? '',
     changeDescription: moc.change_description ?? {}
   });
+
   const set = (key: string, value: any) => setForm((current) => ({ ...current, [key]: value }));
-  const setDesc = (key: string, value: string) => setForm((current) => ({ ...current, changeDescription: { ...current.changeDescription, [key]: value } }));
+  const setDesc = (key: string, value: string) =>
+    setForm((current) => ({ ...current, changeDescription: { ...current.changeDescription, [key]: value } }));
+
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-      <DetailCard title="Editable MOC Master Data" action={<button type="button" onClick={() => editing ? mutations.update.mutate(form, { onSuccess: () => setEditing(false) }) : setEditing(true)} className="rounded-md bg-blue-600 px-3 py-2 text-xs font-black text-white">{editing ? 'Save Changes' : 'Edit Details'}</button>}>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="MOC Number"><input className={detailInput} value={moc.moc_number} disabled /></Field>
-          <Field label="Status"><input className={detailInput} value={moc.status} disabled /></Field>
-          <Field label="Title"><input className={detailInput} disabled={!editing} value={form.title} onChange={(e) => set('title', e.target.value)} /></Field>
-          <Field label="Description"><textarea className={detailTextarea} disabled={!editing} value={form.description} onChange={(e) => set('description', e.target.value)} /></Field>
-          <Field label="Change Type"><select className={detailInput} disabled={!editing} value={form.changeType} onChange={(e) => set('changeType', e.target.value)}>{changeTypes.map((item) => <option key={item}>{item}</option>)}</select></Field>
-          <Field label="Change Category"><select className={detailInput} disabled={!editing} value={form.changeCategory} onChange={(e) => set('changeCategory', e.target.value)}>{changeCategories.map((item) => <option key={item}>{item}</option>)}</select></Field>
-          <Field label="Priority"><select className={detailInput} disabled={!editing} value={form.priority} onChange={(e) => set('priority', e.target.value)}>{priorities.map((item) => <option key={item}>{item}</option>)}</select></Field>
-          <Field label="Target Implementation Date"><input className={detailInput} disabled={!editing} type="date" value={form.targetImplementationDate ?? ''} onChange={(e) => set('targetImplementationDate', e.target.value)} /></Field>
-          <Field label="Requested Start Date"><input className={detailInput} disabled={!editing} type="date" value={form.requestedStartDate ?? ''} onChange={(e) => set('requestedStartDate', e.target.value)} /></Field>
-          <Field label="Affected System / Service"><input className={detailInput} disabled={!editing} value={form.affectedSystem ?? ''} onChange={(e) => set('affectedSystem', e.target.value)} /></Field>
-          <Field label="Location Description"><textarea className={detailTextarea} disabled={!editing} value={form.locationDescription ?? ''} onChange={(e) => set('locationDescription', e.target.value)} /></Field>
+    <div className="space-y-6 w-full">
+      {/* Master Metadata Form Card */}
+      <DetailCard
+        title="MOC Master Data"
+        action={
+          <MocButton
+            variant={editing ? 'primary' : 'secondary'}
+            onClick={() =>
+              editing
+                ? mutations.update.mutate(form, { onSuccess: () => setEditing(false) })
+                : setEditing(true)
+            }
+          >
+            {editing ? 'Save Changes' : 'Edit Details'}
+          </MocButton>
+        }
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="MOC Number">
+            <input className={detailInput} value={moc.moc_number} disabled />
+          </Field>
+          <Field label="Current Status">
+            <input className={detailInput} value={moc.status} disabled />
+          </Field>
+          <Field label="Change Priority">
+            <select
+              className={detailInput}
+              disabled={!editing}
+              value={form.priority}
+              onChange={(e) => set('priority', e.target.value)}
+            >
+              {priorities.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Change Type">
+            <select
+              className={detailInput}
+              disabled={!editing}
+              value={form.changeType}
+              onChange={(e) => set('changeType', e.target.value)}
+            >
+              {changeTypes.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Change Category">
+            <select
+              className={detailInput}
+              disabled={!editing}
+              value={form.changeCategory}
+              onChange={(e) => set('changeCategory', e.target.value)}
+            >
+              {changeCategories.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Affected System / Service">
+            <input
+              className={detailInput}
+              disabled={!editing}
+              value={form.affectedSystem ?? ''}
+              onChange={(e) => set('affectedSystem', e.target.value)}
+            />
+          </Field>
+          <Field label="Requested Start Date">
+            <input
+              className={detailInput}
+              disabled={!editing}
+              type="date"
+              value={form.requestedStartDate ?? ''}
+              onChange={(e) => set('requestedStartDate', e.target.value)}
+            />
+          </Field>
+          <Field label="Target Implementation Date">
+            <input
+              className={detailInput}
+              disabled={!editing}
+              type="date"
+              value={form.targetImplementationDate ?? ''}
+              onChange={(e) => set('targetImplementationDate', e.target.value)}
+            />
+          </Field>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Field label="Title / Purpose">
+              <input
+                className={detailInput}
+                disabled={!editing}
+                value={form.title}
+                onChange={(e) => set('title', e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Field label="High-Level Scope Description">
+              <textarea
+                className={detailTextarea}
+                disabled={!editing}
+                value={form.description}
+                onChange={(e) => set('description', e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Field label="Physical Location Description">
+              <textarea
+                className={detailTextarea}
+                disabled={!editing}
+                value={form.locationDescription ?? ''}
+                onChange={(e) => set('locationDescription', e.target.value)}
+              />
+            </Field>
+          </div>
         </div>
       </DetailCard>
-      <DetailCard title="Affected Equipment">
-        {moc.equipment?.length ? <div className="space-y-2">{moc.equipment.map((item: any) => <div key={item.id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3"><p className="font-black text-white">{item.equipment?.tag} · {item.role}</p><p className="text-sm text-slate-400">{item.equipment?.name} / {item.equipment?.type}</p><p className="mt-1 text-xs text-slate-500">Criticality {item.equipment?.criticality ?? '-'} · System {item.equipment?.system ?? '-'}</p></div>)}</div> : <EmptyState title="No affected equipment" detail="Use Edit Details after equipment search is expanded to add or remove affected assets." />}
+
+      {/* Affected Equipment */}
+      <DetailCard title="Affected Equipment Assets">
+        {moc.equipment?.length ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {moc.equipment.map((item: any) => (
+              <div
+                key={item.id}
+                className="flex flex-col justify-between rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-xs transition-colors"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-sm font-bold text-[var(--psm-fg)]">
+                      {item.equipment?.tag}
+                    </span>
+                    <Badge tone={item.role === 'PRIMARY' ? 'blue' : 'slate'}>{item.role}</Badge>
+                  </div>
+                  <p className="mt-1 text-[var(--psm-muted)] font-medium">
+                    {item.equipment?.name} · {item.equipment?.type}
+                  </p>
+                </div>
+                <p className="mt-2 text-[10px] text-[var(--psm-muted)]">
+                  Criticality: <strong>{item.equipment?.criticality ?? '-'}</strong> · System: <strong>{item.equipment?.system ?? '-'}</strong>
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No affected equipment linked"
+            detail="Specify affected assets in the Engineering Package or initial creation wizard."
+          />
+        )}
       </DetailCard>
-      <DetailCard title="Change Description">
-        <div className="grid gap-4 md:grid-cols-2">
-          {['currentCondition', 'proposedChange', 'reasonForChange', 'problemStatement', 'businessJustification', 'safetyJustification', 'expectedBenefit', 'preChangeState', 'postChangeState', 'scopeBoundaries', 'notIncluded', 'implementationPlanSummary'].map((key) => <Field key={key} label={key.replace(/([A-Z])/g, ' $1')}><textarea className={detailTextarea} disabled={!editing} value={form.changeDescription?.[key] ?? ''} onChange={(e) => setDesc(key, e.target.value)} /></Field>)}
+
+      {/* Structured Technical Scope Questions */}
+      <DetailCard title="Detailed Technical Change Scope">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {([
+            ['currentCondition', 'Current Baseline Condition'],
+            ['proposedChange', 'Proposed Modification'],
+            ['reasonForChange', 'Reason for Change'],
+            ['problemStatement', 'Problem Statement'],
+            ['businessJustification', 'Business Justification'],
+            ['safetyJustification', 'Process Safety Justification'],
+            ['expectedBenefit', 'Expected Benefit & Deliverables'],
+            ['preChangeState', 'Pre-Change Technical State'],
+            ['postChangeState', 'Post-Change Verification State'],
+            ['scopeBoundaries', 'Scope Boundaries'],
+            ['notIncluded', 'Out of Scope / Exclusions'],
+            ['implementationPlanSummary', 'Implementation Plan Summary']
+          ] as const).map(([key, label]) => (
+            <Field key={key} label={label}>
+              <textarea
+                className={detailTextarea}
+                disabled={!editing}
+                value={(form.changeDescription as any)?.[key] ?? ''}
+                onChange={(e) => setDesc(key, e.target.value)}
+                placeholder={`Enter details for ${label.toLowerCase()}...`}
+              />
+            </Field>
+          ))}
         </div>
       </DetailCard>
     </div>

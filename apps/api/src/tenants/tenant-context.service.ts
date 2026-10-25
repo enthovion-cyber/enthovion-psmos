@@ -32,9 +32,30 @@ const siteAdminRoleKeys = new Set(['platform_admin', 'super_admin', 'corporate_a
 
 @Injectable()
 export class TenantContextService {
+  private readonly contextCache = new Map<string, { expiresAt: number; value: TenantContext }>();
+  private readonly contextInFlight = new Map<string, Promise<TenantContext>>();
+
   constructor(private readonly db: SupabaseService) {}
 
   async forUser(user: RequestUser, requestedSiteId?: string | null, requestMeta?: { ip?: string | null; userAgent?: string | null }): Promise<TenantContext> {
+    const cacheKey = `${user.tenantId}:${user.id}:${requestedSiteId ?? ''}`;
+    const cached = this.contextCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return { ...cached.value, requestIp: requestMeta?.ip ?? null, userAgent: requestMeta?.userAgent ?? null };
+    const pending = this.contextInFlight.get(cacheKey);
+    if (pending) return { ...(await pending), requestIp: requestMeta?.ip ?? null, userAgent: requestMeta?.userAgent ?? null };
+
+    const load = this.loadForUser(user, requestedSiteId, requestMeta);
+    this.contextInFlight.set(cacheKey, load);
+    try {
+      const value = await load;
+      this.contextCache.set(cacheKey, { expiresAt: Date.now() + 5_000, value });
+      return value;
+    } finally {
+      this.contextInFlight.delete(cacheKey);
+    }
+  }
+
+  private async loadForUser(user: RequestUser, requestedSiteId?: string | null, requestMeta?: { ip?: string | null; userAgent?: string | null }): Promise<TenantContext> {
     const [siteAccess, roleAssignments, activeContext, memberships, permissions] = await Promise.all([
       this.db.many<any>(
         this.db.from('UserSite')
@@ -75,11 +96,11 @@ export class TenantContextService {
       ...siteRows.map((site) => site?.companyId).filter(Boolean),
       ...siteAccess.map((access) => access.companyId).filter(Boolean)
     ])];
-    const selectedSiteId = requestedSiteId ?? activeContext?.activeSiteId ?? user.selectedSiteId ?? siteIds[0] ?? null;
+    let selectedSiteId = requestedSiteId ?? activeContext?.activeSiteId ?? user.selectedSiteId ?? siteIds[0] ?? null;
     if (selectedSiteId && siteIds.length && !siteIds.includes(selectedSiteId)) {
-      throw new ForbiddenException('Selected site is outside the current user access scope');
+      selectedSiteId = siteIds[0] ?? null;
     }
-    const activeSite = selectedSiteId
+    let activeSite = selectedSiteId
       ? await this.db.single<any>(this.db.from('Site').select('id,name,code,companyId,status').eq('tenantId', user.tenantId).eq('id', selectedSiteId).maybeSingle()).catch(() => null)
       : null;
     const activeCompanyId = activeContext?.activeCompanyId ?? activeSite?.companyId ?? companyIds[0] ?? null;
@@ -87,7 +108,8 @@ export class TenantContextService {
       throw new ForbiddenException('Selected company is outside the current user access scope');
     }
     if (activeSite?.companyId && activeCompanyId && activeSite.companyId !== activeCompanyId) {
-      throw new ForbiddenException('Selected site does not belong to the selected company');
+      activeSite = null;
+      selectedSiteId = null;
     }
     const activeCompany = activeCompanyId
       ? await this.db.single<any>(this.db.from('Company').select('id,name,code,status').eq('tenantId', user.tenantId).eq('id', activeCompanyId).maybeSingle()).catch(() => null)
@@ -136,7 +158,6 @@ export class TenantContextService {
   }
 
   private async resolvePermissions(user: RequestUser) {
-    if (user.permissions?.length) return user.permissions;
     const roleAssignments = await this.db.many<any>(
       this.db.from('UserRole')
         .select('roleId,role:Role!inner(tenantId)')

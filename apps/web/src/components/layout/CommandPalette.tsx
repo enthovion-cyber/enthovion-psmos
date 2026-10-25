@@ -12,12 +12,13 @@ import type { SearchResult } from '@/services/search.service';
 const modules = [
   ['all', 'All'],
   ['equipment', 'Equipment'],
+  ['documents', 'Documents'],
   ['actions', 'Actions'],
+  ['ptw', 'Permits'],
+  ['moc', 'MOC'],
+  ['incidents', 'Incidents'],
   ['users', 'Users'],
-  ['roles', 'Roles'],
-  ['sites', 'Sites'],
-  ['units', 'Units'],
-  ['areas', 'Areas']
+  ['sites', 'Sites/Units']
 ] as const;
 
 const statuses = [
@@ -71,6 +72,25 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const recent = recentQuery.data ?? [];
   const showRecent = debouncedQuery.trim().length <= 1;
   const activeResult = results[activeIndex];
+
+  const groupedResults = useMemo(() => {
+    const groups: Record<string, SearchResult[]> = {};
+    for (const res of results) {
+      let cat = 'Other Records';
+      const m = res.moduleKey?.toLowerCase() ?? '';
+      if (m === 'equipment') cat = 'Equipment Registry';
+      else if (m === 'documents') cat = 'Controlled Documents';
+      else if (m === 'actions') cat = 'Corrective Actions (CAPA)';
+      else if (m === 'ptw' || m === 'moc' || m === 'pssr') cat = 'Permits & Management of Change';
+      else if (m === 'incidents' || m === 'hazop' || m === 'lopa') cat = 'Risk Assessments & Incidents';
+      else if (m === 'users' || m === 'roles') cat = 'Personnel & Security Roles';
+      else if (['companies', 'sites', 'units', 'areas'].includes(m)) cat = 'Plant Hierarchy & Asset Scoping';
+
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat]?.push(res);
+    }
+    return groups;
+  }, [results]);
 
   useEffect(() => setActiveIndex(0), [debouncedQuery, module, status]);
 
@@ -169,9 +189,28 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           ) : searchQuery.isError ? (
             <SearchEmptyState title="Search failed" description="The API could not return search results. Check your session and API server." />
           ) : results.length ? (
-            <div className="space-y-2">
-              {results.map((result, index) => (
-                <SearchResultCard key={result.id} result={result} query={query} active={index === activeIndex} onSelect={() => selectResult(result)} />
+            <div className="space-y-4">
+              {Object.entries(groupedResults).map(([category, items]) => (
+                <div key={category} className="space-y-1.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--psm-muted)] px-1 flex items-center justify-between">
+                    <span>{category}</span>
+                    <span className="font-mono text-[10px] opacity-75">{items.length}</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {items.map((result) => {
+                      const overallIndex = results.findIndex((r) => r.id === result.id);
+                      return (
+                        <SearchResultCard
+                          key={result.id}
+                          result={result}
+                          query={query}
+                          active={overallIndex === activeIndex}
+                          onSelect={() => selectResult(result)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           ) : (

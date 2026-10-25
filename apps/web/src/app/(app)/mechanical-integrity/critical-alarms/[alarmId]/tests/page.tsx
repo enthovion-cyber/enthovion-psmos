@@ -1,5 +1,11 @@
 import { CriticalAlarmDetailPage } from '@/features/mechanical-integrity/critical-alarms/CriticalAlarmDetailPage';
 
-export default function MechanicalIntegrityCriticalAlarmTestsPage({ params }: { params: { alarmId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function MechanicalIntegrityCriticalAlarmTestsPage(props: { params: Promise<{ alarmId: string }> }) {
+  const params = await props.params;
   return <CriticalAlarmDetailPage alarmId={params.alarmId} />;
 }

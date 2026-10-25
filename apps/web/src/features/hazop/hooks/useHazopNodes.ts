@@ -39,6 +39,7 @@ export function useHazopScenarioMutations(studyId: string) {
     duplicateScenario: useMutation({ mutationFn: (scenarioId: string) => hazopService.duplicateScenario(studyId, scenarioId), onSuccess: invalidate }),
     bulkGenerate: useMutation({ mutationFn: (values: Record<string, any>) => hazopService.bulkGenerateScenarios(studyId, values), onSuccess: invalidate }),
     markLopaRequired: useMutation({ mutationFn: ({ scenarioId, reason }: { scenarioId: string; reason: string }) => hazopService.markScenarioLopaRequired(studyId, scenarioId, reason), onSuccess: invalidate }),
+    escalateToLopa: useMutation({ mutationFn: ({ scenarioId, values }: { scenarioId: string; values?: Record<string, any> }) => hazopService.escalateScenarioToLopa(studyId, scenarioId, values ?? {}), onSuccess: invalidate }),
     closeScenario: useMutation({ mutationFn: (scenarioId: string) => hazopService.closeScenario(studyId, scenarioId), onSuccess: invalidate }),
     addSafeguard: useMutation({ mutationFn: ({ scenarioId, values }: { scenarioId: string; values: Record<string, any> }) => hazopService.addSafeguard(studyId, scenarioId, values), onSuccess: invalidate }),
     addRecommendation: useMutation({ mutationFn: (values: Record<string, any>) => hazopService.addRecommendation(studyId, values), onSuccess: invalidate })

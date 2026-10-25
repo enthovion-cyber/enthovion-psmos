@@ -80,6 +80,8 @@ export type RegulatoryComplianceGap = {
   recommended_fix?: string | null;
   action_required?: boolean | null;
   action_id?: string | null;
+  universal_action_id?: string | null;
+  action_number_snapshot?: string | null;
   capa_required?: boolean | null;
   capa_id?: string | null;
   evidence_required?: boolean | null;

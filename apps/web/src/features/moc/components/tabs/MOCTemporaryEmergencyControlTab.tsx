@@ -43,39 +43,43 @@ export function MOCTemporaryEmergencyControlTab({ moc }: { moc: any }) {
   if (temporary.isError || emergency.isError) return <ErrorState message="Unable to load temporary / emergency control data." />;
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 xl:grid-cols-2">
+    <div className="space-y-6 w-full">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <TemporarySummaryCard data={temporary.data} />
         <EmergencySummaryCard data={emergency.data} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <TemporaryExpiryCountdown data={temporary.data} />
         <TemporaryRiskControls values={temporaryValues} setValues={setTemporaryValues} onSave={() => mutations.updateTemporary.mutate(temporaryValues)} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <ReversalRemovalPlan values={temporaryValues} setValues={setTemporaryValues} onRemovalComplete={() => mutations.markRemovalComplete.mutate({ evidenceAttachmentId: temporaryValues.removalEvidenceAttachmentId })} />
         <TemporaryExtensionRequests request={extensionRequest} setRequest={setExtensionRequest} onRequest={() => mutations.requestExtension.mutate(extensionRequest)} onApprove={() => mutations.approveExtension.mutate(extensionRequest)} onReject={() => mutations.rejectExtension.mutate({ ...extensionRequest, reason: extensionRequest.reason ?? extensionRequest.justification ?? 'Extension rejected' })} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full">
         <TemporaryExtensionHistory extensions={temporary.data?.extensions ?? []} />
-        <TemporaryEscalationPanel escalation={temporary.data?.escalation} />
+        <TemporaryEscalationPanel
+          escalation={temporary.data?.escalation}
+          onRunSweep={() => mutations.runExpiryCheck.mutate()}
+          isRunning={mutations.runExpiryCheck.isPending}
+        />
         <NormalizationRiskIndicator risk={Boolean(temporary.data?.summary?.normalizationRisk)} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_0.7fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <EmergencyJustificationPanel values={emergencyValues} setValues={setEmergencyValues} onSave={() => mutations.updateEmergency.mutate(emergencyValues)} />
         <EmergencyReviewCountdown data={emergency.data} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <ImmediateRiskControls values={emergencyValues} setValues={setEmergencyValues} />
         <PostImplementationReview review={review} setReview={setReview} onComplete={() => mutations.completeEmergencyReview.mutate(review)} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full">
         <EmergencyFollowupActions action={followup} setAction={setFollowup} onCreate={() => mutations.createEmergencyFollowupAction.mutate(followup)} />
         <EmergencyEscalationPanel escalation={emergency.data?.escalation} />
         <TemporaryActions onReminder={() => mutations.updateTemporary.mutate(temporaryValues)} onConvert={() => mutations.convertTemporaryToPermanent.mutate({ reason: 'Converted from temporary control tab' })} />

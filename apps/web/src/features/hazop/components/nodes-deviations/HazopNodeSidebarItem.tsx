@@ -24,35 +24,35 @@ export function HazopNodeSidebarItem({
   onDelete: () => void;
   onMove: (direction: "up" | "down") => void;
 }) {
-  const statusTone = node.status === "Completed" || node.status === "Reviewed" || node.status === "Closed" ? "text-emerald-300" : node.status === "Needs Rework" ? "text-amber-300" : "text-sky-300";
+  const statusTone = node.status === "Completed" || node.status === "Reviewed" || node.status === "Closed" ? "text-emerald-600 dark:text-emerald-400" : node.status === "Needs Rework" ? "text-amber-600 dark:text-amber-400" : "text-sky-600 dark:text-sky-400";
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        "group w-full rounded-lg border p-3 text-left transition",
-        active ? "border-primary/70 bg-primary/15 shadow-lg shadow-primary/10" : "border-white/10 bg-white/[0.025] hover:border-primary/35 hover:bg-primary/5",
+        "group w-full rounded-lg border p-2.5 sm:p-3 text-left transition",
+        active ? "border-blue-500/80 bg-blue-500/15 shadow-sm" : "border-[var(--psm-line)] bg-[var(--psm-surface-2)]/30 hover:border-blue-500/35 hover:bg-[var(--psm-surface-2)]",
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-[11px] text-slate-400">{node.node_number ?? node.nodeNumber ?? "Node"}</div>
-          <div className="truncate text-sm font-semibold text-slate-100">{node.title ?? "Untitled node"}</div>
-          <div className="mt-1 truncate text-[11px] text-slate-500">{node.equipmentLabel || node.process_section || "No equipment linked"}</div>
+          <div className="text-[10px] sm:text-[11px] font-medium text-[var(--psm-muted)]">{node.node_number ?? node.nodeNumber ?? "Node"}</div>
+          <div className="truncate text-xs sm:text-sm font-semibold text-[var(--psm-text)]">{node.title ?? "Untitled node"}</div>
+          <div className="mt-0.5 truncate text-[10px] sm:text-[11px] text-[var(--psm-muted)]">{node.equipmentLabel || node.process_section || "No equipment linked"}</div>
         </div>
         <CheckCircle2 size={14} className={statusTone} />
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2 text-[10px]">
-        <Metric icon={<Layers3 size={12} />} value={node.scenarioCount ?? 0} label="Scenarios" tone="text-sky-300" />
-        <Metric icon={<AlertTriangle size={12} />} value={node.highRiskCount ?? 0} label="High Risk" tone="text-red-300" />
-        <Metric icon={<ClipboardList size={12} />} value={node.openRecommendationCount ?? 0} label="Open Recs" tone="text-amber-300" />
-        <Metric icon={<ShieldAlert size={12} />} value={node.lopaRequiredCount ?? 0} label="LOPA Req." tone="text-purple-300" />
+      <div className="mt-2.5 grid grid-cols-4 gap-1.5 text-[10px]">
+        <Metric icon={<Layers3 size={11} />} value={node.scenarioCount ?? 0} label="Scenarios" tone="text-sky-600 dark:text-sky-400" />
+        <Metric icon={<AlertTriangle size={11} />} value={node.highRiskCount ?? 0} label="High Risk" tone="text-rose-600 dark:text-rose-400" />
+        <Metric icon={<ClipboardList size={11} />} value={node.openRecommendationCount ?? 0} label="Open Recs" tone="text-amber-600 dark:text-amber-400" />
+        <Metric icon={<ShieldAlert size={11} />} value={node.lopaRequiredCount ?? 0} label="LOPA Req." tone="text-purple-600 dark:text-purple-400" />
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, node.completionPercent ?? 0))}%` }} />
+      <div className="mt-2.5 flex items-center gap-2">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--psm-surface-2)] border border-[var(--psm-line)]">
+          <div className="h-full rounded-full bg-blue-500" style={{ width: `${Math.min(100, Math.max(0, node.completionPercent ?? 0))}%` }} />
         </div>
-        <span className="text-[10px] font-semibold text-slate-300">{node.completionPercent ?? 0}%</span>
+        <span className="text-[10px] font-semibold text-[var(--psm-text)]">{node.completionPercent ?? 0}%</span>
       </div>
       {(canEdit || canDelete) ? (
         <div className="mt-2 hidden justify-end gap-1 group-hover:flex" onClick={(event) => event.stopPropagation()}>
@@ -67,7 +67,7 @@ export function HazopNodeSidebarItem({
 }
 
 function Metric({ icon, value, label, tone }: { icon: ReactNode; value: number; label: string; tone: string }) {
-  return <div className="min-w-0 text-center"><div className={`flex items-center justify-center gap-1 font-semibold ${tone}`}>{icon}{value}</div><div className="truncate text-slate-500">{label}</div></div>;
+  return <div className="min-w-0 text-center"><div className={`flex items-center justify-center gap-0.5 font-semibold ${tone}`}>{icon}{value}</div><div className="truncate text-[var(--psm-muted)]">{label}</div></div>;
 }
 
 function Tiny({ children, title, danger, onClick }: { children: ReactNode; title: string; danger?: boolean; onClick: () => void }) {

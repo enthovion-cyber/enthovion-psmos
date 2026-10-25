@@ -9,7 +9,7 @@ export function useMOCMutation(id: string) {
     await queryClient.invalidateQueries({ queryKey: ['moc', id] });
     await queryClient.invalidateQueries({ queryKey: ['moc'] });
   };
-  const mutate = <TArgs extends unknown[], TResult>(mutationFn: (...args: TArgs) => Promise<TResult>) => useMutation({ mutationFn, onSuccess: refresh });
+  const mutate = <TVariables, TResult>(mutationFn: (variables: TVariables) => Promise<TResult>) => useMutation({ mutationFn, onSuccess: refresh });
   return {
     update: mutate((values: Record<string, any>) => mocService.update(id, values)),
     submit: mutate(() => mocService.submit(id)),

@@ -20,6 +20,8 @@ import { ClosureCompleteValidator } from './validators/closure-complete.validato
 import { GasLimitsValidator } from './validators/gas-limits.validator';
 import { IsolationCompleteValidator } from './validators/isolation-complete.validator';
 import { PermitConflictValidator } from './validators/permit-conflict.validator';
+import { WorkerCompetencyValidator } from './validators/worker-competency.validator';
+import { SceBypassValidator } from './validators/sce-bypass.validator';
 
 @Module({
   imports: [SupabaseModule, AuditModule, NotificationsModule, PermissionsModule, SearchModule, TenantsModule, WorkflowsModule, ActionsModule],
@@ -32,12 +34,14 @@ import { PermitConflictValidator } from './validators/permit-conflict.validator'
     PermitConflictValidator,
     IsolationCompleteValidator,
     ClosureCompleteValidator,
+    WorkerCompetencyValidator,
+    SceBypassValidator,
     IssuePermitPolicy,
     ClosePermitPolicy,
     ExtendPermitPolicy,
     PermitExpiryJob,
     GasTestReminderJob
   ],
-  exports: [PtwService]
+  exports: [PtwService, WorkerCompetencyValidator, SceBypassValidator]
 })
 export class PtwModule {}

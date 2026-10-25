@@ -391,6 +391,17 @@ export class HazopSessionActionDto {
   @IsOptional() @IsBoolean() evidenceRequired?: boolean;
 }
 
+export class EscalateScenarioToLopaDto {
+  @IsOptional() @IsString() reason?: string;
+  @IsOptional() @IsString() ownerId?: string;
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() priority?: string;
+  @IsOptional() initiatingEventFrequency?: number;
+  @IsOptional() @IsBoolean() createAction?: boolean;
+  @IsOptional() @IsString() actionTitle?: string;
+  @IsOptional() @IsDateString() actionDueDate?: string;
+}
+
 export class HazopCommentDto {
   @IsOptional() @IsString() comment?: string;
   @IsOptional() @IsString() reason?: string;

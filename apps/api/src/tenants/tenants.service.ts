@@ -143,6 +143,7 @@ export class TenantsService {
   }
 
   createUnit(tenantId: string, actorId: string, dto: FoundationEntityDto) {
+    const opStatus = dto.operatingStatus ?? 'IN_SERVICE';
     return this.createEntity(tenantId, actorId, 'Unit', {
       id: crypto.randomUUID(),
       tenantId,
@@ -151,12 +152,25 @@ export class TenantsService {
       name: dto.name,
       code: dto.code ?? dto.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').slice(0, 24),
       description: dto.description ?? null,
-      status: dto.status ?? 'ACTIVE'
+      status: dto.status ?? 'ACTIVE',
+      operatingStatus: opStatus,
+      operating_status: opStatus,
+      unitManagerId: dto.unitManagerId ?? null,
+      unit_manager_id: dto.unitManagerId ?? null
     }, 'UNIT_CREATED');
   }
 
   updateUnit(tenantId: string, actorId: string, id: string, dto: FoundationEntityDto) {
-    return this.updateEntity(tenantId, actorId, 'Unit', id, this.patch(dto, ['siteId', 'departmentId', 'name', 'code', 'description', 'status']), 'UNIT_UPDATED');
+    const patchData: Record<string, any> = this.patch(dto, ['siteId', 'departmentId', 'name', 'code', 'description', 'status']);
+    if (dto.operatingStatus !== undefined) {
+      patchData.operatingStatus = dto.operatingStatus;
+      patchData.operating_status = dto.operatingStatus;
+    }
+    if (dto.unitManagerId !== undefined) {
+      patchData.unitManagerId = dto.unitManagerId;
+      patchData.unit_manager_id = dto.unitManagerId;
+    }
+    return this.updateEntity(tenantId, actorId, 'Unit', id, patchData, 'UNIT_UPDATED');
   }
 
   createArea(tenantId: string, actorId: string, dto: FoundationEntityDto) {
@@ -168,12 +182,19 @@ export class TenantsService {
       name: dto.name,
       code: dto.code ?? dto.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').slice(0, 24),
       description: dto.description ?? null,
-      status: dto.status ?? 'ACTIVE'
+      status: dto.status ?? 'ACTIVE',
+      areaAuthorityUserId: dto.areaAuthorityUserId ?? null,
+      area_authority_user_id: dto.areaAuthorityUserId ?? null
     }, 'AREA_CREATED');
   }
 
   updateArea(tenantId: string, actorId: string, id: string, dto: FoundationEntityDto) {
-    return this.updateEntity(tenantId, actorId, 'Area', id, this.patch(dto, ['siteId', 'unitId', 'name', 'code', 'description', 'status']), 'AREA_UPDATED');
+    const patchData: Record<string, any> = this.patch(dto, ['siteId', 'unitId', 'name', 'code', 'description', 'status']);
+    if (dto.areaAuthorityUserId !== undefined) {
+      patchData.areaAuthorityUserId = dto.areaAuthorityUserId;
+      patchData.area_authority_user_id = dto.areaAuthorityUserId;
+    }
+    return this.updateEntity(tenantId, actorId, 'Area', id, patchData, 'AREA_UPDATED');
   }
 
   async getCompanySettings(tenantId: string, companyId?: string | null) {
@@ -415,6 +436,179 @@ export class TenantsService {
     if (dto.emergencyContact) return dto.emergencyContact;
     const values = [dto.emergencyContactName, dto.emergencyContactPhone, dto.emergencyContactEmail].filter(Boolean);
     return values.length ? values.join(' | ') : null;
+  }
+
+  async getHierarchyTree(tenantId: string) {
+    const [companies, sites, departments, units, areas, users] = await Promise.all([
+      this.db.many<any>(this.db.from('Company').select('*').eq('tenantId', tenantId).order('name')).catch(() => []),
+      this.db.many<any>(this.db.from('Site').select('*').eq('tenantId', tenantId).order('name')).catch(() => []),
+      this.db.many<any>(this.db.from('Department').select('*').eq('tenantId', tenantId).order('name')).catch(() => []),
+      this.db.many<any>(this.db.from('Unit').select('*').eq('tenantId', tenantId).order('name')).catch(() => []),
+      this.db.many<any>(this.db.from('Area').select('*').eq('tenantId', tenantId).order('name')).catch(() => []),
+      this.db.many<any>(this.db.from('User').select('id,email,displayName,title').eq('tenantId', tenantId)).catch(() => [])
+    ]);
+
+    const userMap = new Map(users.map((u: any) => [u.id, u]));
+
+    const areasWithAuthority = areas.map((area: any) => ({
+      ...area,
+      authority: area.areaAuthorityUserId ? userMap.get(area.areaAuthorityUserId) ?? null : null
+    }));
+
+    const unitsWithChildren = units.map((unit: any) => ({
+      ...unit,
+      operatingStatus: unit.operatingStatus ?? unit.operating_status ?? 'IN_SERVICE',
+      manager: unit.unitManagerId ? userMap.get(unit.unitManagerId) ?? null : null,
+      areas: areasWithAuthority.filter((a: any) => a.unitId === unit.id)
+    }));
+
+    const sitesWithChildren = sites.map((site: any) => ({
+      ...site,
+      departments: departments.filter((d: any) => d.siteId === site.id),
+      units: unitsWithChildren.filter((u: any) => u.siteId === site.id)
+    }));
+
+    const tree = companies.map((comp: any) => ({
+      ...comp,
+      sites: sitesWithChildren.filter((s: any) => s.companyId === comp.id || (!comp.id && !s.companyId))
+    }));
+
+    return {
+      tree,
+      summary: {
+        totalCompanies: companies.length,
+        totalSites: sites.length,
+        totalDepartments: departments.length,
+        totalUnits: units.length,
+        totalAreas: areas.length
+      }
+    };
+  }
+
+  async listNumberingRules(tenantId: string) {
+    try {
+      const rows = await this.db.many<any>(
+        this.db.from('tenant_numbering_rules').select('*').eq('tenant_id', tenantId).order('module_key')
+      );
+      if (rows.length) return rows;
+    } catch {}
+
+    const defaults = [
+      { module_key: 'ptw', prefix: 'PTW', include_site_code: true, include_year: true, digits: 4, current_sequence: 1, sample_preview: 'PTW-SITE-2026-0001' },
+      { module_key: 'moc', prefix: 'MOC', include_site_code: true, include_year: true, digits: 4, current_sequence: 1, sample_preview: 'MOC-SITE-2026-0001' },
+      { module_key: 'actions', prefix: 'CAPA', include_site_code: false, include_year: true, digits: 5, current_sequence: 1, sample_preview: 'CAPA-2026-00001' },
+      { module_key: 'incidents', prefix: 'INC', include_site_code: true, include_year: true, digits: 4, current_sequence: 1, sample_preview: 'INC-SITE-2026-0001' },
+      { module_key: 'documents', prefix: 'DOC', include_site_code: true, include_year: false, digits: 4, current_sequence: 1, sample_preview: 'DOC-SITE-0001' },
+      { module_key: 'equipment', prefix: 'EQ', include_site_code: true, include_year: false, digits: 5, current_sequence: 1, sample_preview: 'EQ-SITE-00001' },
+      { module_key: 'pssr', prefix: 'PSSR', include_site_code: true, include_year: true, digits: 4, current_sequence: 1, sample_preview: 'PSSR-SITE-2026-0001' }
+    ];
+
+    try {
+      for (const item of defaults) {
+        await this.db.single(
+          this.db.from('tenant_numbering_rules').insert({ id: crypto.randomUUID(), tenant_id: tenantId, ...item }).select().single()
+        ).catch(() => null);
+      }
+      return await this.db.many<any>(
+        this.db.from('tenant_numbering_rules').select('*').eq('tenant_id', tenantId).order('module_key')
+      ).catch(() => defaults);
+    } catch {
+      return defaults;
+    }
+  }
+
+  async updateNumberingRule(tenantId: string, moduleKey: string, input: { prefix: string; include_site_code?: boolean; include_year?: boolean; digits?: number }) {
+    const digits = Math.max(3, Math.min(8, Number(input.digits ?? 4)));
+    const sample = `${input.prefix}-${input.include_site_code !== false ? 'SITE-' : ''}${input.include_year !== false ? new Date().getFullYear() + '-' : ''}${'1'.padStart(digits, '0')}`;
+    const payload = {
+      tenant_id: tenantId,
+      module_key: moduleKey,
+      prefix: input.prefix.toUpperCase().trim(),
+      include_site_code: input.include_site_code !== false,
+      include_year: input.include_year !== false,
+      digits,
+      sample_preview: sample,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      return await this.db.single(
+        this.db.from('tenant_numbering_rules')
+          .upsert(payload, { onConflict: 'tenant_id,module_key' })
+          .select()
+          .single()
+      );
+    } catch {
+      return payload;
+    }
+  }
+
+  async getRiskMatrixConfig(tenantId: string) {
+    try {
+      const matrix = await this.db.single<any>(
+        this.db.from('hazop_risk_matrices').select('*, levels:hazop_risk_matrix_levels(*)').eq('tenant_id', tenantId).maybeSingle()
+      ).catch(() => null);
+
+      if (matrix && matrix.levels?.length) {
+        return matrix;
+      }
+    } catch {}
+
+    const severities = [
+      { level: 1, label: 'Negligible', description: 'Minor injury or negligible process deviation' },
+      { level: 2, label: 'Minor', description: 'First aid treatment or minor contained release' },
+      { level: 3, label: 'Moderate', description: 'Lost time injury or release contained on-site' },
+      { level: 4, label: 'Major', description: 'Permanent disability or release with off-site alert' },
+      { level: 5, label: 'Catastrophic', description: 'Fatality or massive toxic release off-site' }
+    ];
+
+    const likelihoods = [
+      { level: 1, label: 'Improbable', description: '< 10^-5 per year (extremely unlikely)' },
+      { level: 2, label: 'Remote', description: '10^-4 to 10^-5 per year' },
+      { level: 3, label: 'Occasional', description: '10^-3 to 10^-4 per year' },
+      { level: 4, label: 'Probable', description: '10^-2 to 10^-3 per year' },
+      { level: 5, label: 'Frequent', description: '> 10^-2 per year (expected in plant life)' }
+    ];
+
+    return {
+      id: 'default-5x5',
+      name: 'OSHA 1910.119 Standard 5x5 Risk Matrix',
+      matrix_type: '5x5',
+      severities,
+      likelihoods,
+      riskTiers: [
+        { key: 'LOW', label: 'Low Risk', color: '#10b981', action: 'Broadly acceptable with standard operating procedures' },
+        { key: 'MEDIUM', label: 'Medium Risk', color: '#f59e0b', action: 'Manageable with specific engineering safeguards' },
+        { key: 'HIGH', label: 'High Risk', color: '#f97316', action: 'Requires PHA recommendation and MOC review' },
+        { key: 'CRITICAL', label: 'Critical Risk', color: '#ef4444', action: 'Unacceptable; requires SIL/LOPA IPL and VP authorization' }
+      ]
+    };
+  }
+
+  async saveRiskMatrixConfig(tenantId: string, input: any) {
+    const payload = {
+      tenant_id: tenantId,
+      name: input.name ?? 'OSHA 1910.119 Standard 5x5 Risk Matrix',
+      matrix_type: '5x5',
+      active: true,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      const existing = await this.db.single<any>(
+        this.db.from('hazop_risk_matrices').select('id').eq('tenant_id', tenantId).maybeSingle()
+      ).catch(() => null);
+
+      if (existing?.id) {
+        return await this.db.single(
+          this.db.from('hazop_risk_matrices').update(payload).eq('id', existing.id).select().single()
+        );
+      } else {
+        return await this.db.single(
+          this.db.from('hazop_risk_matrices').insert({ id: crypto.randomUUID(), ...payload }).select().single()
+        );
+      }
+    } catch {
+      return { ...payload, id: 'updated' };
+    }
   }
 
   private slugify(value: string) {

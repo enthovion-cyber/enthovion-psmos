@@ -21,10 +21,10 @@ export function MOCApprovalWorkflowTab({ moc }: { moc: any }) {
   const data = workflow.data;
   const readOnly = ['Closed', 'Cancelled'].includes(moc.status);
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 w-full">
       <MOCWorkflowSummaryCard data={data} />
       <MOCApprovalStepper steps={data?.steps ?? []} />
-      <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <CurrentApprovalStepPanel data={data} />
         <WorkflowActionBar mutations={mutations} disabled={readOnly} />
       </div>
@@ -39,7 +39,7 @@ export function MOCApprovalWorkflowTab({ moc }: { moc: any }) {
         }}
       />
       <ApproversTable approvers={data?.approvers ?? []} />
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         <ApprovalComments comments={data?.comments ?? []} />
         <WorkflowEscalationPanel data={data} />
       </div>

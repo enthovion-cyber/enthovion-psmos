@@ -13,8 +13,7 @@ import { HazopStudyRegisterTable } from './HazopStudyRegisterTable';
 import { HazopRiskOverviewInfographic } from './HazopRiskOverviewInfographic';
 import { HazopStatusDistributionChart } from './HazopStatusDistributionChart';
 import { HazopRecommendationHealthPanel } from './HazopRecommendationHealthPanel';
-import { HazopRevalidationDuePanel } from './HazopRevalidationDuePanel';
-import { HazopOverdueStudiesPanel } from './HazopOverdueStudiesPanel';
+import { HazopRevalidationDuePanel, HazopOverdueStudiesPanel, HazopComplianceWatchPanel } from './HazopRevalidationDuePanel';
 import { HazopHighCriticalRiskPanel } from './HazopHighCriticalRiskPanel';
 import { HazopLopaRequiredPanel } from './HazopLopaRequiredPanel';
 import { HazopTeamSignoffPanel } from './HazopTeamSignoffPanel';
@@ -23,6 +22,7 @@ import { HazopTrendCharts } from './HazopTrendCharts';
 import { HazopDashboardQuickActions } from './HazopDashboardQuickActions';
 
 interface StudyItem {
+  id?: string | number;
   study_number: string;
   title: string;
   study_type: string;
@@ -111,26 +111,31 @@ export function HazopDashboardDetails() {
           <HazopRecommendationHealthPanel health={data.recommendationHealth ?? {}} />
         </div>
 
-        {/* ROW 2: Primary Data Registry Table & Action Tracking Sidecar */}
-        <div className="grid gap-4 xl:grid-cols-[1180px_1fr]">
-          <HazopStudyRegisterTable studies={filteredStudies} />
-          <div className="flex flex-col gap-4">
-            <HazopRevalidationDuePanel studies={data.revalidation ?? []} />
-            <HazopOverdueStudiesPanel studies={overdueStudies} />
-            <HazopRecentActivityTimeline events={data.recentActivity ?? []} />
-          </div>
-        </div>
-
-        {/* ROW 3: Dedicated Deep-Dive Exception & Target Group Rail panels */}
+        {/* ROW 2: Operational Exception Watchlists (4 equal-height balanced cards) */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <HazopHighCriticalRiskPanel scenarios={data.highRiskScenarios ?? []} />
           <HazopLopaRequiredPanel studies={lopaStudies} />
           <HazopTeamSignoffPanel signoff={teamSignoff.data ?? { pending: kpis.pendingSignoffs ?? 0, rows: [] }} />
-          <TopUnitsPanel studies={filteredStudies} />
+          <HazopComplianceWatchPanel overdueStudies={overdueStudies} revalidationStudies={data.revalidation ?? []} />
         </div>
 
-        {/* Bottom Historical Progression Analysis & Quick Action Toolbar */}
-        <HazopTrendCharts charts={data.charts ?? {}} />
+        {/* ROW 3: Primary Full-Width Data Registry Table Showcase */}
+        <div className="w-full min-w-0">
+          <HazopStudyRegisterTable studies={filteredStudies} />
+        </div>
+
+        {/* ROW 4: Operational Units, Historical Trends & Real-Time Audit Feed */}
+        <div className="grid gap-4 xl:grid-cols-[1fr_380px] min-w-0">
+          <div className="space-y-4 min-w-0">
+            <TopUnitsPanel studies={filteredStudies} />
+            <HazopTrendCharts charts={data.charts ?? {}} />
+          </div>
+          <div className="min-w-0">
+            <HazopRecentActivityTimeline events={data.recentActivity ?? []} />
+          </div>
+        </div>
+
+        {/* Bottom Quick Action Toolbar */}
         <HazopDashboardQuickActions onExport={doExport} onFilter={(key, value) => setFilter(key as any, value)} />
       </div>
     </div>
@@ -187,7 +192,6 @@ function TopUnitsPanel({ studies }: { studies: StudyItem[] }) {
     const aggregateMap = studies.reduce((map: Record<string, number>, study) => {
       const key = study.unit_name ?? study.area_name ?? study.site_name ?? 'Unassigned';
       map[key] = (map[key] ?? 0) + Number(study.openRecommendationCount ?? 0);
-      map[key] = (map[key] ?? 0) + Number(study.openRecommendationCount ?? 0);
       return map;
     }, {});
     
@@ -199,31 +203,36 @@ function TopUnitsPanel({ studies }: { studies: StudyItem[] }) {
   const max = useMemo(() => Math.max(1, ...rows.map(([, value]) => Number(value))), [rows]);
 
   return (
-    <section className="w-full rounded-xl border border-[var(--psm-line,#1e293b)] bg-[var(--psm-surface,#0f172a)] p-4 flex flex-col justify-between shadow-md">
+    <section className="w-full rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3.5 sm:p-4 flex flex-col justify-between shadow-sm">
       <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-white">Top Units by Open Recommendations</h3>
-          <button className="text-[11px] font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xs sm:text-sm font-semibold tracking-wide text-[var(--psm-text)]">Top Units by Open Recommendations</h3>
+            <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              {rows.length} units
+            </span>
+          </div>
+          <button className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline transition-colors">
             View All
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {rows.map(([name, value]) => (
             <div key={name} className="group">
               <div className="mb-1 flex justify-between text-xs font-medium">
-                <span className="text-gray-300 truncate max-w-[200px]">{name}</span>
-                <span className="text-white font-bold tracking-wide">{Number(value)}</span>
+                <span className="text-[var(--psm-text)] truncate max-w-[200px]">{name}</span>
+                <span className="text-[var(--psm-text)] font-bold tracking-wide">{Number(value)}</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-slate-800/60 overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-[var(--psm-surface-2)] overflow-hidden">
                 <div 
-                  className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500 ease-out" 
+                  className="h-full rounded-full bg-blue-500 transition-all duration-500 ease-out" 
                   style={{ width: `${(Number(value) / max) * 100}%` }} 
                 />
               </div>
             </div>
           ))}
           {!rows.length && (
-            <div className="rounded-lg border border-dashed border-[var(--psm-line,#334155)] p-8 text-center text-xs font-medium text-slate-500">
+            <div className="rounded-lg border border-dashed border-[var(--psm-line)] p-6 text-center text-xs font-medium text-[var(--psm-muted)]">
               No operational recommendation data recorded.
             </div>
           )}

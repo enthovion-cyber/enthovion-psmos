@@ -147,6 +147,18 @@ export class FoundationEntityDto {
   @IsOptional()
   @IsString()
   reason?: string;
+
+  @IsOptional()
+  @IsString()
+  operatingStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  unitManagerId?: string;
+
+  @IsOptional()
+  @IsString()
+  areaAuthorityUserId?: string;
 }
 
 export class SwitchCompanyDto {

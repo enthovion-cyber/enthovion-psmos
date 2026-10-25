@@ -1,22 +1,24 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, BarChart3, ChevronRight } from 'lucide-react';
+import { AlertTriangle, ChevronRight, ShieldAlert } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useMOCDashboardStore } from '../../stores/moc-dashboard.store';
 
 const getRiskColor = (label: string) => {
-  const norm = label.toLowerCase();
-  if (norm === 'high' || norm === 'critical') return '#f87171';
-  if (norm === 'medium') return '#fbbf24';
-  return '#4ade80';
+  const norm = (label ?? '').toLowerCase();
+  if (norm === 'critical') return '#ef4444';
+  if (norm === 'high') return '#f97316';
+  if (norm === 'medium') return '#f59e0b';
+  return '#10b981';
 };
 
-const riskTone = (level: string) => {
-  const norm = level.toLowerCase();
-  if (norm === 'high' || norm === 'critical') return 'bg-red-500/10 text-red-400 border border-red-500/20';
-  if (norm === 'medium') return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-  return 'bg-green-500/10 text-green-400 border border-green-500/20';
+const riskBadgeTone = (level: string) => {
+  const norm = (level ?? '').toLowerCase();
+  if (norm === 'critical') return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30';
+  if (norm === 'high') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+  if (norm === 'medium') return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30';
+  return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
 };
 
 const DEFAULT_MOCK_DATA = {
@@ -39,13 +41,7 @@ const DEFAULT_MOCK_DATA = {
 };
 
 interface MOCRiskOverviewProps {
-  data?: {
-    distribution?: Array<{ risk_level?: string; label?: string; count: number }>;
-    highRiskUnits?: Array<{ id?: string; name?: string; label?: string; count?: number; High?: number; Critical?: number; total?: number }>;
-    byUnit?: Array<any>;
-    topRiskItems?: Array<{ id: string | number; moc_number?: string; mocNumber?: string; title: string; risk_level?: string; riskLevel?: string; status: string; daysOpen?: number; ageDays?: number; age_days?: number; currentWorkflowStep?: string }>;
-    plantManagerAttention?: Array<any>;
-  };
+  data?: Record<string, any> | undefined;
 }
 
 export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
@@ -67,27 +63,25 @@ export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
   });
 
   return (
-    <div className="w-full rounded-xl border border-slate-800 bg-slate-950 p-4 shadow-md md:p-5 flex flex-col justify-between h-full">
-      {/* Tightened Header */}
-      <div className="mb-4 flex items-center justify-between border-b border-slate-900 pb-2">
-        <div>
-          <h3 className="text-base font-bold tracking-tight text-white">
-            Risk Overview
+    <div className="w-full rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-4 shadow-sm md:p-5 flex flex-col justify-between h-full transition-colors text-[var(--psm-fg)]">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between border-b border-[var(--psm-line)] pb-3">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold uppercase tracking-wide text-[var(--psm-fg)]">
+            HAZOP & PHA Risk Distribution
           </h3>
         </div>
-        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-slate-400 border border-slate-800">
+        <span className="rounded-full bg-[var(--psm-surface-2)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--psm-muted)] border border-[var(--psm-line)]">
           Risk Dashboard
         </span>
       </div>
 
-      <div className="flex flex-col gap-4 w-full content-start">
-        
-        {/* ROW 1: Smaller Chart Viewport & Shorter Gaps */}
-        <div className="rounded-xl bg-slate-900/40 p-3 border border-slate-900 w-full">
+      <div className="flex flex-col gap-4 w-full">
+        {/* ROW 1: Donut Chart Viewport & Legends */}
+        <div className="rounded-xl bg-[var(--psm-surface-2)] p-3 border border-[var(--psm-line)] w-full">
           {distribution.length ? (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 py-1">
-              
-              {/* Reduced chart size from h-60/w-60 down to h-36/w-36 */}
               <div className="relative h-36 w-36 flex-shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -97,11 +91,11 @@ export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
                       cy="50%"
                       innerRadius={46}
                       outerRadius={58}
-                      paddingAngle={1}
+                      paddingAngle={2}
                       dataKey="value"
                       stroke="none"
                     >
-                      {chartData.map((entry, index) => (
+                      {chartData.map((entry: any, index: number) => (
                         <Cell 
                           key={`cell-risk-${index}`} 
                           fill={entry.color} 
@@ -111,19 +105,18 @@ export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '4px 8px' }}
-                      itemStyle={{ color: '#f8fafc', fontSize: '11px' }}
+                      contentStyle={{ background: 'var(--psm-surface, #1e293b)', border: '1px solid var(--psm-line, #334155)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px', color: 'var(--psm-fg, #f8fafc)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
                 
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-                  <span className="text-2xl font-black text-white tracking-tight leading-none">{total}</span>
-                  <span className="text-[9px] uppercase tracking-widest text-slate-400 font-extrabold mt-1">Total</span>
+                  <span className="text-2xl font-black text-[var(--psm-fg)] tracking-tight leading-none">{total}</span>
+                  <span className="text-[9px] uppercase tracking-widest text-[var(--psm-muted)] font-extrabold mt-1">Total</span>
                 </div>
               </div>
 
-              {/* Tighter Legend Grid */}
+              {/* Legend Grid */}
               <div className="grid w-full flex-1 grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {distribution.map((item: any) => {
                   const label = item.risk_level ?? item.label;
@@ -133,18 +126,19 @@ export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
                   return (
                     <button
                       key={label}
+                      type="button"
                       onClick={() => setFilters({ risk_level: label })}
-                      className="flex w-full items-center justify-between rounded-lg bg-slate-950 px-2.5 py-1.5 text-left border border-slate-900 hover:border-slate-800 transition-all focus:outline-none"
+                      className="flex w-full items-center justify-between rounded-lg bg-[var(--psm-surface)] px-2.5 py-1.5 text-left border border-[var(--psm-line)] hover:border-primary/50 transition-colors focus:outline-none"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-                        <span className="text-xs font-semibold text-slate-300 truncate">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                        <span className="text-xs font-semibold text-[var(--psm-fg)] truncate">
                           {label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 shrink-0 ml-2">
-                        <span className="text-slate-100">{item.count}</span>
-                        <span className="text-[10px] font-medium text-slate-500">({percent}%)</span>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--psm-muted)] shrink-0 ml-2">
+                        <span className="text-[var(--psm-fg)]">{item.count}</span>
+                        <span className="text-[10px]">({percent}%)</span>
                       </div>
                     </button>
                   );
@@ -152,30 +146,29 @@ export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
               </div>
             </div>
           ) : (
-            <div className="py-4 text-center text-xs text-slate-400">No risk distribution data</div>
+            <div className="py-4 text-center text-xs text-[var(--psm-muted)]">No risk distribution data</div>
           )}
         </div>
 
-        {/* ROW 2: Tighter Sub-lists (Sliced to display fewer items simultaneously to control maximum card height) */}
-        <div className="grid gap-4 sm:grid-cols-2 items-start w-full">
-          
-          {/* Top Risk Items (Reduced height padding & limited to 2 max rows) */}
-          <div className="flex flex-col rounded-xl bg-slate-900/40 p-3 border border-slate-900 w-full">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-white">
-              <AlertTriangle size={14} className="text-red-400" /> Top Risks
+        {/* ROW 2: Sub-lists */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 items-start w-full">
+          {/* Top Risk Items */}
+          <div className="flex flex-col rounded-xl bg-[var(--psm-surface-2)] p-3 border border-[var(--psm-line)] w-full">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-[var(--psm-fg)]">
+              <AlertTriangle size={14} className="text-rose-500" /> Top Priority Risk Items
             </div>
             <div className="space-y-1.5">
               {top.slice(0, 2).map((item: any) => (
                 <a
                   key={item.id}
                   href={`/moc/${item.id}`}
-                  className="block rounded-lg border border-slate-900 bg-slate-950 p-2 hover:border-slate-800 transition-all"
+                  className="block rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] p-2 hover:border-primary/50 transition-colors"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-xs text-slate-200 truncate max-w-[70%]">
-                      <span className="text-red-400 font-bold">{item.moc_number ?? item.mocNumber}</span> · {item.title}
+                    <p className="font-semibold text-xs text-[var(--psm-fg)] truncate max-w-[70%]">
+                      <span className="text-primary font-mono font-bold">{item.moc_number ?? item.mocNumber}</span> · {item.title}
                     </p>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${riskTone(item.risk_level ?? item.riskLevel)}`}>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${riskBadgeTone(item.risk_level ?? item.riskLevel)}`}>
                       {item.risk_level ?? item.riskLevel}
                     </span>
                   </div>
@@ -184,30 +177,30 @@ export function MOCRiskOverview({ data = {} }: MOCRiskOverviewProps) {
             </div>
           </div>
 
-          {/* High Risk Process Units (Limited to 2 max items to clean up space) */}
-          <div className="flex flex-col rounded-xl bg-slate-900/40 p-3 border border-slate-900 w-full">
-            <div className="mb-2 text-xs font-bold text-white">Process Hotspots</div>
+          {/* High Risk Process Units */}
+          <div className="flex flex-col rounded-xl bg-[var(--psm-surface-2)] p-3 border border-[var(--psm-line)] w-full">
+            <div className="mb-2 text-xs font-bold text-[var(--psm-fg)]">Process Unit Hotspots</div>
             <div className="space-y-1.5">
               {units.slice(0, 2).map((unit: any) => (
                 <button
                   key={unit.id ?? unit.name ?? unit.label}
+                  type="button"
                   onClick={() => setFilters({ unit_id: unit.id ?? unit.label, risk_level: 'High' })}
-                  className="flex items-center justify-between rounded-lg border border-slate-900 bg-slate-950 p-2 text-left hover:border-slate-800 transition-all w-full"
+                  className="flex items-center justify-between rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] p-2 text-left hover:border-primary/50 transition-colors w-full"
                 >
-                  <p className="font-semibold text-xs text-slate-300 truncate max-w-[80%]">
+                  <p className="font-semibold text-xs text-[var(--psm-fg)] truncate max-w-[80%]">
                     {unit.name ?? unit.label ?? 'Unit'}
                   </p>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-xs font-black text-red-400">
+                    <span className="text-xs font-mono font-black text-rose-500">
                       {unit.count ?? unit.High ?? unit.Critical ?? unit.total}
                     </span>
-                    <ChevronRight size={12} className="text-slate-700" />
+                    <ChevronRight size={12} className="text-[var(--psm-muted)]" />
                   </div>
                 </button>
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </div>

@@ -11,30 +11,123 @@ export function HazopDashboardFiltersPanel({
   onReset: () => void;
   activeCount: number;
 }) {
-  const selectClass = 'h-10 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface)] px-3 text-sm outline-none';
+  const selectClass =
+    'h-9 w-full rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-2.5 text-xs text-[var(--psm-text)] outline-none transition focus:border-primary sm:h-10 sm:text-sm';
+
+  const checkboxClass =
+    'flex h-9 items-center gap-1.5 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-2.5 text-xs font-medium text-[var(--psm-text)] transition hover:bg-[var(--psm-surface)] cursor-pointer select-none sm:h-10 sm:text-sm';
+
   return (
-    <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3">
-      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-8">
-        <select className={selectClass} value={filters.status} onChange={(event) => onFilter('status', event.target.value)}>
+    <section className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-3 shadow-sm">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
+        <select
+          className={selectClass}
+          value={filters.status}
+          onChange={(event) => onFilter('status', event.target.value)}
+        >
           <option value="">All statuses</option>
-          {['Draft', 'Planned', 'In Preparation', 'In Progress', 'In Review', 'Pending Approval', 'Approved', 'Closed', 'Reopened', 'Cancelled', 'Overdue'].map((item) => <option key={item}>{item}</option>)}
+          {[
+            'Draft',
+            'Planned',
+            'In Preparation',
+            'In Progress',
+            'In Review',
+            'Pending Approval',
+            'Approved',
+            'Closed',
+            'Reopened',
+            'Cancelled',
+            'Overdue',
+          ].map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
         </select>
-        <select className={selectClass} value={filters.studyType} onChange={(event) => onFilter('studyType', event.target.value)}>
+
+        <select
+          className={selectClass}
+          value={filters.studyType}
+          onChange={(event) => onFilter('studyType', event.target.value)}
+        >
           <option value="">All study types</option>
-          {['HAZOP', 'What-If', 'Checklist PHA', 'What-If/Checklist', 'FMEA', 'Bowtie', 'Revalidation', 'MOC-triggered', 'PSSR-triggered', 'Incident-triggered'].map((item) => <option key={item}>{item}</option>)}
+          {[
+            'HAZOP',
+            'What-If',
+            'Checklist PHA',
+            'What-If/Checklist',
+            'FMEA',
+            'Bowtie',
+            'Revalidation',
+            'MOC-triggered',
+            'PSSR-triggered',
+            'Incident-triggered',
+          ].map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
         </select>
-        <select className={selectClass} value={filters.riskPriority} onChange={(event) => onFilter('riskPriority', event.target.value)}>
+
+        <select
+          className={selectClass}
+          value={filters.riskPriority}
+          onChange={(event) => onFilter('riskPriority', event.target.value)}
+        >
           <option value="">All risk priorities</option>
           <option value="Critical">Critical</option>
           <option value="High">High</option>
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
-        <label className="flex h-10 items-center gap-2 rounded-lg border border-[var(--psm-line)] px-3 text-sm"><input type="checkbox" checked={filters.overdue} onChange={(event) => onFilter('overdue', event.target.checked)} /> Overdue</label>
-        <label className="flex h-10 items-center gap-2 rounded-lg border border-[var(--psm-line)] px-3 text-sm"><input type="checkbox" checked={filters.lopaRequired} onChange={(event) => onFilter('lopaRequired', event.target.checked)} /> LOPA</label>
-        <label className="flex h-10 items-center gap-2 rounded-lg border border-[var(--psm-line)] px-3 text-sm"><input type="checkbox" checked={filters.pendingSignoff} onChange={(event) => onFilter('pendingSignoff', event.target.checked)} /> Sign-off</label>
-        <label className="flex h-10 items-center gap-2 rounded-lg border border-[var(--psm-line)] px-3 text-sm"><input type="checkbox" checked={filters.revalidationDue} onChange={(event) => onFilter('revalidationDue', event.target.checked)} /> Revalidation</label>
-        <button type="button" onClick={onReset} className="h-10 rounded-lg border border-[var(--psm-line)] px-3 text-sm font-semibold hover:bg-[var(--psm-surface-2)]">Reset {activeCount ? `(${activeCount})` : ''}</button>
+
+        <label className={checkboxClass}>
+          <input
+            type="checkbox"
+            className="accent-primary"
+            checked={Boolean(filters.overdue)}
+            onChange={(event) => onFilter('overdue', event.target.checked)}
+          />
+          <span>Overdue</span>
+        </label>
+
+        <label className={checkboxClass}>
+          <input
+            type="checkbox"
+            className="accent-primary"
+            checked={Boolean(filters.lopaRequired)}
+            onChange={(event) => onFilter('lopaRequired', event.target.checked)}
+          />
+          <span>LOPA</span>
+        </label>
+
+        <label className={checkboxClass}>
+          <input
+            type="checkbox"
+            className="accent-primary"
+            checked={Boolean(filters.pendingSignoff)}
+            onChange={(event) => onFilter('pendingSignoff', event.target.checked)}
+          />
+          <span>Sign-off</span>
+        </label>
+
+        <label className={checkboxClass}>
+          <input
+            type="checkbox"
+            className="accent-primary"
+            checked={Boolean(filters.revalidationDue)}
+            onChange={(event) => onFilter('revalidationDue', event.target.checked)}
+          />
+          <span>Revalidation</span>
+        </label>
+
+        <button
+          type="button"
+          onClick={onReset}
+          className="h-9 w-full rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3 text-xs font-semibold text-[var(--psm-text)] transition hover:bg-[var(--psm-surface)] active:scale-95 sm:h-10 sm:text-sm"
+        >
+          Reset {activeCount ? `(${activeCount})` : ''}
+        </button>
       </div>
     </section>
   );

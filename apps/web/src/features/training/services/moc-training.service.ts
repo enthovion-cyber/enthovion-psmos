@@ -53,11 +53,11 @@ export const mocTrainingService = {
   workerAssignments: (workerId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingAssignment>>(`/training-competency/workforce/${workerId}/moc-training-assignments`, params),
   workerHistory: (workerId: string, params?: Record<string, unknown>) => get<MocTrainingRegister>(`/training-competency/workforce/${workerId}/moc-training-history`, params),
   scoped: (scope: 'sites' | 'units' | 'areas', id: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingRequirement>>(`/training-competency/${scope}/${id}/moc-training-requirements`, params),
-  mocRequirements: (mocId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingRequirement>>(`/moc/${mocId}/training-requirements`, params),
-  mocReadiness: (mocId: string) => get<Record<string, unknown>>(`/moc/${mocId}/training-readiness`),
-  runMocReadiness: (mocId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`/moc/${mocId}/training-readiness/run`, payload),
-  mocBlockers: (mocId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingBlocker>>(`/moc/${mocId}/training-blockers`, params),
-  mocEvidence: (mocId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingAssignment>>(`/moc/${mocId}/training-evidence`, params),
+  mocRequirements: (mocId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingRequirement>>(`/training-competency/moc/${mocId}/training-requirements`, params),
+  mocReadiness: (mocId: string) => get<Record<string, unknown>>(`/training-competency/moc/${mocId}/training-readiness`),
+  runMocReadiness: (mocId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`/training-competency/moc/${mocId}/training-readiness/run`, payload),
+  mocBlockers: (mocId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingBlocker>>(`/training-competency/moc/${mocId}/training-blockers`, params),
+  mocEvidence: (mocId: string, params?: Record<string, unknown>) => get<MocTrainingRegister<MocTrainingAssignment>>(`/training-competency/moc/${mocId}/training-evidence`, params),
   mocImpactCheck: (mocId: string, params?: Record<string, unknown>) => get<Record<string, unknown>>(`/moc/${mocId}/training-impact-check`, params),
   runMocImpactCheck: (mocId: string, payload?: Record<string, unknown>) => post<Record<string, unknown>>(`/moc/${mocId}/training-impact-check/run`, payload)
 };

@@ -34,7 +34,7 @@ export function SidebarFooterUserMenu({ collapsed, onNavigate }: { collapsed: bo
         aria-label="Open user account menu"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className={`w-full rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3 text-left transition hover:border-info/50 hover:bg-[var(--psm-surface-3)] focus:outline-none focus:ring-2 focus:ring-info/40 ${collapsed ? 'lg:grid lg:place-items-center lg:border-transparent lg:bg-transparent lg:p-2' : ''}`}
+        className={`w-full rounded-lg border border-white/15 bg-white/5 p-3 text-left text-slate-100 transition hover:border-white/30 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 ${collapsed ? 'lg:grid lg:place-items-center lg:border-transparent lg:bg-transparent lg:p-2' : ''}`}
         title={collapsed ? `${profile.data?.user.fullName ?? 'User'}\n${profile.data?.user.email ?? ''}` : undefined}
       >
         <SidebarUserCard data={profile.data} collapsed={collapsed} open={open} />

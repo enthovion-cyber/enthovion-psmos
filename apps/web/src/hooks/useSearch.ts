@@ -2,17 +2,22 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { searchService, type SearchParams } from '@/services/search.service';
+import { hasLocalSession } from '@/services/api';
 
 export function useGlobalSearch(params: SearchParams, enabled = true) {
   return useQuery({
     queryKey: ['search', params],
     queryFn: () => searchService.search(params),
-    enabled
+    enabled: enabled && hasLocalSession()
   });
 }
 
 export function useRecentSearches() {
-  return useQuery({ queryKey: ['search', 'recent'], queryFn: searchService.recent });
+  return useQuery({
+    queryKey: ['search', 'recent'],
+    queryFn: searchService.recent,
+    enabled: hasLocalSession()
+  });
 }
 
 export function useSearchMutations() {

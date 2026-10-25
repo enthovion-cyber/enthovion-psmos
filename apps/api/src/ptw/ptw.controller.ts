@@ -30,6 +30,8 @@ import { WorkforceAccountabilityDto, WorkforceBriefingDto, WorkforceBulkDto, Wor
 import { HandoverAcknowledgeDto, HandoverChecklistDto, ShiftHandoverDto, SuspendHandoverDto } from './dto/shift-handover.dto';
 import { ConflictMatrixRuleDto, ConflictOverrideDto, ConflictRejectDto, SimopsControlDto, SimopsReviewDto, UpdateConflictDto } from './dto/conflict-simops.dto';
 import { RejectPermitSignatureDto, SignatureRequirementDto, SignPermitSignatureDto } from './dto/signature-tab.dto';
+import { AuthorizeBypassDto } from './dto/authorize-bypass.dto';
+import { EmergencySuspendDto } from './dto/emergency-suspend.dto';
 import { PtwService } from './ptw.service';
 
 @ApiTags('ptw')
@@ -382,6 +384,12 @@ export class PtwController {
     return this.ptw.deleteAttachmentRequirement(user.tenantId, user.id, requirementId);
   }
 
+  @Post('emergency-suspend')
+  @Permissions(PermissionKeys.PTWSuspend)
+  emergencySuspend(@CurrentUser() user: RequestUser, @Body() dto: EmergencySuspendDto) {
+    return this.ptw.emergencySuspend(user.tenantId, user.id, dto, this.scope(user));
+  }
+
   @Get(':id')
   @Permissions(PermissionKeys.PTWRead)
   get(@CurrentUser() user: RequestUser, @Param('id') id: string) {
@@ -550,6 +558,23 @@ export class PtwController {
     return this.ptw.confirmIsolation(user.tenantId, user.id, id, isolationId, {}, this.scope(user));
   }
 
+  @Get(':id/isolation/sce-bypass-status')
+  @Permissions(PermissionKeys.PTWRead)
+  isolationSceBypassStatus(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.ptw.isolationSceBypassStatus(user.tenantId, id, this.scope(user));
+  }
+
+  @Post(':id/isolation/:isolationId/authorize-bypass')
+  @Permissions(PermissionKeys.PTWIsolationConfirm)
+  authorizeIsolationBypass(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Param('isolationId') isolationId: string,
+    @Body() dto: AuthorizeBypassDto
+  ) {
+    return this.ptw.authorizeIsolationBypass(user.tenantId, user.id, id, isolationId, dto, this.scope(user));
+  }
+
   @Post(':id/de-isolation')
   @Permissions(PermissionKeys.PTWDeisolationConfirm)
   deisolate(@CurrentUser() user: RequestUser, @Param('id') id: string) {
@@ -662,6 +687,12 @@ export class PtwController {
   @Permissions(PermissionKeys.PTWWorkforceView)
   workforceRequiredRoles(@CurrentUser() user: RequestUser, @Param('id') id: string) {
     return this.ptw.workforceRequiredRoles(user.tenantId, id, this.scope(user));
+  }
+
+  @Get(':id/workforce/competency-check')
+  @Permissions(PermissionKeys.PTWWorkforceView)
+  workforceCompetencyCheck(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.ptw.workforceCompetencyCheck(user.tenantId, id, this.scope(user));
   }
 
   @Get(':id/workforce/history')

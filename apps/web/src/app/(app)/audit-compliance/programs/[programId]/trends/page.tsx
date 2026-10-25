@@ -1,2 +1,11 @@
 import { AuditSourceTrendPage } from '@/features/audit/history/AuditSourceTrendPage';
-export default function Page({ params }: { params: { programId: string } }) { return <AuditSourceTrendPage title="Program Trend Analysis" resource="programs" id={params.programId} />; }
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function Page(props: { params: Promise<{ programId: string }> }) {
+  const params = await props.params;
+  return <AuditSourceTrendPage title="Program Trend Analysis" resource="programs" id={params.programId} />;
+}

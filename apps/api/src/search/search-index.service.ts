@@ -52,6 +52,10 @@ export class SearchIndexService {
     const module = normalizeModule(moduleKey);
     if (module === 'equipment') return this.reindexEquipment(tenantId);
     if (module === 'actions') return this.reindexActions(tenantId);
+    if (module === 'documents') return this.reindexDocuments(tenantId);
+    if (module === 'ptw') return this.reindexPtw(tenantId);
+    if (module === 'moc') return this.reindexMoc(tenantId);
+    if (module === 'incidents') return this.reindexIncidents(tenantId);
     if (module === 'users') return this.reindexUsers(tenantId);
     if (module === 'roles') return this.reindexRoles(tenantId);
     if (module === 'companies') return this.reindexCompanies(tenantId);
@@ -62,10 +66,124 @@ export class SearchIndexService {
   }
 
   async reindexFoundation(tenantId: string) {
-    const modules = ['equipment', 'actions', 'users', 'roles', 'companies', 'sites', 'units', 'areas'];
+    const modules = ['equipment', 'actions', 'documents', 'ptw', 'moc', 'incidents', 'users', 'roles', 'companies', 'sites', 'units', 'areas'];
     const results = [];
     for (const module of modules) results.push(await this.reindexModule(tenantId, module));
     return { modules: results, indexed: results.reduce((sum, result) => sum + result.indexed, 0) };
+  }
+
+  private async reindexDocuments(tenantId: string) {
+    try {
+      const rows = await this.db.many<any>(
+        this.db.from('documents').select('*').eq('tenant_id', tenantId)
+      );
+      for (const doc of rows) {
+        await this.indexRecord(tenantId, {
+          module: 'documents',
+          recordType: 'Document',
+          recordId: doc.id,
+          recordNumber: doc.document_number,
+          title: doc.title,
+          subtitle: [doc.document_type, doc.status].filter(Boolean).join(' / '),
+          description: doc.description,
+          status: doc.status,
+          siteId: doc.site_id,
+          url: `/documents/${doc.id}`,
+          searchableText: normalizeSearchText([doc.document_number, doc.title, doc.description, doc.document_type, doc.status])
+        });
+      }
+      return { module: 'documents', indexed: rows.length };
+    } catch {
+      return { module: 'documents', indexed: 0 };
+    }
+  }
+
+  private async reindexPtw(tenantId: string) {
+    try {
+      let rows = await this.db.many<any>(
+        this.db.from('permits').select('*').eq('tenant_id', tenantId)
+      );
+      if (!rows.length) {
+        rows = await this.db.many<any>(
+          this.db.from('ptw_permits').select('*').eq('tenant_id', tenantId)
+        );
+      }
+      for (const ptw of rows) {
+        await this.indexRecord(tenantId, {
+          module: 'ptw',
+          recordType: 'Permit',
+          recordId: ptw.id,
+          recordNumber: ptw.permit_number,
+          title: ptw.title,
+          subtitle: [ptw.permit_type, ptw.status].filter(Boolean).join(' / '),
+          description: ptw.work_description ?? ptw.description,
+          status: ptw.status,
+          siteId: ptw.site_id,
+          url: `/ptw/${ptw.id}`,
+          searchableText: normalizeSearchText([ptw.permit_number, ptw.title, ptw.work_description, ptw.permit_type, ptw.equipment_tag, ptw.equipment_name, ptw.job_area, ptw.status])
+        });
+      }
+      return { module: 'ptw', indexed: rows.length };
+    } catch {
+      return { module: 'ptw', indexed: 0 };
+    }
+  }
+
+  private async reindexMoc(tenantId: string) {
+    try {
+      let rows = await this.db.many<any>(
+        this.db.from('mocs').select('*').eq('tenant_id', tenantId)
+      );
+      if (!rows.length) {
+        rows = await this.db.many<any>(
+          this.db.from('moc_requests').select('*').eq('tenant_id', tenantId)
+        );
+      }
+      for (const moc of rows) {
+        await this.indexRecord(tenantId, {
+          module: 'moc',
+          recordType: 'MOC',
+          recordId: moc.id,
+          recordNumber: moc.moc_number,
+          title: moc.title,
+          subtitle: [moc.change_type ?? moc.change_category, moc.status ?? moc.workflow_status].filter(Boolean).join(' / '),
+          description: moc.description,
+          status: moc.status ?? moc.workflow_status,
+          siteId: moc.site_id,
+          url: `/moc/${moc.id}`,
+          searchableText: normalizeSearchText([moc.moc_number, moc.title, moc.description, moc.change_type, moc.change_category, moc.risk_level, moc.status, moc.workflow_status])
+        });
+      }
+      return { module: 'moc', indexed: rows.length };
+    } catch {
+      return { module: 'moc', indexed: 0 };
+    }
+  }
+
+  private async reindexIncidents(tenantId: string) {
+    try {
+      const rows = await this.db.many<any>(
+        this.db.from('incidents').select('*').eq('tenant_id', tenantId)
+      );
+      for (const inc of rows) {
+        await this.indexRecord(tenantId, {
+          module: 'incidents',
+          recordType: 'Incident',
+          recordId: inc.id,
+          recordNumber: inc.incident_number,
+          title: inc.title,
+          subtitle: [inc.incident_type, inc.severity, inc.status].filter(Boolean).join(' / '),
+          description: inc.description,
+          status: inc.status,
+          siteId: inc.site_id,
+          url: `/incidents/${inc.id}`,
+          searchableText: normalizeSearchText([inc.incident_number, inc.title, inc.description, inc.incident_type, inc.severity, inc.status])
+        });
+      }
+      return { module: 'incidents', indexed: rows.length };
+    } catch {
+      return { module: 'incidents', indexed: 0 };
+    }
   }
 
   private async reindexEquipment(tenantId: string) {
@@ -235,8 +353,12 @@ function normalizeModule(moduleKey: string) {
 function defaultUrl(moduleKey: string, recordId: string) {
   if (moduleKey === 'equipment') return `/equipment/${recordId}`;
   if (moduleKey === 'actions') return `/actions/${recordId}`;
+  if (moduleKey === 'documents') return `/documents/${recordId}`;
+  if (moduleKey === 'ptw') return `/ptw/${recordId}`;
+  if (moduleKey === 'moc') return `/moc/${recordId}`;
+  if (moduleKey === 'incidents') return `/incidents/${recordId}`;
   if (moduleKey === 'users') return `/settings/users/${recordId}`;
   if (moduleKey === 'roles') return `/settings/roles/${recordId}`;
-  if (['companies', 'sites', 'units', 'areas'].includes(moduleKey)) return '/settings/units-areas';
+  if (['companies', 'sites', 'units', 'areas'].includes(moduleKey)) return '/settings/hierarchy';
   return '/search';
 }

@@ -47,4 +47,8 @@ export class CreateActionDto {
   @IsOptional()
   @IsBoolean()
   verificationRequired?: boolean;
+
+  @IsOptional()
+  @IsString()
+  timingGate?: string;
 }

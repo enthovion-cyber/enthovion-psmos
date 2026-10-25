@@ -18,7 +18,7 @@ import { MOCEngineeringPackageStep } from './create/MOCEngineeringPackageStep';
 import { MOCRequiredActionsPreviewStep } from './create/MOCRequiredActionsPreviewStep';
 import { MOCReviewSubmitStep } from './create/MOCReviewSubmitStep';
 
-const steps = ['Basic Change Information', 'Affected Location & Equipment', 'Change Description', 'Risk Ranking', 'Impact Assessment', 'Temporary / Emergency Controls', 'Engineering Package', 'Required Actions Preview', 'Review & Submit'];
+const steps = ['Basic Info', 'Location & Equipment', 'Change Description', 'Risk Ranking', 'Impact Assessment', 'Temporary / Emergency Controls', 'Engineering Package', 'Required Actions Preview', 'Review & Submit'];
 
 export function MOCCreateWizard() {
   const router = useRouter();
@@ -44,22 +44,46 @@ export function MOCCreateWizard() {
   ][step];
   return (
     <FormProvider {...form}>
-      <form className="min-h-screen bg-[#020b16] text-slate-100" onSubmit={form.handleSubmit((values) => submit(values, 'submit'))}>
-        <header className="border-b border-cyan-300/10 bg-[#04101f]/95 p-5">
+      <form className="min-h-screen bg-[var(--psm-bg)] text-[var(--psm-fg)]" onSubmit={form.handleSubmit((values) => submit(values, 'submit'))}>
+        <header className="border-b border-[var(--psm-line)] bg-[var(--psm-surface)] p-5 shadow-sm">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-200">Module 04 / OSHA 1910.119(l)</p><h1 className="mt-1 text-2xl font-black text-white">Create MOC Request</h1><p className="mt-2 text-sm text-slate-400">API-driven MOC creation wizard with equipment lookup, risk ranking, impacts, controls, engineering package, generated actions, workflow, audit, notifications, and search indexing.</p></div>
-            <div className="rounded-xl border border-cyan-300/10 bg-slate-950/35 p-3 text-right"><p className="text-xs text-slate-400">Calculated Risk</p><p className={`text-2xl font-black ${risk.level === 'Critical' ? 'text-red-300' : risk.level === 'High' ? 'text-amber-300' : 'text-emerald-300'}`}>{risk.level} / {risk.score}</p></div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-primary">Module 04 / OSHA 1910.119(l)</p>
+              <h1 className="mt-1 text-2xl font-black text-[var(--psm-fg)]">Create MOC Request</h1>
+              <p className="mt-1 text-sm text-[var(--psm-muted)]">Enterprise-grade MOC creation wizard with equipment lookup, risk ranking, impacts, controls, engineering package, generated actions, workflow, and search indexing.</p>
+            </div>
+            <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface-2)] p-3.5 text-right shrink-0">
+              <p className="text-xs font-semibold text-[var(--psm-muted)] uppercase tracking-wider">Calculated Risk</p>
+              <p className={`text-2xl font-black ${risk.level === 'Critical' ? 'text-red-500' : risk.level === 'High' ? 'text-amber-500' : 'text-emerald-500'}`}>{risk.level} / {risk.score}</p>
+            </div>
           </div>
-          <nav className="mt-5 grid gap-2 md:grid-cols-3 xl:grid-cols-9">
-            {steps.map((label, index) => <button key={label} type="button" onClick={() => setStep(index)} className={`rounded-lg border px-2 py-2 text-xs font-bold ${step === index ? 'border-blue-300/70 bg-blue-500/15 text-white' : 'border-white/10 bg-white/[0.03] text-slate-400'}`}>{index + 1}. {label}</button>)}
+          <nav className="mt-5 flex flex-wrap gap-2">
+            {steps.map((label, index) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setStep(index)}
+                className={`rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
+                  step === index
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-[var(--psm-line)] bg-[var(--psm-surface-2)] text-[var(--psm-muted)] hover:text-[var(--psm-fg)] hover:border-primary/50'
+                }`}
+              >
+                {index + 1}. {label}
+              </button>
+            ))}
           </nav>
         </header>
-        <main className="p-4">{context.isLoading ? <div className="rounded-xl border border-cyan-300/10 bg-[#07182a] p-6 text-slate-300">Loading MOC context...</div> : current}</main>
-        <footer className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-cyan-300/10 bg-[#04101f]/95 p-4">
-          <button type="button" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))} className="inline-flex items-center gap-2 rounded-md border border-white/10 px-4 py-2 text-sm font-bold text-slate-200 disabled:opacity-40"><ArrowLeft size={15} /> Back</button>
+        <main className="p-6 max-w-7xl mx-auto">{context.isLoading ? <div className="rounded-xl border border-[var(--psm-line)] bg-[var(--psm-surface)] p-6 text-[var(--psm-muted)]">Loading MOC context...</div> : current}</main>
+        <footer className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--psm-line)] bg-[var(--psm-surface)]/95 backdrop-blur p-4 shadow-lg">
+          <button type="button" disabled={step === 0} onClick={() => setStep((value) => Math.max(0, value - 1))} className="inline-flex items-center gap-2 rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-4 py-2 text-sm font-bold text-[var(--psm-fg)] hover:bg-[var(--psm-surface)] disabled:opacity-40 transition-all"><ArrowLeft size={15} /> Back</button>
           <div className="flex gap-2">
-            <button type="button" onClick={() => submit(form.getValues(), 'draft')} className="inline-flex items-center gap-2 rounded-md border border-cyan-300/20 bg-cyan-500/10 px-4 py-2 text-sm font-bold text-cyan-100"><Save size={15} /> Save Draft</button>
-            {step < steps.length - 1 ? <button type="button" onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))} className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white">Next <ArrowRight size={15} /></button> : <button type="submit" disabled={createMoc.isPending} className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"><Send size={15} /> Submit for Review</button>}
+            <button type="button" onClick={() => submit(form.getValues(), 'draft')} className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-all"><Save size={15} /> Save Draft</button>
+            {step < steps.length - 1 ? (
+              <button type="button" onClick={() => setStep((value) => Math.min(steps.length - 1, value + 1))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow hover:opacity-90 transition-all">Next <ArrowRight size={15} /></button>
+            ) : (
+              <button type="submit" disabled={createMoc.isPending} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow hover:bg-emerald-500 disabled:opacity-60 transition-all"><Send size={15} /> Submit for Review</button>
+            )}
           </div>
         </footer>
       </form>

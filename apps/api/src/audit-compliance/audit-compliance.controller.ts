@@ -2466,6 +2466,11 @@ export class AuditComplianceController {
   async executionReadiness(@CurrentUser() user: RequestUser, @Param("executionId") executionId: string) {
     return (await this.executions.detail(user, executionId)).readiness;
   }
+  @Get("execution/:executionId/closure-gate")
+  @Permissions(auditPermissions.executionView)
+  executionClosureGate(@CurrentUser() user: RequestUser, @Param("executionId") executionId: string) {
+    return this.executions.closureGate(user, executionId);
+  }
   @Post("execution/:executionId/readiness/run")
   @Permissions(auditPermissions.executionReadinessRun)
   runExecutionReadiness(@CurrentUser() user: RequestUser, @Param("executionId") executionId: string) {

@@ -1,5 +1,11 @@
 import { ProcessChemistryDetailPage } from '@/features/psi/process-chemistry/detail/ProcessChemistryDetailPage';
 
-export default function ProcessChemistryDetailRoute({ params }: { params: { chemistryId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function ProcessChemistryDetailRoute(props: { params: Promise<{ chemistryId: string }> }) {
+  const params = await props.params;
   return <ProcessChemistryDetailPage chemistryId={params.chemistryId} />;
 }

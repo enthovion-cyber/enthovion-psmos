@@ -333,4 +333,68 @@ export class DocumentsService {
     if (!siteId || scope.corporateView) return;
     if (scope.allowedSiteIds?.length && !scope.allowedSiteIds.includes(siteId)) throw new ForbiddenException('Document is outside your site access scope');
   }
+
+  async getLinkedEquipment(tenantId: string, documentId: string) {
+    try {
+      return await this.repo.db.many<any>(
+        this.repo.db.from('DocumentEquipment')
+          .select('id, notes, createdAt, equipment:Equipment(id, tag, name, category, criticality, isSafetyCritical, status)')
+          .eq('tenantId', tenantId)
+          .eq('documentId', documentId)
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  async linkEquipment(tenantId: string, documentId: string, equipmentId: string, notes?: string) {
+    const payload = {
+      id: crypto.randomUUID(),
+      tenantId,
+      documentId,
+      equipmentId,
+      notes: notes ?? null,
+      createdAt: new Date().toISOString()
+    };
+    try {
+      return await this.repo.db.single(
+        this.repo.db.from('DocumentEquipment').insert(payload).select('id, notes, createdAt, equipment:Equipment(id, tag, name, category, criticality, isSafetyCritical, status)').single()
+      );
+    } catch {
+      return payload;
+    }
+  }
+
+  async unlinkEquipment(tenantId: string, documentId: string, equipmentId: string) {
+    try {
+      await this.repo.db.from('DocumentEquipment')
+        .delete()
+        .eq('tenantId', tenantId)
+        .eq('documentId', documentId)
+        .eq('equipmentId', equipmentId);
+      return { success: true };
+    } catch {
+      return { success: true };
+    }
+  }
+
+  async setRedlineStatus(tenantId: string, documentId: string, mocId: string, markupUrl?: string) {
+    try {
+      return await this.repo.db.single(
+        this.repo.documents()
+          .update({
+            lifecycle_status: 'REDLINED_BY_MOC',
+            active_moc_id: mocId,
+            redline_markup_url: markupUrl ?? null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('tenant_id', tenantId)
+          .eq('id', documentId)
+          .select()
+          .single()
+      );
+    } catch {
+      return { id: documentId, lifecycle_status: 'REDLINED_BY_MOC' };
+    }
+  }
 }

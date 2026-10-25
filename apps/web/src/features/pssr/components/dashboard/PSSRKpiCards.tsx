@@ -77,7 +77,7 @@ export function PSSRKpiCards({
       {/* Premium Dashboard Grid Matrix */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
         {visibleKpis.map((item, index) => {
-          const Icon = icons[index % icons.length];
+          const Icon = icons[index % icons.length] ?? ClipboardCheck;
           const themes = getThemeMapping(item.tone);
 
           return (

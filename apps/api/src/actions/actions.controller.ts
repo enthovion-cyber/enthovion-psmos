@@ -137,6 +137,18 @@ export class ActionsController {
     return this.actions.verify(user.tenantId, user.id, id, dto);
   }
 
+  @Post(':id/request-extension')
+  @Permissions(PermissionKeys.ActionsEdit)
+  requestExtension(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() body: { requestedDueDate: string; reason: string }) {
+    return this.actions.requestExtension(user.tenantId, user.id, id, body);
+  }
+
+  @Post(':id/review-extension')
+  @Permissions(PermissionKeys.ActionsVerify)
+  reviewExtension(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() body: { decision: 'APPROVED' | 'REJECTED'; notes?: string }) {
+    return this.actions.reviewExtension(user.tenantId, user.id, id, body);
+  }
+
   @Post(':id/close')
   @Permissions(PermissionKeys.ActionsClose)
   close(@CurrentUser() user: RequestUser, @Param('id') id: string, @Body() dto: CloseActionDto) {

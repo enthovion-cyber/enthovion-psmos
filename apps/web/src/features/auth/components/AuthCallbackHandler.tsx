@@ -44,7 +44,8 @@ export function AuthCallbackHandler({ provider = 'auth' }: { provider?: string }
         const marketingNext = intent
           ? resolveMarketingCta({ action: intent === 'trial' ? 'trial' : intent === 'enterprise' ? 'contact-sales' : 'checkout', planCode: plan ?? undefined, isAuthenticated: true, hasWorkspace: Boolean(result.companyIds?.length || result.siteIds?.length || result.tenantId) })
           : null;
-        window.location.href = marketingNext ?? result.next ?? '/dashboard';
+        const nextUrl = marketingNext ?? result.next ?? '/executive';
+        window.location.href = nextUrl === '/dashboard' ? '/executive' : nextUrl;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unable to complete sign-in.';
         window.location.href = `/access-denied?reason=${encodeURIComponent(message)}`;

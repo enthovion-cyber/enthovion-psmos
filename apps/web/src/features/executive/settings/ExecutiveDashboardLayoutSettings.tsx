@@ -1,0 +1,5 @@
+'use client';
+import { useQuery } from '@tanstack/react-query';
+import { executiveApi } from '../services/executive-api';
+import { ExecutiveEmpty, ExecutivePanel } from '../components/ExecutivePanel';
+export function ExecutiveDashboardLayoutSettings() { const query = useQuery({ queryKey: ['executive','layouts'], queryFn: executiveApi.layouts }); if (query.isLoading) return <div className="h-24 animate-pulse rounded-lg bg-[var(--psm-surface-2)]" />; if (query.isError) return <ExecutivePanel title="Dashboard Layouts"><ExecutiveEmpty message="Layouts are restricted or unavailable for this user." /></ExecutivePanel>; const rows = query.data ?? []; return <ExecutivePanel title="Dashboard Layouts" subtitle="Only saved layouts belonging to you or shared with your company are shown.">{rows.length ? <ul className="space-y-2">{rows.map((row: any) => <li className="rounded-md border border-[var(--psm-line)] p-3 text-sm" key={row.id}>{row.layout_title}</li>)}</ul> : <ExecutiveEmpty message="No saved executive layouts are available." />}</ExecutivePanel>; }

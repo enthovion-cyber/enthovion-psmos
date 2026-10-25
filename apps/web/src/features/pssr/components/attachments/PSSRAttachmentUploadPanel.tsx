@@ -19,8 +19,9 @@ export function PSSRAttachmentUploadPanel({ onUpload }: { onUpload: (file: File)
   // 3. Handle the file selection event
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0) {
-      onUpload(files[0]); // Pass the selected file up to your parent component
+    const selectedFile = files?.[0];
+    if (selectedFile) {
+      onUpload(selectedFile); // Pass the selected file up to your parent component
     }
   };
 

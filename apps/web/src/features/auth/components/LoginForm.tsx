@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { validateLogin } from '../schemas/login.schema';
 import { useLogin } from '../hooks/useLogin';
 import { GoogleLoginButton } from './GoogleLoginButton';
+import { AuthBrand } from './AuthBrand';
 
 export function LoginForm() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export function LoginForm() {
       const result = await login.mutateAsync(form);
       setSession(result.accessToken, result.tenantId, result.refreshToken);
       
-      const destination = result.next ?? '/dashboard';
+      const destination = !result.next || result.next === '/dashboard' ? '/executive' : result.next;
       router.push(destination);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid email or password.';
@@ -53,24 +54,13 @@ export function LoginForm() {
     <div className="w-full max-w-md">
       <form
         onSubmit={submit}
-        className="psm-panel relative overflow-hidden rounded-2xl border border-[var(--psm-line)] bg-[var(--psm-surface-1)] p-8 shadow-2xl backdrop-blur-md transition-all duration-200"
+        className="relative"
       >
-        {/* Top Accent Line */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-info/40 via-info to-info/40" />
-
-        {/* Header Section */}
-        <div className="mb-8 flex items-center gap-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-info/20 bg-info/10 text-info shadow-inner">
-            <ShieldCheck className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--psm-foreground)]">
-              Sign in
-            </h1>
-            <p className="text-sm font-medium text-[var(--psm-muted)]">
-              PSM OS enterprise workspace access
-            </p>
-          </div>
+        <div className="mb-9 lg:hidden"><AuthBrand compact /></div>
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-2 text-[var(--psm-primary)]"><ShieldCheck size={18} /><span className="text-xs font-bold uppercase tracking-[.14em]">Secure workspace</span></div>
+          <h1 className="text-3xl font-semibold tracking-tight">Sign in to your account</h1>
+          <p className="mt-2 text-sm text-[var(--text-secondary)] dark:text-slate-300">Access your Enthovion PSM OS workspace.</p>
         </div>
 
         {/* Form Inputs */}
@@ -79,28 +69,18 @@ export function LoginForm() {
           <div>
             <label 
               htmlFor="email" 
-              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--psm-muted)]"
+              className="mb-2 block text-sm font-semibold"
             >
               Email address
             </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="name@company.com"
-              className="psm-input w-full rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] px-3.5 py-2.5 text-sm transition-all focus:border-info focus:outline-none focus:ring-2 focus:ring-info/20"
-              value={form.email}
-              onChange={(event) => setForm({ ...form, email: event.target.value })}
-            />
+            <div className="relative"><Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" size={18} /><input id="email" name="email" type="email" required autoComplete="email" placeholder="name@company.com" className="psm-input w-full bg-white px-10 py-2.5 text-sm dark:border-[#355477] dark:bg-[#10213b]" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></div>
           </div>
 
           {/* Password Field */}
           <div>
             <label 
               htmlFor="password" 
-              className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--psm-muted)]"
+              className="mb-2 block text-sm font-semibold"
             >
               Password
             </label>
@@ -112,14 +92,15 @@ export function LoginForm() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="psm-input w-full rounded-lg border border-[var(--psm-line)] bg-[var(--psm-surface-2)] pl-3.5 pr-10 py-2.5 text-sm transition-all focus:border-info focus:outline-none focus:ring-2 focus:ring-info/20"
+                className="psm-input w-full bg-white px-10 py-2.5 text-sm dark:border-[#355477] dark:bg-[#10213b]"
                 value={form.password}
                 onChange={(event) => setForm({ ...form, password: event.target.value })}
               />
+              <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" size={18} />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--psm-muted)] transition-colors hover:text-[var(--psm-foreground)] focus:outline-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--psm-muted)] transition-colors hover:text-[var(--psm-text)]"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
@@ -134,10 +115,10 @@ export function LoginForm() {
 
         {/* Options Row */}
         <div className="my-5 flex items-center justify-between text-sm">
-          <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-[var(--psm-muted)] transition-colors hover:text-[var(--psm-foreground)]">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--psm-text)]">
             <input
               type="checkbox"
-              className="h-4 w-4 rounded border-[var(--psm-line)] accent-info"
+              className="h-4 w-4 rounded border-[var(--psm-line)] accent-[var(--psm-primary)]"
               checked={form.rememberMe}
               onChange={(event) => setForm({ ...form, rememberMe: event.target.checked })}
             />
@@ -145,7 +126,7 @@ export function LoginForm() {
           </label>
           <Link
             href="/forgot-password"
-            className="text-xs font-medium text-info transition-colors hover:underline hover:text-info/80"
+            className="text-sm font-semibold text-[var(--action-primary)] transition-colors hover:underline"
           >
             Forgot password?
           </Link>
@@ -161,7 +142,7 @@ export function LoginForm() {
 
         {/* Primary Action Button */}
         <button
-          className="psm-button psm-button-primary flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold shadow-md transition-all active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
+          className="psm-button psm-button-primary flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold shadow-md active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
           type="submit"
           disabled={login.isPending}
         >
@@ -171,15 +152,15 @@ export function LoginForm() {
               <span>Signing in...</span>
             </>
           ) : (
-            <span>Continue</span>
+            <><span>Sign in</span><ArrowRight size={17} /></>
           )}
         </button>
 
         {/* Divider */}
         <div className="relative my-6 flex items-center justify-center">
           <div className="w-full border-t border-[var(--psm-line)]" />
-          <span className="absolute bg-[var(--psm-surface-1)] px-3 text-xs font-semibold uppercase tracking-wider text-[var(--psm-muted)]">
-            or
+          <span className="absolute bg-[var(--psm-surface)] px-3 text-xs font-medium text-[var(--psm-muted)]">
+            or continue with
           </span>
         </div>
 

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ActionsService } from '../actions/actions.service';
 import { AuditService } from '../audit/audit.service';
 import { RequestUser } from '../common/decorators/current-user.decorator';
 import { SupabaseService } from '../database/supabase.service';
@@ -7,6 +8,7 @@ import { EquipmentFilterDto } from '../equipment/dto/equipment-filter.dto';
 import { UpdateEquipmentDto } from '../equipment/dto/update-equipment.dto';
 import { UploadEquipmentDocumentDto } from '../equipment/dto/upload-equipment-document.dto';
 import { EquipmentService } from '../equipment/equipment.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type RegistryQuery = EquipmentFilterDto & Record<string, string | undefined>;
 
@@ -20,7 +22,9 @@ export class MechanicalIntegrityService {
   constructor(
     private readonly db: SupabaseService,
     private readonly equipment: EquipmentService,
-    private readonly audit: AuditService
+    private readonly audit: AuditService,
+    private readonly actions: ActionsService,
+    private readonly notifications: NotificationsService
   ) {}
 
   async dashboard(user: RequestUser) {
@@ -2543,7 +2547,20 @@ export class MechanicalIntegrityService {
 
   private async ensureMiEquipmentShadow(user: RequestUser, equipment: any) {
     const existing = await this.db.single<any>(this.db.from('mi_equipment').select('*').eq('id', equipment.id).maybeSingle()).catch(() => null);
-    if (existing) return existing;
+    const tag = equipment.tag ?? equipment.equipmentTag ?? equipment.id;
+    const name = equipment.name ?? equipment.equipmentName ?? equipment.tag ?? equipment.id;
+    const status = equipment.status ?? 'Active';
+    if (existing) {
+      if (existing.equipment_tag !== tag || existing.equipment_name !== name || existing.status !== status) {
+        return this.db.single<any>(this.db.from('mi_equipment').update({
+          equipment_tag: tag,
+          equipment_name: name,
+          status,
+          updated_at: new Date().toISOString()
+        }).eq('id', equipment.id).select().single()).catch(() => existing);
+      }
+      return existing;
+    }
     const payload = {
       id: equipment.id,
       tenant_id: user.tenantId,
@@ -2551,8 +2568,8 @@ export class MechanicalIntegrityService {
       site_id: equipment.siteId ?? user.selectedSiteId,
       unit_id: equipment.unitId ?? null,
       area_id: equipment.areaId ?? null,
-      equipment_tag: equipment.tag ?? equipment.equipmentTag ?? equipment.id,
-      equipment_name: equipment.name ?? equipment.equipmentName ?? equipment.tag ?? equipment.id,
+      equipment_tag: tag,
+      equipment_name: name,
       description: equipment.description ?? null,
       equipment_type_key: String(equipment.type ?? 'other').toLowerCase().replace(/[^a-z0-9]+/g, '_'),
       equipment_category: equipment.type ?? null,
@@ -2560,7 +2577,7 @@ export class MechanicalIntegrityService {
       model: equipment.model ?? null,
       serial_number: equipment.serialNumber ?? null,
       asset_number: equipment.assetNumber ?? equipment.nameplateNumber ?? null,
-      status: equipment.status ?? 'Active',
+      status: status,
       owner_department_id: equipment.ownerDepartmentId ?? null,
       custodian_user_id: equipment.custodianUserId ?? null,
       created_by: user.id,
@@ -5154,6 +5171,9 @@ export class MechanicalIntegrityService {
     await this.recalculateReliefSchedule(user, row.relief_device_id).catch(() => null);
     await this.updateReliefReadinessSummary(user, row.relief_device_id).catch(() => null);
     await this.addReliefHistory(user, row.relief_device_id, row.protected_equipment_id, failed ? 'RELIEF_TEST_APPROVED_FAILED' : 'RELIEF_TEST_APPROVED', 'Relief test approved', body.comment ?? finalResult, before, row, 'Relief Test', testId);
+    if (failed) {
+      await (this as any).dispatchFailedReliefTestAlerts(user, row, finalResult, testId);
+    }
     return this.reliefTestDetail(user, testId);
   }
 
@@ -7203,7 +7223,88 @@ export class MechanicalIntegrityService {
     if (test.sif_id) { await this.db.single(this.db.from('mi_sifs').update({ last_test_date: test.test_date, next_test_due_date: due, due_status: this.safeguardDueStatus(due), last_test_result: evaluation.final_result, degraded: failed, startup_blocked: failed, status: failed ? 'Failed' : 'Active', updated_at: new Date().toISOString() }).eq('id', test.sif_id).select('id').single()).catch(() => null); await this.updateSifReadiness(user, test.sif_id); }
     if (test.interlock_id) await this.db.single(this.db.from('mi_interlocks').update({ last_test_date: test.test_date, next_test_due_date: due, due_status: this.safeguardDueStatus(due), last_test_result: evaluation.final_result, startup_blocked: failed, status: failed ? 'Failed' : 'Active', updated_at: new Date().toISOString() }).eq('id', test.interlock_id).select('id').single()).catch(() => null);
     if (test.alarm_id) await this.db.single(this.db.from('mi_critical_alarms').update({ last_test_date: test.test_date, next_test_due_date: due, due_status: this.safeguardDueStatus(due), last_test_result: evaluation.final_result, startup_blocked: failed, status: failed ? 'Failed' : 'Active', updated_at: new Date().toISOString() }).eq('id', test.alarm_id).select('id').single()).catch(() => null);
-    if (failed) await this.addSafeguardHistory(user, test, 'FAILED_SAFEGUARD_DETECTED', 'Failed safeguard detected', null, evaluation);
+    if (failed) {
+      await this.addSafeguardHistory(user, test, 'FAILED_SAFEGUARD_DETECTED', 'Failed safeguard detected', null, evaluation);
+      await this.dispatchFailedProofTestAlerts(user, test, evaluation);
+    }
+  }
+
+  private async dispatchFailedProofTestAlerts(user: RequestUser, test: any, evaluation: any) {
+    const label = test.sif_id ? `SIF (${test.sif_id})` : test.interlock_id ? `Interlock (${test.interlock_id})` : `Critical Alarm (${test.alarm_id})`;
+    try {
+      await this.actions.create(
+        user.tenantId,
+        user.id,
+        {
+          title: `FAILED PROOF TEST: ${label} - Immediate Remediation Required`,
+          description: `Safeguard proof test (${test.test_record_number ?? test.id}) failed validation with result: "${evaluation.final_result}". Barrier has been marked Degraded / Startup Blocked under OSHA 1910.119(j) & IEC 61511. Immediate corrective action and re-testing required before clearing startup blocker.`,
+          priority: 'SAFETY_CRITICAL',
+          sourceModule: 'MECHANICAL_INTEGRITY',
+          sourceRecordId: test.id,
+          sourceType: 'MI_SAFEGUARD_TEST',
+          siteId: test.site_id,
+          ownerId: user.id,
+          dueDate: new Date(Date.now() + 48 * 3600 * 1000).toISOString().slice(0, 10)
+        }
+      );
+    } catch {
+      // safe fallback
+    }
+
+    try {
+      await this.notifications.notifyUser({
+        tenantId: user.tenantId,
+        userId: user.id,
+        siteId: test.site_id,
+        type: 'mi.safeguard.test.failed',
+        module: 'mechanical-integrity',
+        title: `🚨 Safeguard Proof Test Failed: ${label}`,
+        message: `Proof test recorded failure: "${evaluation.final_result}". Barrier marked as Startup Blocked. High-priority CAPA created in Action Center.`,
+        relatedRecordId: test.id,
+        relatedRecordType: 'MI Safeguard Test',
+        relatedUrl: `/mechanical-integrity/safeguard-tests/${test.id}`,
+        priority: 'Safety-Critical'
+      });
+    } catch {
+      // safe fallback
+    }
+  }
+
+  private async dispatchFailedReliefTestAlerts(user: RequestUser, row: any, finalResult: string, testId: string) {
+    const tag = row.device_tag ?? row.relief_device_id;
+    try {
+      await this.actions.create(
+        user.tenantId,
+        user.id,
+        {
+          title: `FAILED RELIEF DEVICE TEST: ${tag} - Pop/Leak Test Failed`,
+          description: `Pressure safety relief valve test (${row.test_record_number ?? testId}) failed evaluation with result "${finalResult}". Protected asset marked Not Fit for Service and Startup Blocked. Inspection, overhaul, or replacement mandated prior to startup.`,
+          priority: 'SAFETY_CRITICAL',
+          sourceModule: 'MECHANICAL_INTEGRITY',
+          sourceRecordId: testId,
+          sourceType: 'MI_RELIEF_DEVICE_TEST',
+          siteId: row.site_id,
+          ownerId: user.id,
+          dueDate: new Date(Date.now() + 48 * 3600 * 1000).toISOString().slice(0, 10)
+        }
+      );
+    } catch {}
+
+    try {
+      await this.notifications.notifyUser({
+        tenantId: user.tenantId,
+        userId: user.id,
+        siteId: row.site_id,
+        type: 'mi.relief.test.failed',
+        module: 'mechanical-integrity',
+        title: `🚨 PSV / Relief Device Test Failed: ${tag}`,
+        message: `Pop / seat leak test failed with result "${finalResult}". Device set to Not Fit for Service and startup is blocked.`,
+        relatedRecordId: testId,
+        relatedRecordType: 'MI Relief Test',
+        relatedUrl: `/mechanical-integrity/relief-tests/${testId}`,
+        priority: 'Safety-Critical'
+      });
+    } catch {}
   }
 
   private async updateSafeguardScheduleFields(ref: any, due: string | null, status: string) {

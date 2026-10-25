@@ -1,5 +1,11 @@
 import { OccurrenceExecutionPage } from '@/features/mechanical-integrity/inspection-records/OccurrenceExecutionPage';
 
-export default function CompleteInspectionOccurrencePage({ params }: { params: { occurrenceId: string } }) {
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
+export default async function CompleteInspectionOccurrencePage(props: { params: Promise<{ occurrenceId: string }> }) {
+  const params = await props.params;
   return <OccurrenceExecutionPage occurrenceId={params.occurrenceId} />;
 }

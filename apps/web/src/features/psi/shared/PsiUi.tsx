@@ -18,14 +18,14 @@ export function PsiCard({ title, subtitle, children, action }: { title?: string 
   );
 }
 
-export function PsiButton({ children, href, onClick, disabled, title, variant = 'primary', type = 'button' }: { children: ReactNode; href?: string | undefined; onClick?: (() => void) | undefined; disabled?: boolean | undefined; title?: string | undefined; variant?: 'primary' | 'secondary' | 'danger' | undefined; type?: 'button' | 'submit' | undefined }) {
+export function PsiButton({ children, href, onClick, disabled, title, variant = 'primary', type = 'button', className: customClassName = '' }: { children: ReactNode; href?: string | undefined; onClick?: (() => void) | undefined; disabled?: boolean | undefined; title?: string | undefined; variant?: 'primary' | 'secondary' | 'danger' | undefined; type?: 'button' | 'submit' | undefined; className?: string | undefined }) {
   const className = `inline-flex min-h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold transition ${
     variant === 'primary'
       ? 'bg-primary text-white hover:bg-primary/90 disabled:bg-primary/40'
       : variant === 'danger'
         ? 'border border-danger/40 bg-danger/10 text-danger hover:bg-danger/15 disabled:opacity-50'
         : 'border border-[var(--psm-line)] bg-[var(--psm-surface-2)] text-[var(--psm-fg)] hover:bg-[var(--psm-surface-3)] disabled:opacity-50'
-  }`;
+  } ${customClassName}`;
   if (href && !disabled) return <Link href={href} className={className} title={title}>{children}</Link>;
   return <button type={type} onClick={onClick} disabled={disabled} title={disabled ? title : undefined} className={className}>{children}</button>;
 }
